@@ -111,23 +111,31 @@
     box-shadow: 0 0 15px hsl(185 100% 50% / 0.2);
   }
 
-  /* === UNIFIED DESIGN SYSTEM === */
-  /* Idle State: Dark bg, subtle grey border, no glow */
-  /* Active State: 2px cyan border, glow, optional tinted bg */
+  /* === DUAL-STATE NEON DESIGN SYSTEM === */
+  /* Empty State: 1px cyan border at 40% opacity, no glow */
+  /* Filled State: 2px solid cyan 100%, cyan tint bg, strong glow */
 
   .interactive-idle {
-    @apply bg-background border border-border rounded-xl transition-all duration-300;
+    @apply bg-background rounded-xl;
+    border: 1px solid rgba(0, 242, 255, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .interactive-idle:hover {
+    border: 1px solid rgba(0, 242, 255, 0.6);
   }
 
   .interactive-active {
-    @apply bg-primary/10 rounded-xl transition-all duration-300;
+    @apply bg-primary/10 rounded-xl;
     border: 2px solid hsl(185 100% 50%);
-    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .btn-primary {
-    @apply bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-xl transition-all duration-300;
+    @apply bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-xl;
     box-shadow: 0 0 20px hsl(185 100% 50% / 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .btn-primary:hover {
@@ -135,27 +143,44 @@
     transform: translateY(-2px);
   }
 
+  .btn-primary-inactive {
+    @apply bg-primary/50 text-primary-foreground font-semibold px-6 py-3 rounded-xl opacity-70;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground font-medium px-6 py-3 rounded-xl border border-border transition-all duration-300;
+    @apply bg-secondary text-secondary-foreground font-medium px-6 py-3 rounded-xl;
+    border: 1px solid rgba(0, 242, 255, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .btn-secondary:hover {
-    @apply border-primary/50 bg-secondary/80;
+    border: 1px solid rgba(0, 242, 255, 0.6);
+    @apply bg-secondary/80;
   }
 
+  /* Input Fields - Dual State */
   .input-field {
-    @apply bg-background border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground transition-all duration-300 focus:outline-none;
+    @apply bg-background rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none;
+    border: 1px solid rgba(0, 242, 255, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .input-field:hover {
+    border: 1px solid rgba(0, 242, 255, 0.6);
   }
 
   .input-field:focus {
+    @apply bg-primary/10;
     border: 2px solid hsl(185 100% 50%);
-    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
   }
 
   .input-field-active {
-    @apply bg-primary/10 text-foreground rounded-xl px-4 py-3 placeholder:text-muted-foreground transition-all duration-300 focus:outline-none;
+    @apply bg-primary/10 text-foreground rounded-xl px-4 py-3 placeholder:text-muted-foreground focus:outline-none;
     border: 2px solid hsl(185 100% 50%);
-    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   /* Anti-autofill CSS fix */
@@ -191,18 +216,19 @@
   }
 
   .service-card {
-    @apply bg-background p-4 cursor-pointer transition-all duration-300 rounded-xl;
-    border: 1px solid hsl(0 0% 14%);
+    @apply bg-background p-4 cursor-pointer rounded-xl;
+    border: 1px solid rgba(0, 242, 255, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .service-card:hover {
-    border-color: hsl(185 100% 50% / 0.5);
+    border: 1px solid rgba(0, 242, 255, 0.6);
   }
 
   .service-card-selected {
     @apply bg-primary/10;
     border: 2px solid hsl(185 100% 50%);
-    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
   }
 
   .progress-bar {
