@@ -27,12 +27,15 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
   };
 
   const getInputClassName = (fieldValue: string | number | undefined, hasError: boolean) => {
-    const baseClasses = 'input-field w-full transition-all duration-300';
-    if (hasError) return `${baseClasses} border-destructive`;
+    const baseClasses = 'w-full px-4 py-3 rounded-lg transition-all duration-300 focus:outline-none text-foreground placeholder:text-muted-foreground';
+    const inactiveClasses = 'bg-secondary/50 border border-border';
+    const activeClasses = 'bg-primary/20 border border-primary text-foreground shadow-[0_0_20px_hsl(185_100%_50%/0.3)]';
+    
+    if (hasError) return `${baseClasses} ${inactiveClasses} border-destructive`;
     if (isFieldFilled(fieldValue)) {
-      return `${baseClasses} border-primary/60 shadow-[0_0_15px_hsl(185_100%_50%/0.25)]`;
+      return `${baseClasses} ${activeClasses}`;
     }
-    return baseClasses;
+    return `${baseClasses} ${inactiveClasses}`;
   };
 
   const isFormComplete = 
