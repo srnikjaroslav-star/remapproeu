@@ -15,7 +15,7 @@ const WIZARD_STEPS = ['Vehicle', 'Services & Upload', 'Contact'];
 
 interface FormData {
   customer: { name: string; email: string };
-  vehicle: { brand: string; model: string; fuelType: string; year: number; ecuType: string };
+  vehicle: { brand: string; model: string; fuelType: string; year: number; ecuType: string; engineDisplacement?: string; enginePower?: string };
   services: string[];
   fileUrl: string;
 }
@@ -26,7 +26,7 @@ const OrderPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     customer: { name: '', email: '' },
-    vehicle: { brand: '', model: '', fuelType: '', year: 0, ecuType: '' },
+    vehicle: { brand: '', model: '', fuelType: '', year: 0, ecuType: '', engineDisplacement: '', enginePower: '' },
     services: [],
     fileUrl: '',
   });

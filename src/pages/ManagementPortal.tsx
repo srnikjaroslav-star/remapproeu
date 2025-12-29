@@ -164,6 +164,41 @@ const ManagementPortal = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Revenue Header */}
+        <div className="glass-card p-6 mb-8">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <span className="neon-text">Revenue Dashboard</span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="text-center p-4 bg-secondary/30 rounded-lg">
+              <p className="text-muted-foreground text-sm mb-1">Total Revenue</p>
+              <p className="text-3xl font-bold neon-text">
+                €{orders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0).toLocaleString()}
+              </p>
+            </div>
+            <div className="text-center p-4 bg-secondary/30 rounded-lg">
+              <p className="text-muted-foreground text-sm mb-1">Orders Count</p>
+              <p className="text-3xl font-bold text-foreground">{orders.length}</p>
+            </div>
+            <div className="text-center p-4 bg-secondary/30 rounded-lg">
+              <p className="text-muted-foreground text-sm mb-1 flex items-center justify-center gap-2">
+                <Clock className="w-4 h-4 text-yellow-500" /> Pending
+              </p>
+              <p className="text-3xl font-bold text-yellow-500">
+                {orders.filter((o) => o.status === 'pending').length}
+              </p>
+            </div>
+            <div className="text-center p-4 bg-secondary/30 rounded-lg">
+              <p className="text-muted-foreground text-sm mb-1 flex items-center justify-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500" /> Completed
+              </p>
+              <p className="text-3xl font-bold text-green-500">
+                {orders.filter((o) => o.status === 'completed').length}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           {/* Search */}
           <div className="relative flex-1">
@@ -190,7 +225,7 @@ const ManagementPortal = () => {
           </select>
         </div>
 
-        {/* Stats */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="glass-card p-4">
             <p className="text-muted-foreground text-sm">Total Orders</p>
