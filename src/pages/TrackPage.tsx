@@ -60,9 +60,15 @@ const TrackPage = () => {
     }
   };
 
-  const selectedServices = order?.service_type?.map((id) => 
-    SERVICES.find((s) => s.id === id)?.name
-  ).filter(Boolean) || [];
+  const getSelectedServices = () => {
+    if (!order?.service_type) return [];
+    const serviceIds = Array.isArray(order.service_type) 
+      ? order.service_type 
+      : JSON.parse(order.service_type as unknown as string);
+    return serviceIds.map((id: string) => SERVICES.find((s) => s.id === id)?.name).filter(Boolean);
+  };
+  
+  const selectedServices = getSelectedServices();
 
   return (
     <div className="min-h-screen bg-background">

@@ -103,11 +103,12 @@ const ManagementPortal = () => {
   };
 
   const filteredOrders = orders.filter((order) => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
-      order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customer_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.car_brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.car_model.toLowerCase().includes(searchTerm.toLowerCase());
+      (order.customer_name || '').toLowerCase().includes(searchLower) ||
+      (order.customer_email || '').toLowerCase().includes(searchLower) ||
+      (order.car_brand || '').toLowerCase().includes(searchLower) ||
+      (order.car_model || '').toLowerCase().includes(searchLower);
     
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     
@@ -127,8 +128,10 @@ const ManagementPortal = () => {
     }
   };
 
-  const getServiceNames = (serviceIds: string[]) => {
-    return serviceIds.map((id) => SERVICES.find((s) => s.id === id)?.name).filter(Boolean).join(', ');
+  const getServiceNames = (serviceIds: string[] | string | null) => {
+    if (!serviceIds) return '';
+    const ids = Array.isArray(serviceIds) ? serviceIds : JSON.parse(serviceIds);
+    return ids.map((id: string) => SERVICES.find((s) => s.id === id)?.name).filter(Boolean).join(', ');
   };
 
   return (
