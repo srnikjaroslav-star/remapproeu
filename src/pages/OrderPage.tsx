@@ -3,16 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
 import WizardSteps from '@/components/WizardSteps';
-import CustomerInfoStep from '@/components/wizard/CustomerInfoStep';
 import VehicleSpecsStep from '@/components/wizard/VehicleSpecsStep';
-import ServicesStep from '@/components/wizard/ServicesStep';
-import FileUploadStep from '@/components/wizard/FileUploadStep';
+import ServicesFileStep from '@/components/wizard/ServicesFileStep';
+import ContactSubmitStep from '@/components/wizard/ContactSubmitStep';
 import { supabase, OrderInsert } from '@/integrations/supabase/client';
 import { SERVICES } from '@/data/services';
 import { ArrowLeft, Zap, Shield, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const WIZARD_STEPS = ['Customer', 'Vehicle', 'Services', 'Upload'];
+const WIZARD_STEPS = ['Vehicle', 'Services & Upload', 'Contact'];
 
 interface FormData {
   customer: { name: string; email: string };
@@ -77,37 +76,33 @@ const OrderPage = () => {
     switch (currentStep) {
       case 0:
         return (
-          <CustomerInfoStep
-            data={formData.customer}
-            onUpdate={(customer) => setFormData({ ...formData, customer })}
+          <VehicleSpecsStep
+            data={formData.vehicle}
+            onUpdate={(vehicle) => setFormData({ ...formData, vehicle })}
             onNext={() => setCurrentStep(1)}
+            onBack={() => navigate('/')}
           />
         );
       case 1:
         return (
-          <VehicleSpecsStep
-            data={formData.vehicle}
-            onUpdate={(vehicle) => setFormData({ ...formData, vehicle })}
+          <ServicesFileStep
+            selectedServices={formData.services}
+            onServicesUpdate={(services) => setFormData({ ...formData, services })}
+            onFileUploaded={(url) => setFormData({ ...formData, fileUrl: url })}
+            fileUrl={formData.fileUrl}
             onNext={() => setCurrentStep(2)}
             onBack={() => setCurrentStep(0)}
           />
         );
       case 2:
         return (
-          <ServicesStep
-            selectedServices={formData.services}
-            onUpdate={(services) => setFormData({ ...formData, services })}
-            onNext={() => setCurrentStep(3)}
+          <ContactSubmitStep
+            data={formData.customer}
+            onUpdate={(customer) => setFormData({ ...formData, customer })}
             onBack={() => setCurrentStep(1)}
-          />
-        );
-      case 3:
-        return (
-          <FileUploadStep
-            onFileUploaded={(url) => setFormData({ ...formData, fileUrl: url })}
-            onBack={() => setCurrentStep(2)}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
+            totalPrice={totalPrice}
           />
         );
       default:

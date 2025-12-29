@@ -19,9 +19,6 @@ const Index = () => {
             <Link to="/track" className="text-muted-foreground hover:text-foreground transition-colors">
               Track Order
             </Link>
-            <Link to="/management-portal" className="text-muted-foreground hover:text-foreground transition-colors">
-              Admin
-            </Link>
             <Link to="/order" className="btn-primary">
               Order Now
             </Link>
@@ -162,7 +159,6 @@ const Index = () => {
           </p>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <Link to="/track" className="hover:text-foreground transition-colors">Track Order</Link>
-            <Link to="/management-portal" className="hover:text-foreground transition-colors">Admin</Link>
           </div>
         </div>
       </footer>

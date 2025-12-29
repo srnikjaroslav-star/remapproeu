@@ -1,0 +1,106 @@
+import { useState } from 'react';
+import { User, Mail, Loader2 } from 'lucide-react';
+
+interface ContactSubmitStepProps {
+  data: { name: string; email: string };
+  onUpdate: (data: { name: string; email: string }) => void;
+  onBack: () => void;
+  onSubmit: () => void;
+  isSubmitting: boolean;
+  totalPrice: number;
+}
+
+const ContactSubmitStep = ({ 
+  data, 
+  onUpdate, 
+  onBack, 
+  onSubmit, 
+  isSubmitting,
+  totalPrice 
+}: ContactSubmitStepProps) => {
+  const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
+
+  const validateAndSubmit = () => {
+    const newErrors: { name?: string; email?: string } = {};
+    
+    if (!data.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+    
+    if (!data.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+      newErrors.email = 'Invalid email format';
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length === 0) {
+      onSubmit();
+    }
+  };
+
+  return (
+    <div className="animate-fadeIn">
+      <h2 className="text-2xl font-bold mb-2">Contact Information</h2>
+      <p className="text-muted-foreground mb-8">Enter your details to complete the order</p>
+      
+      <div className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium mb-2">Full Name</label>
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              type="text"
+              value={data.name}
+              onChange={(e) => onUpdate({ ...data, name: e.target.value })}
+              placeholder="John Doe"
+              className={`input-field w-full pl-12 ${errors.name ? 'border-destructive' : ''}`}
+            />
+          </div>
+          {errors.name && <p className="text-destructive text-sm mt-1">{errors.name}</p>}
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium mb-2">Email Address</label>
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              type="email"
+              value={data.email}
+              onChange={(e) => onUpdate({ ...data, email: e.target.value })}
+              placeholder="john@example.com"
+              className={`input-field w-full pl-12 ${errors.email ? 'border-destructive' : ''}`}
+            />
+          </div>
+          {errors.email && <p className="text-destructive text-sm mt-1">{errors.email}</p>}
+        </div>
+      </div>
+
+      {/* Order Summary */}
+      <div className="mt-8 glass-card p-6">
+        <h3 className="font-semibold mb-4">Order Summary</h3>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">Total to Pay</span>
+          <span className="text-2xl font-bold neon-text">{totalPrice}€</span>
+        </div>
+      </div>
+      
+      <div className="mt-8 flex justify-between">
+        <button onClick={onBack} className="btn-secondary">
+          Back
+        </button>
+        <button 
+          onClick={validateAndSubmit} 
+          disabled={isSubmitting}
+          className={`btn-primary flex items-center gap-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+          {isSubmitting ? 'Submitting...' : 'Submit Order'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default ContactSubmitStep;
