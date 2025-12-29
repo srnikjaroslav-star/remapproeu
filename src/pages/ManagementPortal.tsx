@@ -41,19 +41,23 @@ const ManagementPortal = () => {
   }, []);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    // Optimistic UI update
+    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
+
     try {
       const { error } = await supabase
         .from('orders')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .update({ status: newStatus })
         .eq('id', orderId);
 
       if (error) throw error;
-      
-      toast.success('Status updated');
-      fetchOrders();
+
+      toast.success(`Status updated to ${newStatus.charAt(0).toUpperCase()}${newStatus.slice(1)}`);
+      await fetchOrders();
     } catch (error) {
       console.error('Update error:', error);
       toast.error('Failed to update status');
+      await fetchOrders();
     }
   };
 
@@ -77,10 +81,9 @@ const ManagementPortal = () => {
 
       const { error: updateError } = await supabase
         .from('orders')
-        .update({ 
-          result_file_url: publicUrl, 
+        .update({
+          result_file_url: publicUrl,
           status: 'completed',
-          updated_at: new Date().toISOString() 
         })
         .eq('id', selectedOrderId);
 
