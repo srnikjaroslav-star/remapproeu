@@ -27,15 +27,9 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
   };
 
   const getInputClassName = (fieldValue: string | number | undefined, hasError: boolean) => {
-    const baseClasses = 'w-full px-4 py-3 rounded-lg transition-all duration-300 focus:outline-none text-foreground placeholder:text-muted-foreground';
-    const inactiveClasses = 'bg-secondary/50 border border-border';
-    const activeClasses = 'bg-primary/20 border border-primary text-foreground shadow-[0_0_20px_hsl(185_100%_50%/0.3)]';
-    
-    if (hasError) return `${baseClasses} ${inactiveClasses} border-destructive`;
-    if (isFieldFilled(fieldValue)) {
-      return `${baseClasses} ${activeClasses}`;
-    }
-    return `${baseClasses} ${inactiveClasses}`;
+    if (hasError) return 'input-field w-full border-destructive';
+    if (isFieldFilled(fieldValue)) return 'input-field-active w-full';
+    return 'input-field w-full';
   };
 
   const isFormComplete = 
@@ -178,10 +172,10 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
               type="button"
               onClick={() => onUpdate({ ...data, fuelType: 'Diesel' })}
               className={`
-                flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-300 border
+                flex-1 py-3 px-6 font-medium transition-all duration-300
                 ${data.fuelType === 'Diesel' 
-                  ? 'bg-primary/20 border-primary text-primary shadow-[0_0_20px_hsl(185_100%_50%/0.3)]' 
-                  : 'bg-secondary border-border text-muted-foreground hover:border-primary/50'
+                  ? 'interactive-active text-foreground' 
+                  : 'interactive-idle text-muted-foreground hover:border-primary/50'
                 }
               `}
             >
@@ -191,10 +185,10 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
               type="button"
               onClick={() => onUpdate({ ...data, fuelType: 'Petrol' })}
               className={`
-                flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-300 border
+                flex-1 py-3 px-6 font-medium transition-all duration-300
                 ${data.fuelType === 'Petrol' 
-                  ? 'bg-primary/20 border-primary text-primary shadow-[0_0_20px_hsl(185_100%_50%/0.3)]' 
-                  : 'bg-secondary border-border text-muted-foreground hover:border-primary/50'
+                  ? 'interactive-active text-foreground' 
+                  : 'interactive-idle text-muted-foreground hover:border-primary/50'
                 }
               `}
             >

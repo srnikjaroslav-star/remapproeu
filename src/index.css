@@ -111,8 +111,22 @@
     box-shadow: 0 0 15px hsl(185 100% 50% / 0.2);
   }
 
+  /* === UNIFIED DESIGN SYSTEM === */
+  /* Idle State: Dark bg, subtle grey border, no glow */
+  /* Active State: 2px cyan border, glow, optional tinted bg */
+
+  .interactive-idle {
+    @apply bg-background border border-border rounded-xl transition-all duration-300;
+  }
+
+  .interactive-active {
+    @apply bg-primary/10 rounded-xl transition-all duration-300;
+    border: 2px solid hsl(185 100% 50%);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+  }
+
   .btn-primary {
-    @apply bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-lg transition-all duration-300;
+    @apply bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-xl transition-all duration-300;
     box-shadow: 0 0 20px hsl(185 100% 50% / 0.3);
   }
 
@@ -122,7 +136,7 @@
   }
 
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground font-medium px-6 py-3 rounded-lg border border-border transition-all duration-300;
+    @apply bg-secondary text-secondary-foreground font-medium px-6 py-3 rounded-xl border border-border transition-all duration-300;
   }
 
   .btn-secondary:hover {
@@ -130,11 +144,18 @@
   }
 
   .input-field {
-    @apply bg-secondary/50 border border-border rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground transition-all duration-300 focus:outline-none focus:border-primary/50;
+    @apply bg-background border border-border rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground transition-all duration-300 focus:outline-none;
   }
 
   .input-field:focus {
-    box-shadow: 0 0 15px hsl(185 100% 50% / 0.15);
+    border: 2px solid hsl(185 100% 50%);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+  }
+
+  .input-field-active {
+    @apply bg-primary/10 text-foreground rounded-xl px-4 py-3 placeholder:text-muted-foreground transition-all duration-300 focus:outline-none;
+    border: 2px solid hsl(185 100% 50%);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
   }
 
   /* Anti-autofill CSS fix */
@@ -170,16 +191,18 @@
   }
 
   .service-card {
-    @apply glass-card p-4 cursor-pointer transition-all duration-300;
+    @apply bg-background p-4 cursor-pointer transition-all duration-300 rounded-xl;
+    border: 1px solid hsl(0 0% 14%);
   }
 
   .service-card:hover {
-    @apply border-primary/40;
+    border-color: hsl(185 100% 50% / 0.5);
   }
 
   .service-card-selected {
-    @apply border-primary bg-primary/10;
-    box-shadow: 0 0 20px hsl(185 100% 50% / 0.2);
+    @apply bg-primary/10;
+    border: 2px solid hsl(185 100% 50%);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
   }
 
   .progress-bar {
