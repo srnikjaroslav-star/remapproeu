@@ -21,6 +21,29 @@ interface VehicleSpecsStepProps {
 const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => {
   const [errors, setErrors] = useState<Partial<Record<keyof VehicleData, string>>>({});
 
+  const isFieldFilled = (value: string | number | undefined) => {
+    if (typeof value === 'number') return value > 0;
+    return value && value.trim().length > 0;
+  };
+
+  const getInputClassName = (fieldValue: string | number | undefined, hasError: boolean) => {
+    const baseClasses = 'input-field w-full transition-all duration-300';
+    if (hasError) return `${baseClasses} border-destructive`;
+    if (isFieldFilled(fieldValue)) {
+      return `${baseClasses} border-primary/60 shadow-[0_0_15px_hsl(185_100%_50%/0.25)]`;
+    }
+    return baseClasses;
+  };
+
+  const isFormComplete = 
+    isFieldFilled(data.brand) &&
+    isFieldFilled(data.model) &&
+    isFieldFilled(data.engineDisplacement) &&
+    isFieldFilled(data.enginePower) &&
+    isFieldFilled(data.ecuType) &&
+    isFieldFilled(data.year) &&
+    isFieldFilled(data.fuelType);
+
   const validateAndNext = () => {
     const newErrors: Partial<Record<keyof VehicleData, string>> = {};
     
@@ -56,7 +79,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
             value={data.brand}
             onChange={(e) => onUpdate({ ...data, brand: e.target.value })}
             placeholder="e.g., Audi, BMW, Mercedes"
-            className={`input-field w-full ${errors.brand ? 'border-destructive' : ''}`}
+            className={getInputClassName(data.brand, !!errors.brand)}
           />
           {errors.brand && <p className="text-destructive text-sm mt-1">{errors.brand}</p>}
         </div>
@@ -72,7 +95,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
             value={data.model}
             onChange={(e) => onUpdate({ ...data, model: e.target.value })}
             placeholder="e.g., A4 2.0 TDI"
-            className={`input-field w-full ${errors.model ? 'border-destructive' : ''}`}
+            className={getInputClassName(data.model, !!errors.model)}
           />
           {errors.model && <p className="text-destructive text-sm mt-1">{errors.model}</p>}
         </div>
@@ -88,7 +111,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
             value={data.engineDisplacement || ''}
             onChange={(e) => onUpdate({ ...data, engineDisplacement: e.target.value })}
             placeholder="e.g., 2.0, 3.0"
-            className={`input-field w-full ${errors.engineDisplacement ? 'border-destructive' : ''}`}
+            className={getInputClassName(data.engineDisplacement, !!errors.engineDisplacement)}
           />
           {errors.engineDisplacement && <p className="text-destructive text-sm mt-1">{errors.engineDisplacement}</p>}
         </div>
@@ -104,7 +127,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
             value={data.enginePower || ''}
             onChange={(e) => onUpdate({ ...data, enginePower: e.target.value })}
             placeholder="e.g., 110, 150"
-            className={`input-field w-full ${errors.enginePower ? 'border-destructive' : ''}`}
+            className={getInputClassName(data.enginePower, !!errors.enginePower)}
           />
           {errors.enginePower && <p className="text-destructive text-sm mt-1">{errors.enginePower}</p>}
         </div>
@@ -120,7 +143,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
             value={data.ecuType}
             onChange={(e) => onUpdate({ ...data, ecuType: e.target.value })}
             placeholder="e.g., Bosch EDC17, Siemens PCR2.1"
-            className={`input-field w-full ${errors.ecuType ? 'border-destructive' : ''}`}
+            className={getInputClassName(data.ecuType, !!errors.ecuType)}
           />
           {errors.ecuType && <p className="text-destructive text-sm mt-1">{errors.ecuType}</p>}
         </div>
@@ -136,7 +159,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
             value={data.year || ''}
             onChange={(e) => onUpdate({ ...data, year: parseInt(e.target.value) || 0 })}
             placeholder="e.g., 2019"
-            className={`input-field w-full ${errors.year ? 'border-destructive' : ''}`}
+            className={getInputClassName(data.year, !!errors.year)}
           />
           {errors.year && <p className="text-destructive text-sm mt-1">{errors.year}</p>}
         </div>
@@ -154,7 +177,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
               className={`
                 flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-300 border
                 ${data.fuelType === 'Diesel' 
-                  ? 'bg-primary/20 border-primary text-primary' 
+                  ? 'bg-primary/20 border-primary text-primary shadow-[0_0_20px_hsl(185_100%_50%/0.3)]' 
                   : 'bg-secondary border-border text-muted-foreground hover:border-primary/50'
                 }
               `}
@@ -167,7 +190,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
               className={`
                 flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-300 border
                 ${data.fuelType === 'Petrol' 
-                  ? 'bg-primary/20 border-primary text-primary' 
+                  ? 'bg-primary/20 border-primary text-primary shadow-[0_0_20px_hsl(185_100%_50%/0.3)]' 
                   : 'bg-secondary border-border text-muted-foreground hover:border-primary/50'
                 }
               `}
@@ -180,7 +203,14 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
       </div>
       
       <div className="mt-8 flex justify-end">
-        <button onClick={validateAndNext} className="btn-primary">
+        <button 
+          onClick={validateAndNext} 
+          className={`btn-primary transition-all duration-300 ${
+            isFormComplete 
+              ? 'shadow-[0_0_30px_hsl(185_100%_50%/0.5)] animate-glow' 
+              : 'opacity-70'
+          }`}
+        >
           Continue
         </button>
       </div>
