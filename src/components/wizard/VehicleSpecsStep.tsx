@@ -14,10 +14,10 @@ interface VehicleSpecsStepProps {
   data: VehicleData;
   onUpdate: (data: VehicleData) => void;
   onNext: () => void;
-  onBack: () => void;
+  onBack?: () => void;
 }
 
-const VehicleSpecsStep = ({ data, onUpdate, onNext, onBack }: VehicleSpecsStepProps) => {
+const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => {
   const [errors, setErrors] = useState<Partial<Record<keyof VehicleData, string>>>({});
 
   const validateAndNext = () => {
@@ -138,10 +138,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext, onBack }: VehicleSpecsStepPr
         </div>
       </div>
       
-      <div className="mt-8 flex justify-between">
-        <button onClick={onBack} className="btn-secondary">
-          Back
-        </button>
+      <div className="mt-8 flex justify-end">
         <button onClick={validateAndNext} className="btn-primary">
           Continue
         </button>
