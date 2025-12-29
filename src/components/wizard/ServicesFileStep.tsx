@@ -161,9 +161,12 @@ const ServicesFileStep = ({
         <div
           onClick={() => fileInputRef.current?.click()}
           className={`
-            glass-card p-8 border-2 border-dashed cursor-pointer transition-all duration-300
+            p-8 cursor-pointer transition-all duration-300 rounded-xl
             flex flex-col items-center justify-center text-center
-            ${uploadComplete ? 'border-green-500/50' : 'border-primary/30 hover:border-primary/60'}
+            ${uploadComplete 
+              ? 'bg-green-500/10 border-2 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)]' 
+              : 'interactive-idle border-dashed hover:border-primary/60'
+            }
           `}
         >
           <input
@@ -223,7 +226,11 @@ const ServicesFileStep = ({
         <button 
           onClick={onNext} 
           disabled={!canContinue}
-          className={`btn-primary ${!canContinue ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`btn-primary ${
+            canContinue 
+              ? 'shadow-[0_0_30px_hsl(185_100%_50%/0.5)] animate-glow' 
+              : 'opacity-50 cursor-not-allowed'
+          }`}
         >
           Continue
         </button>
