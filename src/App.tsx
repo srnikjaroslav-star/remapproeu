@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import OrderPage from "./pages/OrderPage";
 import TrackPage from "./pages/TrackPage";
+import CheckOrderPage from "./pages/CheckOrderPage";
 import ManagementPortal from "./pages/ManagementPortal";
 import NotFound from "./pages/NotFound";
 
@@ -21,6 +22,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/order" element={<OrderPage />} />
           <Route path="/track" element={<TrackPage />} />
+          <Route path="/check-order" element={<CheckOrderPage />} />
           <Route path="/management-portal" element={<ManagementPortal />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
