@@ -137,7 +137,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "REMAPPRO <info@remappro.eu>",
+        from: "Tuning Service <info@remappro.eu>",
         to: [customerEmail],
         subject: `🏁 Váš remap pre objednávku ${displayOrderId} je pripravený!`,
         html: emailHtml,
