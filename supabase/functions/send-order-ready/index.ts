@@ -94,7 +94,7 @@ const handler = async (req: Request): Promise<Response> => {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center">
-                          <a href="https://a9909d14-dc94-494f-abaa-4af3d8a8ed18.lovableproject.com/track?order=${orderId}" 
+                          <a href="https://a9909d14-dc94-494f-abaa-4af3d8a8ed18.lovableproject.com/check-order?order=${displayOrderId}" 
                              style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #00d4ff 0%, #00ffcc 100%); color: #000000; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px;">
                             Download Your File
                           </a>
