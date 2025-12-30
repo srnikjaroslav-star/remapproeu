@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Download, Upload, Eye, CheckCircle, Clock, Package, 
-  RefreshCw, Search, ShoppingCart
+  RefreshCw, Search, User
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { supabase, Order } from '@/integrations/supabase/client';
@@ -233,7 +233,7 @@ const ManagementPortal = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="glass-card p-4">
             <p className="text-white text-sm flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4 text-white" /> Total Orders
+              <User className="w-4 h-4 text-white" /> Total Orders
             </p>
             <p className="text-2xl font-bold text-white">{orders.length}</p>
           </div>
