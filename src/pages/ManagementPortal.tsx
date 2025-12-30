@@ -89,7 +89,37 @@ const ManagementPortal = () => {
 
       if (updateError) throw updateError;
 
-      toast.success('Result file uploaded and status updated to completed');
+      // Find the order to get customer details for email
+      const order = orders.find(o => o.id === selectedOrderId);
+      
+      // Send email notification
+      if (order?.customer_email) {
+        try {
+          const response = await supabase.functions.invoke('send-order-ready', {
+            body: {
+              orderId: order.id,
+              orderNumber: order.order_number || '',
+              customerEmail: order.customer_email,
+              customerName: order.customer_name || '',
+              carBrand: order.car_brand || '',
+              carModel: order.car_model || '',
+            },
+          });
+          
+          if (response.error) {
+            console.error('Email notification failed:', response.error);
+            toast.success('Result file uploaded! (Email notification failed)');
+          } else {
+            toast.success('Result file uploaded and customer notified via email!');
+          }
+        } catch (emailError) {
+          console.error('Email notification error:', emailError);
+          toast.success('Result file uploaded! (Email notification failed)');
+        }
+      } else {
+        toast.success('Result file uploaded and status updated to completed');
+      }
+      
       fetchOrders();
     } catch (error) {
       console.error('Upload error:', error);
