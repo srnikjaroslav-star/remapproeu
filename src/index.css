@@ -244,7 +244,7 @@
   /* All with Deep Black background, colored borders and text */
   
   .admin-status-select {
-    @apply rounded-xl px-3 py-2 pr-8 cursor-pointer text-sm font-semibold min-w-[130px];
+    @apply rounded-xl px-4 py-2 cursor-pointer text-sm font-semibold min-w-[120px] text-center;
     background-color: hsl(0 0% 2%);
     -webkit-appearance: none;
     -moz-appearance: none;
