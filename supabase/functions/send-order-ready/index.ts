@@ -1,10 +1,9 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
-const RESEND_API_KEY =
-  Deno.env.get("RESEND_API_KEY") ??
-  // Back-compat only (NOT recommended): don't expose private keys via VITE_ vars.
-  Deno.env.get("VITE_RESEND_API_KEY") ??
-  "";
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
+
+// Verified sender identity in Resend (must match your verified domain)
+const SENDER = "Tuning Service <info@remappro.eu>";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,6 +40,7 @@ const handler = async (req: Request): Promise<Response> => {
     }: NotifyRequest = await req.json();
 
     console.log(`Sending notification for order ${orderNumber} to ${customerEmail}`);
+    console.log("Resend sender:", SENDER);
 
     if (!customerEmail) {
       throw new Error("Customer email is required");
@@ -152,7 +152,7 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Tuning Service <info@remappro.eu>",
+        from: SENDER,
         to: [customerEmail],
         subject: `🏁 Váš remap pre objednávku ${displayOrderId} je pripravený!`,
         html: emailHtml,
