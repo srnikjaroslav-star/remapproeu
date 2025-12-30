@@ -62,15 +62,32 @@ const OrderPage = () => {
         .single();
 
       if (error) {
-        toast.error(`Database error: ${error.message}`);
+        const errorMessage = error.message.includes('network') || error.message.includes('fetch')
+          ? 'Upload failed. Please check your internet connection and try again.'
+          : `Database error: ${error.message}`;
+        toast.error(errorMessage);
         throw error;
       }
 
-      toast.success('Order submitted successfully!');
-      navigate(`/track?order=${data.id}`);
+      // Show professional success message with Order ID
+      toast.success(
+        `Order Received! Your file is being processed by our engineers. Your Order ID is: ${data.id.slice(0, 8).toUpperCase()}`,
+        {
+          duration: 5000,
+          description: 'You will be redirected to track your order.',
+        }
+      );
+      
+      // Navigate after a brief delay to let user see the message
+      setTimeout(() => {
+        navigate(`/track?order=${data.id}`);
+      }, 2000);
     } catch (error) {
       console.error('Submit error:', error);
-      toast.error('Failed to submit order. Please try again.');
+      const err = error as Error;
+      if (!err.message?.includes('network') && !err.message?.includes('Database')) {
+        toast.error('Failed to submit order. Please check your internet connection and try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
