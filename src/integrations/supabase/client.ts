@@ -5,6 +5,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export interface Order {
   id: string;
+  order_number: string | null;
   customer_name: string;
   customer_email: string;
   car_brand: string;
