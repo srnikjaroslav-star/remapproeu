@@ -52,8 +52,7 @@ const OrderPage = () => {
         total_price: totalPrice,
         status: 'pending',
         file_url: formData.fileUrl,
-        legal_consent_agreed: legalConsentAgreed,
-        legal_consent_timestamp: new Date().toISOString(),
+        legal_consent: legalConsentAgreed,
       };
 
       const { data, error } = await supabase
@@ -62,7 +61,10 @@ const OrderPage = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        toast.error(`Database error: ${error.message}`);
+        throw error;
+      }
 
       toast.success('Order submitted successfully!');
       navigate(`/track?order=${data.id}`);
