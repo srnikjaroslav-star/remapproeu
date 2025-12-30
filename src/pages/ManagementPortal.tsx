@@ -316,13 +316,13 @@ const ManagementPortal = () => {
                           <select
                             value={order.status}
                             onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                            className="input-field text-sm py-1 pr-8 appearance-none cursor-pointer"
+                            className="admin-select text-sm py-2 pr-8 min-w-[120px]"
                           >
                             <option value="pending">Pending</option>
                             <option value="processing">Processing</option>
                             <option value="completed">Completed</option>
                           </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-primary pointer-events-none" />
                         </div>
                       </td>
                       <td className="p-4">
