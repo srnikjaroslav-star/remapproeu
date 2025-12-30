@@ -70,13 +70,13 @@ const ManagementPortal = () => {
     try {
       const fileName = `result-${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
-        .from('tunes')
+        .from('modified-files')
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('tunes')
+        .from('modified-files')
         .getPublicUrl(fileName);
 
       const { error: updateError } = await supabase
