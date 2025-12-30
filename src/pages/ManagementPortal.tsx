@@ -108,6 +108,7 @@ const ManagementPortal = () => {
   const filteredOrders = orders.filter((order) => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
+      (order.order_number || '').toLowerCase().includes(searchLower) ||
       (order.customer_name || '').toLowerCase().includes(searchLower) ||
       (order.customer_email || '').toLowerCase().includes(searchLower) ||
       (order.car_brand || '').toLowerCase().includes(searchLower) ||
@@ -269,6 +270,7 @@ const ManagementPortal = () => {
             <table className="w-full">
               <thead>
                 <tr className="table-header">
+                  <th className="text-left p-4">Order ID</th>
                   <th className="text-left p-4">Customer</th>
                   <th className="text-left p-4">Vehicle</th>
                   <th className="text-left p-4">ECU</th>
@@ -281,19 +283,24 @@ const ManagementPortal = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-12 text-muted-foreground">
+                    <td colSpan={8} className="text-center py-12 text-muted-foreground">
                       Loading orders...
                     </td>
                   </tr>
                 ) : filteredOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-12 text-muted-foreground">
+                    <td colSpan={8} className="text-center py-12 text-muted-foreground">
                       No orders found
                     </td>
                   </tr>
                 ) : (
                   filteredOrders.map((order) => (
                     <tr key={order.id} className="table-row">
+                      <td className="p-4">
+                        <span className="font-mono text-sm font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
+                          {order.order_number || order.id.slice(0, 8).toUpperCase()}
+                        </span>
+                      </td>
                       <td className="p-4">
                         <div>
                           <p className="font-medium">{order.customer_name}</p>

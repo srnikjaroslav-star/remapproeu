@@ -70,8 +70,9 @@ const OrderPage = () => {
       }
 
       // Show professional success message with Order ID
+      const displayOrderId = data.order_number || `RP-${data.id.slice(0, 6).toUpperCase()}`;
       toast.success(
-        `Order Received! Your file is being processed by our engineers. Your Order ID is: ${data.id.slice(0, 8).toUpperCase()}`,
+        `Order Received! Your file is being processed by our engineers. Your Order ID is: ${displayOrderId}`,
         {
           duration: 5000,
           description: 'You will be redirected to track your order.',
