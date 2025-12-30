@@ -1,58 +1,90 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search, Package, Clock, CheckCircle, Download, AlertCircle } from 'lucide-react';
+import { Search, Package, Clock, CheckCircle, Download, AlertCircle, Mail, Hash } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { supabase, Order } from '@/integrations/supabase/client';
 import { SERVICES } from '@/data/services';
 
 const TrackPage = () => {
   const [searchParams] = useSearchParams();
-  const [orderId, setOrderId] = useState(searchParams.get('order') || '');
+  const [orderNumber, setOrderNumber] = useState(searchParams.get('order') || '');
+  const [email, setEmail] = useState('');
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOrder = async (id: string) => {
-    if (!id.trim()) return;
+  const fetchOrder = async () => {
+    if (!orderNumber.trim() || !email.trim()) {
+      setError('Please enter both Order ID and Email');
+      return;
+    }
     
     setLoading(true);
     setError(null);
     
     try {
-      const { data, error: fetchError } = await supabase
+      // First try to find by order_number, then by id
+      let query = supabase
         .from('orders')
         .select('*')
-        .eq('id', id)
-        .maybeSingle();
+        .eq('customer_email', email.toLowerCase().trim());
+
+      // Check if it's a RP- format order number or UUID
+      if (orderNumber.toUpperCase().startsWith('RP-')) {
+        query = query.eq('order_number', orderNumber.toUpperCase());
+      } else {
+        // Try matching by id or order_number
+        query = query.or(`id.eq.${orderNumber},order_number.eq.${orderNumber.toUpperCase()}`);
+      }
+
+      const { data, error: fetchError } = await query.maybeSingle();
 
       if (fetchError) throw fetchError;
       
       if (!data) {
-        setError('Order not found');
+        setError('Order not found. Please check your Order ID and Email.');
         setOrder(null);
       } else {
         setOrder(data as Order);
       }
     } catch (err) {
       console.error('Fetch error:', err);
-      setError('Failed to fetch order');
+      setError('Failed to fetch order. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Auto-fetch if order ID is in URL (from redirect after submission)
   useEffect(() => {
-    if (searchParams.get('order')) {
-      fetchOrder(searchParams.get('order')!);
+    const orderId = searchParams.get('order');
+    if (orderId) {
+      // For direct links, fetch by ID without email verification
+      setLoading(true);
+      supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .maybeSingle()
+        .then(({ data, error: fetchError }) => {
+          if (fetchError) {
+            setError('Failed to fetch order');
+          } else if (data) {
+            setOrder(data as Order);
+            setEmail(data.customer_email || '');
+            setOrderNumber(data.order_number || orderId);
+          }
+          setLoading(false);
+        });
     }
   }, [searchParams]);
 
   const getStatusInfo = (status: string) => {
     switch (status) {
       case 'pending':
-        return { icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-500/10', label: 'Pending', progress: 25 };
+        return { icon: Clock, color: 'text-orange-500', bg: 'bg-orange-500/10', label: 'Pending', progress: 25 };
       case 'processing':
-        return { icon: Package, color: 'text-blue-500', bg: 'bg-blue-500/10', label: 'Processing', progress: 50 };
+        return { icon: Package, color: 'text-primary', bg: 'bg-primary/10', label: 'Processing', progress: 50 };
       case 'completed':
         return { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', label: 'Completed', progress: 100 };
       default:
@@ -87,40 +119,50 @@ const TrackPage = () => {
       <main className="container mx-auto px-4 py-12 max-w-2xl">
         <h1 className="text-3xl font-bold mb-2 text-center">Track Your Order</h1>
         <p className="text-muted-foreground text-center mb-8">
-          Enter your order ID to check the status
+          Enter your Order ID and Email to check status
         </p>
 
         {/* Search Box */}
         <div className="glass-card p-6 mb-8">
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <div className="space-y-4">
+            <div className="relative">
+              <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
-                value={orderId}
-                onChange={(e) => setOrderId(e.target.value)}
-                placeholder="Enter your order ID"
+                value={orderNumber}
+                onChange={(e) => setOrderNumber(e.target.value)}
+                placeholder="Order ID (e.g., RP-A7K92X)"
                 className="input-field w-full pl-12"
-                onKeyDown={(e) => e.key === 'Enter' && fetchOrder(orderId)}
+              />
+            </div>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email address used for order"
+                className="input-field w-full pl-12"
+                onKeyDown={(e) => e.key === 'Enter' && fetchOrder()}
               />
             </div>
             <button 
-              onClick={() => fetchOrder(orderId)}
+              onClick={fetchOrder}
               disabled={loading}
-              className="btn-primary"
+              className="btn-primary w-full"
             >
-              {loading ? 'Searching...' : 'Track'}
+              {loading ? 'Searching...' : 'Track Order'}
             </button>
           </div>
         </div>
 
         {/* Error State */}
         {error && (
-          <div className="glass-card p-6 border-destructive/30 flex items-center gap-4">
-            <AlertCircle className="w-8 h-8 text-destructive" />
+          <div className="glass-card p-6 border-destructive/30 flex items-center gap-4 mb-6">
+            <AlertCircle className="w-8 h-8 text-destructive flex-shrink-0" />
             <div>
               <p className="font-medium text-destructive">{error}</p>
-              <p className="text-sm text-muted-foreground">Please check your order ID and try again</p>
+              <p className="text-sm text-muted-foreground">Please verify your details and try again</p>
             </div>
           </div>
         )}
@@ -128,6 +170,22 @@ const TrackPage = () => {
         {/* Order Details */}
         {order && (
           <div className="space-y-6 animate-fadeIn">
+            {/* Order ID Banner */}
+            <div className="glass-card p-4 bg-primary/5 border-primary/30 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Order ID</p>
+                <p className="text-xl font-mono font-bold text-primary">
+                  {order.order_number || order.id.slice(0, 8).toUpperCase()}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">Created</p>
+                <p className="font-medium">
+                  {new Date(order.created_at).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+
             {/* Status Card */}
             <div className="glass-card p-8">
               {(() => {
@@ -211,11 +269,22 @@ const TrackPage = () => {
               <a
                 href={order.result_file_url}
                 download
-                className="btn-primary w-full flex items-center justify-center gap-2 py-4"
+                className="btn-primary w-full flex items-center justify-center gap-2 py-4 shadow-[0_0_30px_hsl(185_100%_50%/0.4)]"
               >
                 <Download className="w-5 h-5" />
-                Download Tuned File
+                Download Your Tuned File
               </a>
+            )}
+
+            {/* Pending/Processing Message */}
+            {order.status !== 'completed' && (
+              <div className="glass-card p-6 text-center">
+                <p className="text-muted-foreground">
+                  {order.status === 'pending' 
+                    ? 'Your order is in queue. Our engineers will start processing soon.'
+                    : 'Your file is being processed. You will receive an email when ready.'}
+                </p>
+              </div>
             )}
           </div>
         )}
