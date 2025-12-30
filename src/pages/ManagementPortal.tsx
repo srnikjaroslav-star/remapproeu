@@ -170,9 +170,11 @@ const ManagementPortal = () => {
             <span className="neon-text">Revenue Dashboard</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="text-center p-4 bg-secondary/30 rounded-lg">
-              <p className="text-muted-foreground text-sm mb-1">Total Revenue</p>
-              <p className="text-3xl font-bold neon-text">
+            <div className="text-center p-4 bg-secondary/30 rounded-lg border-2 border-green-500/30">
+              <p className="text-muted-foreground text-sm mb-1 flex items-center justify-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-500"></span> Total Revenue
+              </p>
+              <p className="text-3xl font-bold text-green-500">
                 €{orders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0).toLocaleString()}
               </p>
             </div>
@@ -180,19 +182,19 @@ const ManagementPortal = () => {
               <p className="text-muted-foreground text-sm mb-1">Orders Count</p>
               <p className="text-3xl font-bold text-foreground">{orders.length}</p>
             </div>
-            <div className="text-center p-4 bg-secondary/30 rounded-lg">
+            <div className="text-center p-4 bg-secondary/30 rounded-lg border-2 border-orange-500/30">
               <p className="text-muted-foreground text-sm mb-1 flex items-center justify-center gap-2">
-                <Clock className="w-4 h-4 text-yellow-500" /> Pending
+                <Clock className="w-4 h-4 text-orange-500" /> Pending
               </p>
-              <p className="text-3xl font-bold text-yellow-500">
+              <p className="text-3xl font-bold text-orange-500">
                 {orders.filter((o) => o.status === 'pending').length}
               </p>
             </div>
-            <div className="text-center p-4 bg-secondary/30 rounded-lg">
+            <div className="text-center p-4 bg-secondary/30 rounded-lg border-2 border-primary/30">
               <p className="text-muted-foreground text-sm mb-1 flex items-center justify-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" /> Completed
+                <CheckCircle className="w-4 h-4 text-primary" /> Completed
               </p>
-              <p className="text-3xl font-bold text-green-500">
+              <p className="text-3xl font-bold text-primary">
                 {orders.filter((o) => o.status === 'completed').length}
               </p>
             </div>
@@ -227,27 +229,27 @@ const ManagementPortal = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="glass-card p-4">
+          <div className="glass-card p-4 border-l-4 border-l-green-500">
             <p className="text-muted-foreground text-sm">Total Orders</p>
             <p className="text-2xl font-bold">{orders.length}</p>
           </div>
-          <div className="glass-card p-4">
+          <div className="glass-card p-4 border-l-4 border-l-orange-500">
             <p className="text-muted-foreground text-sm flex items-center gap-2">
-              <Clock className="w-4 h-4 text-yellow-500" /> Pending
+              <Clock className="w-4 h-4 text-orange-500" /> Pending
             </p>
-            <p className="text-2xl font-bold text-yellow-500">
+            <p className="text-2xl font-bold text-orange-500">
               {orders.filter((o) => o.status === 'pending').length}
             </p>
           </div>
-          <div className="glass-card p-4">
+          <div className="glass-card p-4 border-l-4 border-l-primary">
             <p className="text-muted-foreground text-sm flex items-center gap-2">
-              <Package className="w-4 h-4 text-blue-500" /> Processing
+              <Package className="w-4 h-4 text-primary" /> Processing
             </p>
-            <p className="text-2xl font-bold text-blue-500">
+            <p className="text-2xl font-bold text-primary">
               {orders.filter((o) => o.status === 'processing').length}
             </p>
           </div>
-          <div className="glass-card p-4">
+          <div className="glass-card p-4 border-l-4 border-l-green-500">
             <p className="text-muted-foreground text-sm flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-green-500" /> Completed
             </p>
