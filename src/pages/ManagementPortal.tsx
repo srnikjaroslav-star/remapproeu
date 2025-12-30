@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Download, Upload, Eye, CheckCircle, Clock, Package, 
-  RefreshCw, Search, ChevronDown, ShoppingCart
+  RefreshCw, Search, ShoppingCart
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { supabase, Order } from '@/integrations/supabase/client';
@@ -231,9 +231,9 @@ const ManagementPortal = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <div className="glass-card p-4 border-l-4 border-l-white/50">
             <p className="text-muted-foreground text-sm flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4 text-white" /> Total Orders
+              <ShoppingCart className="w-4 h-4 text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]" /> Total Orders
             </p>
-            <p className="text-2xl font-bold text-white">{orders.length}</p>
+            <p className="text-2xl font-bold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">{orders.length}</p>
           </div>
           <div className="glass-card p-4 border-l-4 border-l-orange-500">
             <p className="text-muted-foreground text-sm flex items-center gap-2">
@@ -316,18 +316,15 @@ const ManagementPortal = () => {
                         <p className="font-semibold text-primary">{order.total_price}€</p>
                       </td>
                       <td className="p-4">
-                        <div className="relative">
-                          <select
-                            value={order.status}
-                            onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                            className={`admin-status-select ${getStatusClass(order.status)}`}
-                          >
-                            <option value="pending">Pending</option>
-                            <option value="processing">Processing</option>
-                            <option value="completed">Completed</option>
-                          </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-white pointer-events-none" />
-                        </div>
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                          className={`admin-status-select ${getStatusClass(order.status)}`}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="processing">Processing</option>
+                          <option value="completed">Completed</option>
+                        </select>
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
