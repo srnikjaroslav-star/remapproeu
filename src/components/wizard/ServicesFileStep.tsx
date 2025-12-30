@@ -76,7 +76,8 @@ const ServicesFileStep = ({
       onFileUploaded(publicUrl);
     } catch (err) {
       console.error('Upload error:', err);
-      setError(err instanceof Error ? err.message : 'Upload failed');
+      const errorMessage = err instanceof Error ? err.message : 'Upload failed';
+      setError(`Upload failed. ${errorMessage.includes('network') || errorMessage.includes('fetch') ? 'Please check your internet connection and try again.' : 'Please try again.'}`);
       setUploadProgress(0);
     } finally {
       setUploading(false);
