@@ -229,11 +229,12 @@ const ManagementPortal = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="p-4 rounded-xl bg-[#050505] border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-            <p className="text-white text-sm flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4 text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.5)]" /> Total Orders
+          <div className="glass-card p-4">
+            <p className="text-sm flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4 text-white" /> 
+              <span className="text-white font-medium">Total Orders</span>
             </p>
-            <p className="text-2xl font-bold text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">{orders.length}</p>
+            <p className="text-2xl font-bold text-foreground">{orders.length}</p>
           </div>
           <div className="glass-card p-4 border-l-4 border-l-orange-500">
             <p className="text-muted-foreground text-sm flex items-center gap-2">
