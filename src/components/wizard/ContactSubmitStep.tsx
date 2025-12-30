@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { User, Mail, Loader2 } from 'lucide-react';
+import { User, Mail, Loader2, AlertTriangle } from 'lucide-react';
 
 interface ContactSubmitStepProps {
   data: { name: string; email: string };
   onUpdate: (data: { name: string; email: string }) => void;
   onBack: () => void;
-  onSubmit: () => void;
+  onSubmit: (legalConsentAgreed: boolean) => void;
   isSubmitting: boolean;
   totalPrice: number;
 }
@@ -18,10 +18,11 @@ const ContactSubmitStep = ({
   isSubmitting,
   totalPrice 
 }: ContactSubmitStepProps) => {
-  const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; email?: string; consent?: string }>({});
+  const [legalConsentAgreed, setLegalConsentAgreed] = useState(false);
 
   const validateAndSubmit = () => {
-    const newErrors: { name?: string; email?: string } = {};
+    const newErrors: { name?: string; email?: string; consent?: string } = {};
     
     if (!data.name.trim()) {
       newErrors.name = 'Name is required';
@@ -32,11 +33,15 @@ const ContactSubmitStep = ({
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
       newErrors.email = 'Invalid email format';
     }
+
+    if (!legalConsentAgreed) {
+      newErrors.consent = 'You must agree to the terms and conditions';
+    }
     
     setErrors(newErrors);
     
     if (Object.keys(newErrors).length === 0) {
-      onSubmit();
+      onSubmit(legalConsentAgreed);
     }
   };
 
@@ -84,6 +89,42 @@ const ContactSubmitStep = ({
           <span className="text-muted-foreground">Total to Pay</span>
           <span className="text-2xl font-bold neon-text">{totalPrice}€</span>
         </div>
+      </div>
+
+      {/* Legal Consent */}
+      <div className="mt-6 space-y-4">
+        {/* Non-refundable notice */}
+        <div className="p-4 border border-amber-500/40 bg-amber-500/10 rounded-lg flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-amber-200">
+            <strong>Non-Refundable:</strong> By starting the download of the modified file, you waive your right to a refund as this is custom-made digital content.
+          </p>
+        </div>
+
+        {/* Mandatory consent checkbox */}
+        <label className={`flex items-start gap-3 p-4 rounded-lg border cursor-pointer transition-all duration-300 ${
+          legalConsentAgreed 
+            ? 'border-primary bg-primary/10' 
+            : errors.consent 
+              ? 'border-destructive bg-destructive/10' 
+              : 'border-border/50 hover:border-primary/50'
+        }`}>
+          <input
+            type="checkbox"
+            checked={legalConsentAgreed}
+            onChange={(e) => {
+              setLegalConsentAgreed(e.target.checked);
+              if (e.target.checked) {
+                setErrors({ ...errors, consent: undefined });
+              }
+            }}
+            className="mt-1 w-5 h-5 accent-primary"
+          />
+          <span className="text-sm text-muted-foreground leading-relaxed">
+            I confirm that I have read the <a href="/terms" target="_blank" className="text-primary underline hover:text-primary/80">Terms and Conditions</a> and I am aware that some modifications (e.g., DPF/EGR/AdBlue removal) are strictly for <strong className="text-foreground">motorsport/off-road use</strong>. I take full responsibility for the use of the software in compliance with local laws.
+          </span>
+        </label>
+        {errors.consent && <p className="text-destructive text-sm">{errors.consent}</p>}
       </div>
       
       <div className="mt-8 flex justify-between">

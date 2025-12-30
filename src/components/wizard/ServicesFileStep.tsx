@@ -134,6 +134,12 @@ const ServicesFileStep = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {removalServices.map(renderServiceCard)}
           </div>
+          {/* Off-Road Disclaimer */}
+          <div className="mt-4 p-4 border border-amber-500/40 bg-amber-500/10 rounded-lg">
+            <p className="text-sm text-amber-200">
+              <strong>⚠️ Notice:</strong> Modifications like DPF/EGR/AdBlue OFF are intended for off-road use, racing, or export to countries where these systems are not legally required. Use on public roads may be illegal in your jurisdiction.
+            </p>
+          </div>
         </div>
         
         <div>
