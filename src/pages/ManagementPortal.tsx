@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Download, Upload, Eye, CheckCircle, Clock, Package, 
-  RefreshCw, Search, ChevronDown
+  RefreshCw, Search, ChevronDown, ShoppingCart
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { supabase, Order } from '@/integrations/supabase/client';
@@ -229,9 +229,11 @@ const ManagementPortal = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="glass-card p-4 border-l-4 border-l-green-500">
-            <p className="text-muted-foreground text-sm">Total Orders</p>
-            <p className="text-2xl font-bold">{orders.length}</p>
+          <div className="glass-card p-4 border-l-4 border-l-white/50">
+            <p className="text-muted-foreground text-sm flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4 text-white" /> Total Orders
+            </p>
+            <p className="text-2xl font-bold text-white">{orders.length}</p>
           </div>
           <div className="glass-card p-4 border-l-4 border-l-orange-500">
             <p className="text-muted-foreground text-sm flex items-center gap-2">
