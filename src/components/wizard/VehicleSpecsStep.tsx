@@ -26,6 +26,24 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
     return value && value.trim().length > 0;
   };
 
+  // Clear error for a specific field when it becomes valid
+  const handleFieldChange = (field: keyof VehicleData, value: string | number) => {
+    const newData = { ...data, [field]: value };
+    onUpdate(newData);
+    
+    // Real-time validation: clear error immediately when field has content
+    if (errors[field]) {
+      const fieldValue = field === 'year' ? value : value;
+      if (typeof fieldValue === 'number' ? fieldValue > 0 : (fieldValue as string).trim().length > 0) {
+        setErrors(prev => {
+          const updated = { ...prev };
+          delete updated[field];
+          return updated;
+        });
+      }
+    }
+  };
+
   const getInputClassName = (fieldValue: string | number | undefined, hasError: boolean) => {
     if (hasError) return 'input-field w-full border-destructive';
     if (isFieldFilled(fieldValue)) return 'input-field-active w-full';
@@ -74,7 +92,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
           <input
             type="text"
             value={data.brand}
-            onChange={(e) => onUpdate({ ...data, brand: e.target.value })}
+            onChange={(e) => handleFieldChange('brand', e.target.value)}
             placeholder="e.g., Audi, BMW, Mercedes"
             className={getInputClassName(data.brand, !!errors.brand)}
           />
@@ -90,7 +108,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
           <input
             type="text"
             value={data.model}
-            onChange={(e) => onUpdate({ ...data, model: e.target.value })}
+            onChange={(e) => handleFieldChange('model', e.target.value)}
             placeholder="e.g., A4 2.0 TDI"
             className={getInputClassName(data.model, !!errors.model)}
           />
@@ -106,7 +124,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
           <input
             type="text"
             value={data.engineDisplacement || ''}
-            onChange={(e) => onUpdate({ ...data, engineDisplacement: e.target.value })}
+            onChange={(e) => handleFieldChange('engineDisplacement', e.target.value)}
             placeholder="e.g., 2.0, 3.0"
             className={getInputClassName(data.engineDisplacement, !!errors.engineDisplacement)}
           />
@@ -122,7 +140,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
           <input
             type="text"
             value={data.enginePower || ''}
-            onChange={(e) => onUpdate({ ...data, enginePower: e.target.value })}
+            onChange={(e) => handleFieldChange('enginePower', e.target.value)}
             placeholder="e.g., 110, 150"
             className={getInputClassName(data.enginePower, !!errors.enginePower)}
           />
@@ -138,7 +156,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
           <input
             type="text"
             value={data.ecuType}
-            onChange={(e) => onUpdate({ ...data, ecuType: e.target.value })}
+            onChange={(e) => handleFieldChange('ecuType', e.target.value)}
             placeholder="e.g., Bosch EDC17, Siemens PCR2.1"
             className={getInputClassName(data.ecuType, !!errors.ecuType)}
           />
@@ -154,7 +172,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
           <input
             type="text"
             value={data.year || ''}
-            onChange={(e) => onUpdate({ ...data, year: parseInt(e.target.value) || 0 })}
+            onChange={(e) => handleFieldChange('year', parseInt(e.target.value) || 0)}
             placeholder="e.g., 2019"
             className={getInputClassName(data.year, !!errors.year)}
           />
@@ -170,7 +188,9 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
           <div className="flex gap-4">
             <button
               type="button"
-              onClick={() => onUpdate({ ...data, fuelType: 'Diesel' })}
+              onClick={() => {
+                handleFieldChange('fuelType', 'Diesel');
+              }}
               className={`
                 flex-1 py-3 px-6 font-medium transition-all duration-300
                 ${data.fuelType === 'Diesel' 
@@ -183,7 +203,9 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
             </button>
             <button
               type="button"
-              onClick={() => onUpdate({ ...data, fuelType: 'Petrol' })}
+              onClick={() => {
+                handleFieldChange('fuelType', 'Petrol');
+              }}
               className={`
                 flex-1 py-3 px-6 font-medium transition-all duration-300
                 ${data.fuelType === 'Petrol' 
