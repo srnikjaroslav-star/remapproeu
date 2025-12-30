@@ -218,7 +218,7 @@ const ManagementPortal = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="input-field min-w-[150px]"
+            className="admin-filter-select min-w-[150px]"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
