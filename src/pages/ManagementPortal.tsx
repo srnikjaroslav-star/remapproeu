@@ -103,11 +103,17 @@ const ManagementPortal = () => {
               customerName: order.customer_name || '',
               carBrand: order.car_brand || '',
               carModel: order.car_model || '',
+              resultFileUrl: publicUrl,
             },
           });
           
-          if (response.error) {
-            console.error('Email notification failed:', response.error);
+          const emailFailed = Boolean(response.error) || response.data?.success === false;
+
+          if (emailFailed) {
+            console.error('Email notification failed:', {
+              error: response.error,
+              data: response.data,
+            });
             toast.success('Result file uploaded! (Email notification failed)');
           } else {
             toast.success('Result file uploaded and customer notified via email!');
