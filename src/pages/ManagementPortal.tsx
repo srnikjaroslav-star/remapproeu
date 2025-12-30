@@ -178,7 +178,7 @@ const ManagementPortal = () => {
                 €{orders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0).toLocaleString()}
               </p>
             </div>
-            <div className="text-center p-4 bg-secondary/30 rounded-lg border-2 border-white/30">
+            <div className="text-center p-4 bg-secondary/30 rounded-lg border border-white shadow-[0_0_8px_rgba(255,255,255,0.15)]">
               <p className="text-white text-sm mb-1 flex items-center justify-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-white"></span> Orders Count
               </p>
