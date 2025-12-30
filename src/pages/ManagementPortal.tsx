@@ -178,9 +178,11 @@ const ManagementPortal = () => {
                 €{orders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0).toLocaleString()}
               </p>
             </div>
-            <div className="text-center p-4 bg-secondary/30 rounded-lg">
-              <p className="text-muted-foreground text-sm mb-1">Orders Count</p>
-              <p className="text-3xl font-bold text-foreground">{orders.length}</p>
+            <div className="text-center p-4 bg-secondary/30 rounded-lg border-2 border-white/30">
+              <p className="text-white text-sm mb-1 flex items-center justify-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-white"></span> Orders Count
+              </p>
+              <p className="text-3xl font-bold text-white">{orders.length}</p>
             </div>
             <div className="text-center p-4 bg-secondary/30 rounded-lg border-2 border-orange-500/30">
               <p className="text-muted-foreground text-sm mb-1 flex items-center justify-center gap-2">
@@ -229,7 +231,7 @@ const ManagementPortal = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-[#050505] rounded-xl p-4">
+          <div className="glass-card p-4">
             <p className="text-white text-sm flex items-center gap-2">
               <ShoppingCart className="w-4 h-4 text-white" /> Total Orders
             </p>
