@@ -58,6 +58,9 @@ const handler = async (req: Request): Promise<Response> => {
                     <h1 style="margin: 0; font-size: 28px; font-weight: bold; color: #00d4ff;">
                       REMAPPRO
                     </h1>
+                    <p style="margin: 10px 0 0; color: #888; font-size: 14px;">
+                      Profesionálny Chiptuning
+                    </p>
                   </td>
                 </tr>
                 
@@ -65,15 +68,15 @@ const handler = async (req: Request): Promise<Response> => {
                 <tr>
                   <td style="padding: 40px;">
                     <h2 style="margin: 0 0 20px; color: #00ffcc; font-size: 24px; text-align: center;">
-                      🏁 Your Remap is Ready!
+                      🏁 Váš remap je pripravený!
                     </h2>
                     
                     <p style="margin: 0 0 20px; color: #ffffff; font-size: 16px; line-height: 1.6;">
-                      Hi ${customerName || 'Customer'},
+                      Dobrý deň${customerName ? `, ${customerName}` : ''},
                     </p>
                     
                     <p style="margin: 0 0 30px; color: #cccccc; font-size: 16px; line-height: 1.6;">
-                      Great news! Your custom ECU remap for <strong style="color: #ffffff;">${vehicleInfo}</strong> has been completed by our engineers and is ready for download.
+                      S radosťou Vám oznamujeme, že úprava riadiacej jednotky pre Vaše vozidlo <strong style="color: #ffffff;">${vehicleInfo}</strong> bola úspešne dokončená a je pripravená na stiahnutie.
                     </p>
                     
                     <!-- Order Box -->
@@ -81,7 +84,7 @@ const handler = async (req: Request): Promise<Response> => {
                       <tr>
                         <td style="padding: 20px; text-align: center;">
                           <p style="margin: 0 0 8px; color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
-                            Order ID
+                            Číslo objednávky
                           </p>
                           <p style="margin: 0; color: #00d4ff; font-size: 28px; font-weight: bold; font-family: 'Monaco', 'Consolas', monospace;">
                             ${displayOrderId}
@@ -94,16 +97,16 @@ const handler = async (req: Request): Promise<Response> => {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center">
-                          <a href="https://a9909d14-dc94-494f-abaa-4af3d8a8ed18.lovableproject.com/check-order?order=${displayOrderId}" 
+                          <a href="https://remappro.eu/check-order?order=${displayOrderId}" 
                              style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #00d4ff 0%, #00ffcc 100%); color: #000000; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px;">
-                            Download Your File
+                            Stiahnuť súbor
                           </a>
                         </td>
                       </tr>
                     </table>
                     
                     <p style="margin: 30px 0 0; color: #888; font-size: 14px; line-height: 1.6; text-align: center;">
-                      If the button doesn't work, visit our tracking page and enter your Order ID and email address.
+                      Ak tlačidlo nefunguje, navštívte našu stránku na sledovanie objednávok a zadajte číslo objednávky a Vašu e-mailovú adresu.
                     </p>
                   </td>
                 </tr>
@@ -111,8 +114,11 @@ const handler = async (req: Request): Promise<Response> => {
                 <!-- Footer -->
                 <tr>
                   <td style="padding: 30px 40px; border-top: 1px solid #333; text-align: center;">
+                    <p style="margin: 0 0 10px; color: #888; font-size: 14px;">
+                      Ďakujeme, že ste si vybrali REMAPPRO!
+                    </p>
                     <p style="margin: 0; color: #666; font-size: 12px;">
-                      © 2024 REMAPPRO. Professional ECU Remapping Services.
+                      © 2024 REMAPPRO. Profesionálne služby úpravy riadiacich jednotiek.
                     </p>
                   </td>
                 </tr>
@@ -131,9 +137,9 @@ const handler = async (req: Request): Promise<Response> => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "REMAPPRO <onboarding@resend.dev>",
+        from: "REMAPPRO <info@remappro.eu>",
         to: [customerEmail],
-        subject: `🏁 Your Remap for Order ${displayOrderId} is Ready!`,
+        subject: `🏁 Váš remap pre objednávku ${displayOrderId} je pripravený!`,
         html: emailHtml,
       }),
     });
