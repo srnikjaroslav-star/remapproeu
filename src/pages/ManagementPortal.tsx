@@ -231,8 +231,8 @@ const ManagementPortal = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="glass-card p-4">
-            <p className="text-white text-sm flex items-center gap-2">
+          <div className="glass-card p-4 border-l-4 border-l-white">
+            <p className="text-muted-foreground text-sm flex items-center gap-2">
               <User className="w-4 h-4 text-white" /> Total Orders
             </p>
             <p className="text-2xl font-bold text-white">{orders.length}</p>
