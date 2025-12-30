@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const RESEND_API_KEY =
+  Deno.env.get("RESEND_API_KEY") ??
+  // Back-compat only (NOT recommended): don't expose private keys via VITE_ vars.
+  Deno.env.get("VITE_RESEND_API_KEY") ??
+  "";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,6 +18,7 @@ interface NotifyRequest {
   customerName: string;
   carBrand: string;
   carModel: string;
+  resultFileUrl?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -25,7 +30,15 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { orderId, orderNumber, customerEmail, customerName, carBrand, carModel }: NotifyRequest = await req.json();
+    const {
+      orderId,
+      orderNumber,
+      customerEmail,
+      customerName,
+      carBrand,
+      carModel,
+      resultFileUrl,
+    }: NotifyRequest = await req.json();
 
     console.log(`Sending notification for order ${orderNumber} to ${customerEmail}`);
 
@@ -39,6 +52,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     const displayOrderId = orderNumber || orderId.slice(0, 8).toUpperCase();
     const vehicleInfo = `${carBrand || ''} ${carModel || ''}`.trim() || 'Your vehicle';
+    const downloadUrl =
+      resultFileUrl || `https://remappro.eu/check-order?order=${displayOrderId}`;
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -97,7 +112,7 @@ const handler = async (req: Request): Promise<Response> => {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center">
-                          <a href="https://remappro.eu/check-order?order=${displayOrderId}" 
+                          <a href="${downloadUrl}" 
                              style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #00d4ff 0%, #00ffcc 100%); color: #000000; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px;">
                             Stiahnuť súbor
                           </a>
@@ -144,11 +159,36 @@ const handler = async (req: Request): Promise<Response> => {
       }),
     });
 
-    const emailResponse = await res.json();
+    const rawBody = await res.text();
+    let emailResponse: any = null;
+    try {
+      emailResponse = rawBody ? JSON.parse(rawBody) : null;
+    } catch {
+      emailResponse = { raw: rawBody };
+    }
 
     if (!res.ok) {
-      console.error("Resend API error:", emailResponse);
-      throw new Error(emailResponse.message || "Failed to send email");
+      console.error("Resend API error:", {
+        status: res.status,
+        statusText: res.statusText,
+        body: emailResponse,
+      });
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Resend API request failed",
+          resend: {
+            status: res.status,
+            statusText: res.statusText,
+            body: emailResponse,
+          },
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
     }
 
     console.log("Email sent successfully:", emailResponse);
