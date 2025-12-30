@@ -17,6 +17,8 @@ export interface Order {
   status: string;
   file_url: string | null;
   result_file_url: string | null;
+  legal_consent_agreed: boolean;
+  legal_consent_timestamp: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -34,6 +36,8 @@ export interface OrderInsert {
   status?: string;
   file_url?: string | null;
   result_file_url?: string | null;
+  legal_consent_agreed: boolean;
+  legal_consent_timestamp?: string;
 }
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

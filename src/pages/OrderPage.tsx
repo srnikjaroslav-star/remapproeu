@@ -36,7 +36,7 @@ const OrderPage = () => {
     return total + (service?.price || 0);
   }, 0);
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (legalConsentAgreed: boolean) => {
     setIsSubmitting(true);
     
     try {
@@ -52,6 +52,8 @@ const OrderPage = () => {
         total_price: totalPrice,
         status: 'pending',
         file_url: formData.fileUrl,
+        legal_consent_agreed: legalConsentAgreed,
+        legal_consent_timestamp: new Date().toISOString(),
       };
 
       const { data, error } = await supabase
