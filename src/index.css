@@ -239,16 +239,71 @@
     @apply h-full bg-gradient-to-r from-primary/80 to-primary rounded-full transition-all duration-500;
   }
 
+  /* === ADMIN STATUS BADGES - NEON CYAN SYSTEM === */
+  /* Permanently visible states using brand Neon Cyan */
+  
+  .admin-status-select {
+    @apply rounded-xl px-3 py-2 pr-8 cursor-pointer text-sm font-medium min-w-[130px];
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Pending: Subtle Cyan Border - visible but not intense */
   .status-pending {
-    @apply bg-yellow-500/20 text-yellow-500 border-yellow-500/30;
+    background-color: hsl(0 0% 4%);
+    color: hsl(185 100% 70%);
+    border: 2px solid hsl(185 100% 50% / 0.5);
   }
 
+  .status-pending:hover,
+  .status-pending:focus {
+    border: 2px solid hsl(185 100% 50%);
+    box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+    outline: none;
+  }
+
+  /* Processing: Solid Neon Cyan Background - high visibility */
   .status-processing {
-    @apply bg-blue-500/20 text-blue-500 border-blue-500/30;
+    background-color: hsl(185 100% 50%);
+    color: hsl(0 0% 2%);
+    border: 2px solid hsl(185 100% 50%);
+    font-weight: 600;
   }
 
+  .status-processing:hover,
+  .status-processing:focus {
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
+    outline: none;
+  }
+
+  /* Completed: Glowing Neon Cyan - strongest effect */
   .status-completed {
-    @apply bg-green-500/20 text-green-500 border-green-500/30;
+    background-color: hsl(185 100% 50% / 0.15);
+    color: hsl(0 0% 100%);
+    border: 2px solid hsl(185 100% 50%);
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
+    font-weight: 600;
+  }
+
+  .status-completed:hover,
+  .status-completed:focus {
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.6), 0 0 40px rgba(0, 242, 255, 0.3);
+    outline: none;
+  }
+
+  /* Dropdown options - Deep Black with White text */
+  .admin-status-select option {
+    background-color: hsl(0 0% 2%);
+    color: hsl(0 0% 98%);
+    padding: 10px 12px;
+  }
+
+  .admin-status-select option:hover,
+  .admin-status-select option:checked {
+    background-color: hsl(185 100% 50% / 0.2);
+    color: hsl(0 0% 100%);
   }
 
   .table-header {
@@ -257,40 +312,6 @@
 
   .table-row {
     @apply border-b border-border/50 transition-colors duration-200 hover:bg-secondary/30;
-  }
-
-  /* Admin Select/Dropdown Styling for Dark Mode */
-  .admin-select {
-    @apply bg-background text-foreground rounded-xl px-3 py-2 cursor-pointer;
-    border: 1px solid rgba(0, 242, 255, 0.4);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-  }
-
-  .admin-select:hover {
-    border: 1px solid rgba(0, 242, 255, 0.6);
-  }
-
-  .admin-select:focus {
-    @apply outline-none bg-primary/10;
-    border: 2px solid hsl(185 100% 50%);
-    box-shadow: 0 0 15px rgba(0, 242, 255, 0.5);
-  }
-
-  .admin-select option {
-    @apply bg-background text-foreground;
-    background-color: hsl(0 0% 4%);
-    color: hsl(0 0% 98%);
-    padding: 8px 12px;
-  }
-
-  .admin-select option:hover,
-  .admin-select option:focus,
-  .admin-select option:checked {
-    background-color: hsl(185 100% 50% / 0.2);
-    color: hsl(0 0% 98%);
   }
 }
 

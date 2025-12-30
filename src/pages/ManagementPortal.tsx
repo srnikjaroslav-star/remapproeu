@@ -118,16 +118,16 @@ const ManagementPortal = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusBadge = (status: string) => {
+  const getStatusClass = (status: string) => {
     switch (status) {
       case 'pending':
-        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/20 text-yellow-500 border border-yellow-500/30">Pending</span>;
+        return 'status-pending';
       case 'processing':
-        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-500 border border-blue-500/30">Processing</span>;
+        return 'status-processing';
       case 'completed':
-        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-500 border border-green-500/30">Completed</span>;
+        return 'status-completed';
       default:
-        return <span className="px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">{status}</span>;
+        return 'status-pending';
     }
   };
 
@@ -316,13 +316,13 @@ const ManagementPortal = () => {
                           <select
                             value={order.status}
                             onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                            className="admin-select text-sm py-2 pr-8 min-w-[120px]"
+                            className={`admin-status-select ${getStatusClass(order.status)}`}
                           >
                             <option value="pending">Pending</option>
                             <option value="processing">Processing</option>
                             <option value="completed">Completed</option>
                           </select>
-                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-primary pointer-events-none" />
+                          <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-white pointer-events-none" />
                         </div>
                       </td>
                       <td className="p-4">
