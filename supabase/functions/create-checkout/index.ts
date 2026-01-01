@@ -1,5 +1,3 @@
-import Stripe from "https://esm.sh/stripe@17.5.0?target=deno&no-check";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -21,27 +19,38 @@ Deno.serve(async (req) => {
       throw new Error("STRIPE_SECRET_KEY is not configured");
     }
 
-    const stripe = new Stripe(STRIPE_SECRET_KEY, {
-      apiVersion: "2024-12-18.acacia",
-    });
-
     const { priceId, successUrl, cancelUrl } = await req.json();
 
     if (!priceId) {
       throw new Error("priceId is required");
     }
 
-    const session = await stripe.checkout.sessions.create({
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      success_url: successUrl || `${req.headers.get("origin")}/success`,
-      cancel_url: cancelUrl || `${req.headers.get("origin")}/pricing`,
+    console.log("Creating checkout session for priceId:", priceId);
+
+    // Create checkout session using Stripe REST API
+    const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${STRIPE_SECRET_KEY}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        "line_items[0][price]": priceId,
+        "line_items[0][quantity]": "1",
+        "mode": "payment",
+        "success_url": successUrl || `${req.headers.get("origin")}/success`,
+        "cancel_url": cancelUrl || `${req.headers.get("origin")}/pricing`,
+      }),
     });
+
+    const session = await response.json();
+
+    if (!response.ok) {
+      console.error("Stripe error:", session);
+      throw new Error(session.error?.message || "Failed to create checkout session");
+    }
+
+    console.log("Checkout session created:", session.id);
 
     return new Response(
       JSON.stringify({ url: session.url }),
