@@ -8,6 +8,8 @@ import OrderPage from "./pages/OrderPage";
 import TrackPage from "./pages/TrackPage";
 import CheckOrderPage from "./pages/CheckOrderPage";
 import ManagementPortal from "./pages/ManagementPortal";
+import PricingPage from "./pages/PricingPage";
+import SuccessPage from "./pages/SuccessPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/track" element={<TrackPage />} />
           <Route path="/check-order" element={<CheckOrderPage />} />
           <Route path="/management-portal" element={<ManagementPortal />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/success" element={<SuccessPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
