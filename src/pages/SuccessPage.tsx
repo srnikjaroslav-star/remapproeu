@@ -117,7 +117,7 @@ const SuccessPage = () => {
                 <Home className="w-4 h-4" />
                 Back to Home
               </Link>
-              <Link to="/check-order" className="btn-primary flex items-center justify-center gap-2">
+              <Link to="/track" className="btn-primary flex items-center justify-center gap-2">
                 <Search className="w-4 h-4" />
                 Track Order
               </Link>

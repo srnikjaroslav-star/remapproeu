@@ -16,8 +16,8 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Logo size="md" />
           <nav className="hidden md:flex items-center gap-8">
-            <Link to="/check-order" className="text-muted-foreground hover:text-foreground transition-colors">
-              Check Order
+            <Link to="/track" className="text-muted-foreground hover:text-foreground transition-colors">
+              Track Order
             </Link>
             <Link to="/order" className="btn-primary">
               Order Now
@@ -53,8 +53,8 @@ const Index = () => {
               Start Your Order
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <Link to="/check-order" className="btn-secondary flex items-center gap-2">
-              Check Existing Order
+            <Link to="/track" className="btn-secondary flex items-center gap-2">
+              Track Your Order
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
@@ -158,7 +158,7 @@ const Index = () => {
             © {new Date().getFullYear()} REMAPPRO. Professional ECU Tuning Services.
           </p>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <Link to="/check-order" className="hover:text-foreground transition-colors">Check Order</Link>
+            <Link to="/track" className="hover:text-foreground transition-colors">Track Order</Link>
           </div>
         </div>
       </footer>

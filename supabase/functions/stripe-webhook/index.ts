@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
-const STRIPE_WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const SENDER = "REMAPPRO <info@remappro.eu>";
 const SITE_URL = "https://remappro.eu";
@@ -14,27 +12,32 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  console.log("Stripe webhook received");
+  console.log("Stripe webhook received:", req.method);
 
+  // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 200, headers: corsHeaders });
+    return new Response(null, { 
+      status: 200, 
+      headers: corsHeaders 
+    });
   }
 
   try {
-    const signature = req.headers.get("stripe-signature");
     const body = await req.text();
+    console.log("Received body length:", body.length);
 
-    // Verify webhook signature if secret is set
     let event;
-    if (STRIPE_WEBHOOK_SECRET && signature) {
-      // For production, you should verify the signature
-      // For now, we'll parse the event directly
+    try {
       event = JSON.parse(body);
-      console.log("Webhook event type:", event.type);
-    } else {
-      event = JSON.parse(body);
-      console.log("Webhook event (no signature verification):", event.type);
+    } catch (parseError) {
+      console.error("Failed to parse webhook body:", parseError);
+      return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
+    console.log("Webhook event type:", event.type);
 
     // Handle checkout.session.completed event
     if (event.type === "checkout.session.completed") {
@@ -178,7 +181,7 @@ serve(async (req) => {
           body: JSON.stringify({
             from: SENDER,
             to: [customerEmail],
-            subject: `Order Confirmed - Your Tuning File is being processed!`,
+            subject: orderNumber ? `Order Confirmed - ${orderNumber}` : `Order Confirmed - Your Tuning File is being processed!`,
             html: emailHtml,
           }),
         });
@@ -201,11 +204,12 @@ serve(async (req) => {
 
   } catch (error: any) {
     console.error("Webhook error:", error);
+    // Always return 200 to prevent Stripe from retrying
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ received: true, error: error.message }),
       {
+        status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
       }
     );
   }
