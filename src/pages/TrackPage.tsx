@@ -7,14 +7,18 @@ import { SERVICES } from '@/data/services';
 
 const TrackPage = () => {
   const [searchParams] = useSearchParams();
-  const [orderNumber, setOrderNumber] = useState(searchParams.get('order') || '');
+  const [orderNumber, setOrderNumber] = useState('');
   const [email, setEmail] = useState('');
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasAutoSearched, setHasAutoSearched] = useState(false);
 
-  const fetchOrder = async () => {
-    if (!orderNumber.trim() || !email.trim()) {
+  const fetchOrder = async (searchId?: string, searchEmail?: string) => {
+    const idToSearch = searchId || orderNumber.trim();
+    const emailToSearch = searchEmail || email.trim();
+
+    if (!idToSearch || !emailToSearch) {
       setError('Please enter both Order ID and Email');
       return;
     }
@@ -23,18 +27,15 @@ const TrackPage = () => {
     setError(null);
     
     try {
-      // First try to find by order_number, then by id
       let query = supabase
         .from('orders')
         .select('*')
-        .eq('customer_email', email.toLowerCase().trim());
+        .eq('customer_email', emailToSearch.toLowerCase());
 
-      // Check if it's a RP- format order number or UUID
-      if (orderNumber.toUpperCase().startsWith('RP-')) {
-        query = query.eq('order_number', orderNumber.toUpperCase());
+      if (idToSearch.toUpperCase().startsWith('RP-')) {
+        query = query.eq('order_number', idToSearch.toUpperCase());
       } else {
-        // Try matching by id or order_number
-        query = query.or(`id.eq.${orderNumber},order_number.eq.${orderNumber.toUpperCase()}`);
+        query = query.or(`id.eq.${idToSearch},order_number.eq.${idToSearch.toUpperCase()}`);
       }
 
       const { data, error: fetchError } = await query.maybeSingle();
@@ -55,29 +56,22 @@ const TrackPage = () => {
     }
   };
 
-  // Auto-fetch if order ID is in URL (from redirect after submission)
+  // Auto-fill from URL params and auto-search
   useEffect(() => {
-    const orderId = searchParams.get('order');
-    if (orderId) {
-      // For direct links, fetch by ID without email verification
-      setLoading(true);
-      supabase
-        .from('orders')
-        .select('*')
-        .eq('id', orderId)
-        .maybeSingle()
-        .then(({ data, error: fetchError }) => {
-          if (fetchError) {
-            setError('Failed to fetch order');
-          } else if (data) {
-            setOrder(data as Order);
-            setEmail(data.customer_email || '');
-            setOrderNumber(data.order_number || orderId);
-          }
-          setLoading(false);
-        });
+    if (hasAutoSearched) return;
+
+    const urlId = searchParams.get('id') || searchParams.get('order') || '';
+    const urlEmail = searchParams.get('email') || '';
+
+    if (urlId) setOrderNumber(urlId);
+    if (urlEmail) setEmail(urlEmail);
+
+    // Auto-search if both params are present
+    if (urlId && urlEmail) {
+      setHasAutoSearched(true);
+      fetchOrder(urlId, urlEmail);
     }
-  }, [searchParams]);
+  }, [searchParams, hasAutoSearched]);
 
   const getStatusInfo = (status: string) => {
     switch (status) {
@@ -147,7 +141,7 @@ const TrackPage = () => {
               />
             </div>
             <button 
-              onClick={fetchOrder}
+              onClick={() => fetchOrder()}
               disabled={loading}
               className="btn-primary w-full"
             >
