@@ -8,7 +8,7 @@ export const redirectToCheckout = async (priceId: string) => {
     body: {
       priceId,
       successUrl: `${window.location.origin}/success`,
-      cancelUrl: `${window.location.origin}/pricing`,
+      cancelUrl: `${window.location.origin}/`,
     },
   });
 
