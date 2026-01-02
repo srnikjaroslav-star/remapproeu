@@ -1,9 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
-
-// Verified sender identity in Resend (must match your verified domain)
-const SENDER = "Tuning Service <info@remappro.eu>";
+const SENDER = "REMAPPRO <info@remappro.eu>";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,7 +22,6 @@ interface NotifyRequest {
 const handler = async (req: Request): Promise<Response> => {
   console.log("send-order-ready function called");
 
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { 
       status: 200, 
@@ -44,7 +41,6 @@ const handler = async (req: Request): Promise<Response> => {
     }: NotifyRequest = await req.json();
 
     console.log(`Sending notification for order ${orderNumber} to ${customerEmail}`);
-    console.log("Resend sender:", SENDER);
 
     if (!customerEmail) {
       throw new Error("Customer email is required");
@@ -55,9 +51,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const displayOrderId = orderNumber || orderId.slice(0, 8).toUpperCase();
-    const vehicleInfo = `${carBrand || ''} ${carModel || ''}`.trim() || 'Your vehicle';
-    const downloadUrl =
-      resultFileUrl || `https://remappro.eu/check-order?order=${displayOrderId}`;
+    const vehicleInfo = `${carBrand || ''} ${carModel || ''}`.trim() || 'your vehicle';
+    const downloadUrl = resultFileUrl || `https://remappro.eu/check-order?order=${displayOrderId}`;
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -78,7 +73,7 @@ const handler = async (req: Request): Promise<Response> => {
                       REMAPPRO
                     </h1>
                     <p style="margin: 10px 0 0; color: #888; font-size: 14px;">
-                      Profesionálny Chiptuning
+                      Professional ECU Tuning
                     </p>
                   </td>
                 </tr>
@@ -87,15 +82,15 @@ const handler = async (req: Request): Promise<Response> => {
                 <tr>
                   <td style="padding: 40px;">
                     <h2 style="margin: 0 0 20px; color: #00ffcc; font-size: 24px; text-align: center;">
-                      🏁 Váš remap je pripravený!
+                      🏁 Your Tuning File is Ready!
                     </h2>
                     
                     <p style="margin: 0 0 20px; color: #ffffff; font-size: 16px; line-height: 1.6;">
-                      Dobrý deň${customerName ? `, ${customerName}` : ''},
+                      Hi${customerName ? ` ${customerName}` : ''},
                     </p>
                     
                     <p style="margin: 0 0 30px; color: #cccccc; font-size: 16px; line-height: 1.6;">
-                      S radosťou Vám oznamujeme, že úprava riadiacej jednotky pre Vaše vozidlo <strong style="color: #ffffff;">${vehicleInfo}</strong> bola úspešne dokončená a je pripravená na stiahnutie.
+                      Great news! The ECU tuning for <strong style="color: #ffffff;">${vehicleInfo}</strong> has been completed and your modified file is ready for download.
                     </p>
                     
                     <!-- Order Box -->
@@ -103,7 +98,7 @@ const handler = async (req: Request): Promise<Response> => {
                       <tr>
                         <td style="padding: 20px; text-align: center;">
                           <p style="margin: 0 0 8px; color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
-                            Číslo objednávky
+                            Order ID
                           </p>
                           <p style="margin: 0; color: #00d4ff; font-size: 28px; font-weight: bold; font-family: 'Monaco', 'Consolas', monospace;">
                             ${displayOrderId}
@@ -118,14 +113,14 @@ const handler = async (req: Request): Promise<Response> => {
                         <td align="center">
                           <a href="${downloadUrl}" 
                              style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #00d4ff 0%, #00ffcc 100%); color: #000000; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px;">
-                            Stiahnuť súbor
+                            Download Your File
                           </a>
                         </td>
                       </tr>
                     </table>
                     
                     <p style="margin: 30px 0 0; color: #888; font-size: 14px; line-height: 1.6; text-align: center;">
-                      Ak tlačidlo nefunguje, navštívte našu stránku na sledovanie objednávok a zadajte číslo objednávky a Vašu e-mailovú adresu.
+                      If the button doesn't work, visit our order tracking page and enter your Order ID and email address.
                     </p>
                   </td>
                 </tr>
@@ -134,10 +129,10 @@ const handler = async (req: Request): Promise<Response> => {
                 <tr>
                   <td style="padding: 30px 40px; border-top: 1px solid #333; text-align: center;">
                     <p style="margin: 0 0 10px; color: #888; font-size: 14px;">
-                      Ďakujeme, že ste si vybrali REMAPPRO!
+                      Thank you for choosing REMAPPRO!
                     </p>
                     <p style="margin: 0; color: #666; font-size: 12px;">
-                      © 2024 REMAPPRO. Profesionálne služby úpravy riadiacich jednotiek.
+                      © ${new Date().getFullYear()} REMAPPRO. Professional ECU Tuning Services.
                     </p>
                   </td>
                 </tr>
@@ -158,7 +153,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: SENDER,
         to: [customerEmail],
-        subject: `🏁 Váš remap pre objednávku ${displayOrderId} je pripravený!`,
+        subject: `Your Tuning File is Ready! - Order ${displayOrderId}`,
         html: emailHtml,
       }),
     });

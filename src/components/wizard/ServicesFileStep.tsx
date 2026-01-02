@@ -44,11 +44,6 @@ const ServicesFileStep = ({
   const removalServices = SERVICES.filter((s) => s.category === 'removal');
   const modificationServices = SERVICES.filter((s) => s.category === 'modification');
 
-  // DEBUG: Log services to verify data
-  console.log('Aktuálne služby:', SERVICES);
-  console.log('Stage služby:', stageServices);
-  console.log('Vybrané služby:', selectedServices);
-
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;

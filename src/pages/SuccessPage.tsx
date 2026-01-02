@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle, Home, FileText, Loader2 } from 'lucide-react';
+import { CheckCircle, Home, FileText, Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
 import { supabase, OrderInsert } from '@/integrations/supabase/client';
@@ -15,7 +15,6 @@ const SuccessPage = () => {
       const pendingOrderData = sessionStorage.getItem('pendingOrder');
       
       if (!pendingOrderData) {
-        // No pending order - user might have visited directly
         setIsProcessing(false);
         return;
       }
@@ -51,8 +50,6 @@ const SuccessPage = () => {
           const displayOrderId = data.order_number || `RP-${data.id.slice(0, 6).toUpperCase()}`;
           setOrderId(displayOrderId);
           toast.success(`Order ${displayOrderId} has been created!`);
-          
-          // Clear the pending order data
           sessionStorage.removeItem('pendingOrder');
         }
       } catch (error) {
@@ -103,13 +100,16 @@ const SuccessPage = () => {
             <h1 className="text-3xl font-bold mb-4">Payment Successful!</h1>
             
             {orderId && (
-              <p className="text-lg font-semibold text-primary mb-4">
-                Order ID: {orderId}
-              </p>
+              <div className="mb-6">
+                <p className="text-muted-foreground mb-2">Your Order ID is</p>
+                <p className="text-2xl font-mono font-bold text-primary">
+                  {orderId}
+                </p>
+              </div>
             )}
             
             <p className="text-muted-foreground mb-8">
-              Thank you for your purchase. You will receive a confirmation email shortly with further instructions.
+              Use this ID to track your order status. You will shortly receive an email with instructions.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -117,7 +117,14 @@ const SuccessPage = () => {
                 <Home className="w-4 h-4" />
                 Back to Home
               </Link>
-              <Link to="/order" className="btn-primary flex items-center justify-center gap-2">
+              <Link to="/check-order" className="btn-primary flex items-center justify-center gap-2">
+                <Search className="w-4 h-4" />
+                Track Order
+              </Link>
+            </div>
+            
+            <div className="mt-6 pt-6 border-t border-border">
+              <Link to="/order" className="text-primary hover:underline flex items-center justify-center gap-2">
                 <FileText className="w-4 h-4" />
                 Place Another Order
               </Link>
