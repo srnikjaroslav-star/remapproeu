@@ -87,7 +87,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
         <div>
           <label className="block text-sm font-medium mb-2">
             <Car className="w-4 h-4 inline mr-2" />
-            Brand (Značka)
+            Brand
           </label>
           <input
             type="text"
@@ -103,7 +103,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
         <div>
           <label className="block text-sm font-medium mb-2">
             <Car className="w-4 h-4 inline mr-2" />
-            Model (Model)
+            Model
           </label>
           <input
             type="text"
@@ -119,7 +119,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
         <div>
           <label className="block text-sm font-medium mb-2">
             <Gauge className="w-4 h-4 inline mr-2" />
-            Engine Displacement (Obsah motora)
+            Engine Displacement
           </label>
           <input
             type="text"
@@ -135,7 +135,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
         <div>
           <label className="block text-sm font-medium mb-2">
             <Zap className="w-4 h-4 inline mr-2" />
-            Engine Power in kW (Výkon motora v kW)
+            Engine Power (kW)
           </label>
           <input
             type="text"
@@ -151,7 +151,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
         <div>
           <label className="block text-sm font-medium mb-2">
             <Cpu className="w-4 h-4 inline mr-2" />
-            ECU Type (Typ riadiacej jednotky)
+            ECU Type
           </label>
           <input
             type="text"
@@ -167,7 +167,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
         <div>
           <label className="block text-sm font-medium mb-2">
             <Calendar className="w-4 h-4 inline mr-2" />
-            Year of Manufacture (Rok výroby)
+            Year of Manufacture
           </label>
           <input
             type="text"
@@ -183,7 +183,7 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
         <div className="md:col-span-2">
           <label className="block text-sm font-medium mb-2">
             <Fuel className="w-4 h-4 inline mr-2" />
-            Fuel Type (Typ paliva)
+            Fuel Type
           </label>
           <div className="flex gap-4">
             <button
