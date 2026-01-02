@@ -44,17 +44,19 @@ const OrderPage = () => {
   };
 
   const handleSubmit = async (legalConsentAgreed: boolean) => {
-    // KRITICKÝ DEBUG LOG
-    console.log('=== HANDLESUBMIT VOLANÝ ===');
-    console.log('Vybrané služby:', formData.services);
+    console.log('Starting order submission...');
+    console.log('Selected services:', formData.services);
     
     setIsSubmitting(true);
     
     try {
-      // Natvrdo použijem testovací Price ID
-      const testPriceId = 'price_1Skvfv4DSSkujAMNfohdnL2A';
+      // Get selected services with price IDs
+      const selectedServicesWithPrices = getSelectedServicesWithPriceIds();
       
-      console.log('Spúšťam platbu pre:', testPriceId);
+      // Use first service's price ID or test price ID
+      const priceId = selectedServicesWithPrices[0]?.stripePriceId || 'price_1Skvfv4DSSkujAMNfohdnL2A';
+      
+      console.log('Starting payment for:', priceId);
       
       // Store form data in sessionStorage for after payment
       sessionStorage.setItem('pendingOrder', JSON.stringify({
@@ -66,12 +68,12 @@ const OrderPage = () => {
         legalConsent: legalConsentAgreed,
       }));
 
-      // Priamo volám redirectToCheckout
-      await redirectToCheckout(testPriceId);
+      // Redirect to Stripe checkout
+      await redirectToCheckout(priceId);
       
     } catch (error) {
       console.error('Submit error:', error);
-      toast.error('Chyba pri inicializácii platby. Skúste znova.');
+      toast.error('Payment initialization failed. Please try again.');
       setIsSubmitting(false);
     }
   };
