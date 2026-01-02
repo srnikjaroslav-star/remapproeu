@@ -6,7 +6,7 @@ import WizardSteps from '@/components/WizardSteps';
 import VehicleSpecsStep from '@/components/wizard/VehicleSpecsStep';
 import ServicesFileStep from '@/components/wizard/ServicesFileStep';
 import ContactSubmitStep from '@/components/wizard/ContactSubmitStep';
-import { supabase, OrderInsert } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { SERVICES } from '@/data/services';
 import { ArrowLeft, Zap, Shield, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -36,60 +36,74 @@ const OrderPage = () => {
     return total + (service?.price || 0);
   }, 0);
 
+  // Get all selected services with their Stripe Price IDs
+  const getSelectedServicesWithPriceIds = () => {
+    return formData.services
+      .map(id => SERVICES.find(s => s.id === id))
+      .filter(s => s && s.stripePriceId);
+  };
+
   const handleSubmit = async (legalConsentAgreed: boolean) => {
     setIsSubmitting(true);
     
     try {
-      const orderData: OrderInsert = {
-        customer_name: formData.customer.name,
-        customer_email: formData.customer.email,
-        car_brand: formData.vehicle.brand,
-        car_model: formData.vehicle.model,
-        fuel_type: formData.vehicle.fuelType,
-        year: formData.vehicle.year,
-        ecu_type: formData.vehicle.ecuType,
-        service_type: formData.services,
-        total_price: totalPrice,
-        status: 'pending',
-        file_url: formData.fileUrl,
-        legal_consent: legalConsentAgreed,
-      };
+      const selectedServices = getSelectedServicesWithPriceIds();
+      
+      if (selectedServices.length === 0) {
+        toast.error('Please select at least one service');
+        setIsSubmitting(false);
+        return;
+      }
 
-      const { data, error } = await supabase
-        .from('orders')
-        .insert([orderData])
-        .select()
-        .single();
+      // Store form data in sessionStorage for after payment
+      sessionStorage.setItem('pendingOrder', JSON.stringify({
+        customer: formData.customer,
+        vehicle: formData.vehicle,
+        services: formData.services,
+        fileUrl: formData.fileUrl,
+        totalPrice,
+        legalConsent: legalConsentAgreed,
+      }));
+
+      // Get all price IDs for the selected services
+      const priceIds = selectedServices.map(s => s!.stripePriceId!);
+      
+      console.log('Redirecting to Stripe checkout with price IDs:', priceIds);
+
+      // Call the create-checkout edge function with multiple price IDs
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: {
+          priceId: priceIds[0], // For now, use first price ID (we can extend to support multiple)
+          priceIds: priceIds, // Pass all price IDs for future multi-item support
+          successUrl: `${window.location.origin}/success`,
+          cancelUrl: `${window.location.origin}/`,
+          customerEmail: formData.customer.email,
+          metadata: {
+            customerName: formData.customer.name,
+            services: formData.services.join(','),
+          }
+        },
+      });
 
       if (error) {
-        const errorMessage = error.message.includes('network') || error.message.includes('fetch')
-          ? 'Upload failed. Please check your internet connection and try again.'
-          : `Database error: ${error.message}`;
-        toast.error(errorMessage);
-        throw error;
+        console.error('Stripe checkout error:', error);
+        toast.error('Payment initialization failed. Please try again.');
+        setIsSubmitting(false);
+        return;
       }
 
-      // Show professional success message with Order ID
-      const displayOrderId = data.order_number || `RP-${data.id.slice(0, 6).toUpperCase()}`;
-      toast.success(
-        `Order Received! Your file is being processed by our engineers. Your Order ID is: ${displayOrderId}`,
-        {
-          duration: 5000,
-          description: 'You will be redirected to track your order.',
-        }
-      );
-      
-      // Navigate after a brief delay to let user see the message
-      setTimeout(() => {
-        navigate(`/track?order=${data.id}`);
-      }, 2000);
+      if (data?.url) {
+        // Redirect to Stripe Checkout
+        console.log('Redirecting to Stripe:', data.url);
+        window.location.href = data.url;
+      } else {
+        console.error('No checkout URL returned:', data);
+        toast.error('Could not create payment session. Please try again.');
+        setIsSubmitting(false);
+      }
     } catch (error) {
       console.error('Submit error:', error);
-      const err = error as Error;
-      if (!err.message?.includes('network') && !err.message?.includes('Database')) {
-        toast.error('Failed to submit order. Please check your internet connection and try again.');
-      }
-    } finally {
+      toast.error('An unexpected error occurred. Please try again.');
       setIsSubmitting(false);
     }
   };
