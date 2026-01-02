@@ -17,7 +17,7 @@ export const redirectToCheckout = async (priceId: string) => {
   }
 
   if (data?.url) {
-    window.location.href = data.url;
+    window.location.assign(data.url);
   } else {
     throw new Error('No checkout URL returned');
   }
