@@ -8,7 +8,7 @@ export interface Service {
 
 export const SERVICES: Service[] = [
   // Stage tuning
-  { id: 'diesel-stage1', name: 'TESTOVACÍ PRODUKT', price: 50, category: 'stage', stripePriceId: 'price_1Skvfv4DSSkujAMNfohdnL2A' },
+  { id: 'diesel-stage1', name: 'TESTOVACÍ PRODUKT', price: 1, category: 'stage', stripePriceId: 'price_1Skvfv4DSSkujAMNfohdnL2A' },
   { id: 'petrol-stage1', name: 'Petrol STAGE1', price: 60, category: 'stage', stripePriceId: 'price_1Skuba4DSSkujAMN8M5AWQIJ' },
   { id: 'tcu-gearbox', name: 'TCU Gearbox', price: 60, category: 'stage', stripePriceId: 'price_1SkucA4DSSkujAMNXL13ZP4h' },
   
