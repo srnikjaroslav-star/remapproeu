@@ -6,8 +6,8 @@ import WizardSteps from '@/components/WizardSteps';
 import VehicleSpecsStep from '@/components/wizard/VehicleSpecsStep';
 import ServicesFileStep from '@/components/wizard/ServicesFileStep';
 import ContactSubmitStep from '@/components/wizard/ContactSubmitStep';
-import { supabase } from '@/integrations/supabase/client';
 import { SERVICES } from '@/data/services';
+import { redirectToCheckout } from '@/lib/stripe';
 import { ArrowLeft, Zap, Shield, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -44,17 +44,18 @@ const OrderPage = () => {
   };
 
   const handleSubmit = async (legalConsentAgreed: boolean) => {
+    // KRITICKÝ DEBUG LOG
+    console.log('=== HANDLESUBMIT VOLANÝ ===');
+    console.log('Vybrané služby:', formData.services);
+    
     setIsSubmitting(true);
     
     try {
-      const selectedServices = getSelectedServicesWithPriceIds();
+      // Natvrdo použijem testovací Price ID
+      const testPriceId = 'price_1Skvfv4DSSkujAMNfohdnL2A';
       
-      if (selectedServices.length === 0) {
-        toast.error('Please select at least one service');
-        setIsSubmitting(false);
-        return;
-      }
-
+      console.log('Spúšťam platbu pre:', testPriceId);
+      
       // Store form data in sessionStorage for after payment
       sessionStorage.setItem('pendingOrder', JSON.stringify({
         customer: formData.customer,
@@ -65,45 +66,12 @@ const OrderPage = () => {
         legalConsent: legalConsentAgreed,
       }));
 
-      // Get all price IDs for the selected services
-      const priceIds = selectedServices.map(s => s!.stripePriceId!);
+      // Priamo volám redirectToCheckout
+      await redirectToCheckout(testPriceId);
       
-      console.log('Redirecting to Stripe checkout with price IDs:', priceIds);
-
-      // Call the create-checkout edge function with multiple price IDs
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: {
-          priceId: priceIds[0], // For now, use first price ID (we can extend to support multiple)
-          priceIds: priceIds, // Pass all price IDs for future multi-item support
-          successUrl: `${window.location.origin}/success`,
-          cancelUrl: `${window.location.origin}/`,
-          customerEmail: formData.customer.email,
-          metadata: {
-            customerName: formData.customer.name,
-            services: formData.services.join(','),
-          }
-        },
-      });
-
-      if (error) {
-        console.error('Stripe checkout error:', error);
-        toast.error('Payment initialization failed. Please try again.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      if (data?.url) {
-        // Redirect to Stripe Checkout
-        console.log('Redirecting to Stripe:', data.url);
-        window.location.href = data.url;
-      } else {
-        console.error('No checkout URL returned:', data);
-        toast.error('Could not create payment session. Please try again.');
-        setIsSubmitting(false);
-      }
     } catch (error) {
       console.error('Submit error:', error);
-      toast.error('An unexpected error occurred. Please try again.');
+      toast.error('Chyba pri inicializácii platby. Skúste znova.');
       setIsSubmitting(false);
     }
   };
