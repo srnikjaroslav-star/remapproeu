@@ -1,8 +1,82 @@
-import { Link } from 'react-router-dom';
-import { CheckCircle, Home, FileText } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { CheckCircle, Home, FileText, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import Logo from '@/components/Logo';
+import { supabase, OrderInsert } from '@/integrations/supabase/client';
 
 const SuccessPage = () => {
+  const navigate = useNavigate();
+  const [isProcessing, setIsProcessing] = useState(true);
+  const [orderId, setOrderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const processPendingOrder = async () => {
+      const pendingOrderData = sessionStorage.getItem('pendingOrder');
+      
+      if (!pendingOrderData) {
+        // No pending order - user might have visited directly
+        setIsProcessing(false);
+        return;
+      }
+
+      try {
+        const orderData = JSON.parse(pendingOrderData);
+        
+        const insertData: OrderInsert = {
+          customer_name: orderData.customer.name,
+          customer_email: orderData.customer.email,
+          car_brand: orderData.vehicle.brand,
+          car_model: orderData.vehicle.model,
+          fuel_type: orderData.vehicle.fuelType,
+          year: orderData.vehicle.year,
+          ecu_type: orderData.vehicle.ecuType,
+          service_type: orderData.services,
+          total_price: orderData.totalPrice,
+          status: 'paid',
+          file_url: orderData.fileUrl || null,
+          legal_consent: orderData.legalConsent,
+        };
+
+        const { data, error } = await supabase
+          .from('orders')
+          .insert([insertData])
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error creating order:', error);
+          toast.error('Order was paid but failed to save. Please contact support.');
+        } else {
+          const displayOrderId = data.order_number || `RP-${data.id.slice(0, 6).toUpperCase()}`;
+          setOrderId(displayOrderId);
+          toast.success(`Order ${displayOrderId} has been created!`);
+          
+          // Clear the pending order data
+          sessionStorage.removeItem('pendingOrder');
+        }
+      } catch (error) {
+        console.error('Error processing order:', error);
+        toast.error('Error processing your order. Please contact support.');
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    processPendingOrder();
+  }, []);
+
+  if (isProcessing) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-lg text-muted-foreground">Processing your order...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Ambient Background */}
@@ -28,6 +102,12 @@ const SuccessPage = () => {
             
             <h1 className="text-3xl font-bold mb-4">Payment Successful!</h1>
             
+            {orderId && (
+              <p className="text-lg font-semibold text-primary mb-4">
+                Order ID: {orderId}
+              </p>
+            )}
+            
             <p className="text-muted-foreground mb-8">
               Thank you for your purchase. You will receive a confirmation email shortly with further instructions.
             </p>
@@ -39,7 +119,7 @@ const SuccessPage = () => {
               </Link>
               <Link to="/order" className="btn-primary flex items-center justify-center gap-2">
                 <FileText className="w-4 h-4" />
-                Place Full Order
+                Place Another Order
               </Link>
             </div>
           </div>
