@@ -318,7 +318,7 @@ const ManagementPortal = () => {
 
       {/* Header */}
       <header className="border-b border-border/50 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
-        <div className="w-full max-w-[1440px] mx-auto px-12 py-4 flex items-center justify-between">
+        <div className="w-full max-w-[77%] mx-auto px-12 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link to="/">
               <Logo size="sm" />
@@ -349,7 +349,7 @@ const ManagementPortal = () => {
         </div>
       </header>
 
-      <main className="w-full max-w-[1440px] mx-auto px-12 py-8">
+      <main className="w-full max-w-[77%] mx-auto px-12 py-8">
         {/* Revenue Header */}
         <div className="glass-card p-6 mb-8">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
