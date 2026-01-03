@@ -546,14 +546,16 @@ const ManagementPortal = () => {
                         />
                       </td>
                       <td className="p-4">
-                        <input
-                          type="text"
-                          value={getEditableValue(order, 'internal_note')}
-                          onChange={(e) => handleFieldChange(order.id, 'internal_note', e.target.value)}
-                          onBlur={() => handleFieldBlur(order.id, 'internal_note')}
-                          placeholder="Internal note..."
-                          className="w-full bg-secondary/50 border border-border/50 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        />
+                        <div className="relative group">
+                          <textarea
+                            value={getEditableValue(order, 'internal_note')}
+                            onChange={(e) => handleFieldChange(order.id, 'internal_note', e.target.value)}
+                            onBlur={() => handleFieldBlur(order.id, 'internal_note')}
+                            placeholder="Internal note..."
+                            rows={2}
+                            className="w-full min-w-[200px] bg-secondary/50 border border-border/50 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 resize-y min-h-[60px] max-h-[200px]"
+                          />
+                        </div>
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
