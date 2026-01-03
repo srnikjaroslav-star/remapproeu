@@ -21,11 +21,9 @@ Deno.serve(async (req) => {
       throw new Error("STRIPE_SECRET_KEY is not configured");
     }
 
-    const stripe = new Stripe(STRIPE_SECRET_KEY, {
-      apiVersion: "2024-12-18.acacia",
-    });
+    const stripe = new Stripe(STRIPE_SECRET_KEY);
 
-    const { serviceNames, totalAmount, successUrl, cancelUrl, clientReferenceId, customerEmail, customerNote } = await req.json();
+    const { serviceNames, totalAmount, clientReferenceId } = await req.json();
 
     // Validate totalAmount
     if (typeof totalAmount !== 'number' || totalAmount <= 0) {
@@ -37,38 +35,38 @@ Deno.serve(async (req) => {
       throw new Error("At least one service name is required");
     }
 
-    // Build description from service names
-    const description = serviceNames.join(", ");
+    const origin = req.headers.get('origin');
+    if (!origin) {
+      throw new Error('Missing Origin header');
+    }
+
+    const orderId = clientReferenceId;
 
     console.log("Creating checkout session:");
-    console.log("Service names:", description);
     console.log("Total amount (EUR):", totalAmount);
-    console.log("Unit amount in cents:", Math.round(totalAmount * 100));
-    console.log("Client reference ID:", clientReferenceId);
-    console.log("Customer email:", customerEmail);
+    console.log("Order ID:", orderId);
 
-    // Create checkout session using Stripe SDK with price_data (no Price IDs)
+    // Prevod celkovej ceny na centy (integer)
+    const unitAmount = Math.round(totalAmount * 100);
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
         price_data: {
           currency: 'eur',
-          product_data: { 
-            name: `REMAPPRO Services: ${description}` 
+          product_data: {
+            name: 'Chiptuning Service - Custom Order',
+            description: 'Professional software optimization',
           },
-          unit_amount: Math.round(totalAmount * 100), // Convert to cents
+          unit_amount: unitAmount,
         },
         quantity: 1,
       }],
       mode: 'payment',
-      success_url: successUrl || `${req.headers.get('origin')}/success`,
-      cancel_url: cancelUrl || `${req.headers.get('origin')}/order`,
-      client_reference_id: clientReferenceId || undefined,
-      customer_email: customerEmail || undefined,
+      success_url: `${origin}/success`,
+      cancel_url: `${origin}/order`,
       metadata: {
-        services: description,
-        total_amount: totalAmount.toFixed(2),
-        ...(customerNote && { customer_note: customerNote }),
+        order_id: orderId || '',
       },
     });
 
