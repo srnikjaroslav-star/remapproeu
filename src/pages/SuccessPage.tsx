@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CheckCircle, Home, FileText, Loader2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import Logo from '@/components/Logo';
+import Footer from '@/components/Footer';
 import { supabase, OrderInsert } from '@/integrations/supabase/client';
 
 const SuccessPage = () => {
@@ -134,13 +135,7 @@ const SuccessPage = () => {
       </main>
 
       {/* Footer */}
-      <footer className="relative border-t border-border/50 py-8">
-        <div className="container mx-auto px-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} REMAPPRO. Professional ECU Tuning Services.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
