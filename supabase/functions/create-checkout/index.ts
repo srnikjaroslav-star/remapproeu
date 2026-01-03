@@ -1,3 +1,5 @@
+import Stripe from "https://esm.sh/stripe@17.7.0?target=deno";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
@@ -19,6 +21,10 @@ Deno.serve(async (req) => {
       throw new Error("STRIPE_SECRET_KEY is not configured");
     }
 
+    const stripe = new Stripe(STRIPE_SECRET_KEY, {
+      apiVersion: "2024-12-18.acacia",
+    });
+
     const { serviceNames, totalAmount, successUrl, cancelUrl, clientReferenceId, customerEmail, customerNote } = await req.json();
 
     // Validate totalAmount
@@ -31,65 +37,40 @@ Deno.serve(async (req) => {
       throw new Error("At least one service name is required");
     }
 
-    // Convert to cents (integer)
-    const unitAmountCents = Math.round(totalAmount * 100);
-    
     // Build description from service names
     const description = serviceNames.join(", ");
 
     console.log("Creating checkout session:");
     console.log("Service names:", description);
     console.log("Total amount (EUR):", totalAmount);
-    console.log("Final amount being sent to Stripe (cents):", unitAmountCents);
+    console.log("Unit amount in cents:", Math.round(totalAmount * 100));
     console.log("Client reference ID:", clientReferenceId);
     console.log("Customer email:", customerEmail);
 
-    // Build form data for Stripe API with single line item using price_data
-    const formData = new URLSearchParams({
-      "mode": "payment",
-      "success_url": successUrl || `${req.headers.get("origin")}/success`,
-      "cancel_url": cancelUrl || `${req.headers.get("origin")}/order`,
-      // Single line item with dynamic price_data
-      "line_items[0][price_data][currency]": "eur",
-      "line_items[0][price_data][product_data][name]": `REMAPPRO Services: ${description}`,
-      "line_items[0][price_data][unit_amount]": unitAmountCents.toString(),
-      "line_items[0][quantity]": "1",
-    });
-
-    // Add client_reference_id if provided (for order tracking)
-    if (clientReferenceId) {
-      formData.append("client_reference_id", clientReferenceId);
-    }
-
-    // Add customer email if provided
-    if (customerEmail) {
-      formData.append("customer_email", customerEmail);
-    }
-
-    // Add metadata
-    formData.append("metadata[services]", description);
-    formData.append("metadata[total_amount]", totalAmount.toFixed(2));
-    
-    if (customerNote) {
-      formData.append("metadata[customer_note]", customerNote);
-    }
-
-    // Create checkout session using Stripe REST API
-    const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${STRIPE_SECRET_KEY}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+    // Create checkout session using Stripe SDK with price_data (no Price IDs)
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'eur',
+          product_data: { 
+            name: `REMAPPRO Services: ${description}` 
+          },
+          unit_amount: Math.round(totalAmount * 100), // Convert to cents
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: successUrl || `${req.headers.get('origin')}/success`,
+      cancel_url: cancelUrl || `${req.headers.get('origin')}/order`,
+      client_reference_id: clientReferenceId || undefined,
+      customer_email: customerEmail || undefined,
+      metadata: {
+        services: description,
+        total_amount: totalAmount.toFixed(2),
+        ...(customerNote && { customer_note: customerNote }),
       },
-      body: formData,
     });
-
-    const session = await response.json();
-
-    if (!response.ok) {
-      console.error("Stripe error:", session);
-      throw new Error(session.error?.message || "Failed to create checkout session");
-    }
 
     console.log("Checkout session created:", session.id);
 
