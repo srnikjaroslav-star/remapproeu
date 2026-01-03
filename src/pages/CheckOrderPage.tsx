@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Mail, Hash, Clock, Package, CheckCircle, Download, AlertCircle, ArrowLeft } from 'lucide-react';
 import Logo from '@/components/Logo';
+import Footer from '@/components/Footer';
 import { supabase, Order } from '@/integrations/supabase/client';
 import { SERVICES } from '@/data/services';
 
@@ -300,6 +301,9 @@ const CheckOrderPage = () => {
           </div>
         )}
       </main>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Zap, Shield, Clock, Car, ChevronRight, Gauge, Settings } from 'lucide-react';
 import Logo from '@/components/Logo';
 import SystemStatus from '@/components/SystemStatus';
+import Footer from '@/components/Footer';
 
 const Index = () => {
   return (
@@ -155,17 +156,7 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="relative border-t border-border/50 py-8">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <Logo size="sm" />
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} REMAPPRO. Professional ECU Tuning Services.
-          </p>
-          <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            <Link to="/track" className="hover:text-foreground transition-colors">Track Order</Link>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

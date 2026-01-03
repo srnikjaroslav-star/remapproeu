@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Zap, ShoppingCart, Loader2 } from 'lucide-react';
 import Logo from '@/components/Logo';
+import Footer from '@/components/Footer';
 import { SERVICES, Service } from '@/data/services';
 import { redirectToCheckout, generateOrderId } from '@/lib/stripe';
 import { toast } from 'sonner';
@@ -139,14 +140,7 @@ const PricingPage = () => {
       </section>
 
       {/* Footer */}
-      <footer className="relative border-t border-border/50 py-8 mt-12">
-        <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <Logo size="sm" />
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} REMAPPRO. Professional ECU Tuning Services.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

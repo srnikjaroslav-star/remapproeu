@@ -11,6 +11,7 @@ import { redirectToCheckout, generateOrderId } from '@/lib/stripe';
 import { ArrowLeft, Zap, Shield, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SystemStatus from '@/components/SystemStatus';
+import Footer from '@/components/Footer';
 
 const WIZARD_STEPS = ['Vehicle', 'Services & Upload', 'Contact'];
 
@@ -163,6 +164,9 @@ const OrderPage = () => {
           {renderStep()}
         </div>
       </main>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 };
