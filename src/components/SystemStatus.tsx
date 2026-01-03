@@ -146,14 +146,14 @@ const SystemStatus = () => {
         className={`w-2.5 h-2.5 rounded-full ${
           isOnline 
             ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' 
-            : 'bg-gray-500'
+            : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] animate-pulse'
         }`}
       />
-      <span className={isOnline ? 'text-green-500' : 'text-muted-foreground'}>
+      <span className={isOnline ? 'text-green-500' : 'text-red-500 font-bold'}>
         {isOnline ? 'ONLINE' : 'OFFLINE'}
       </span>
       {mode !== 'auto' && (
-        <span className="text-xs text-muted-foreground/60">(Manual)</span>
+        <span className={`text-xs ${isOnline ? 'text-muted-foreground/60' : 'text-red-400/60'}`}>(Manual)</span>
       )}
     </div>
   );
