@@ -3,38 +3,37 @@ export interface Service {
   name: string;
   price: number;
   category: 'stage' | 'removal' | 'modification';
-  stripePriceId: string;
 }
 
 export const SERVICES: Service[] = [
   // Stage tuning
-  { id: 'diesel-stage1', name: 'Diesel STAGE1', price: 60, category: 'stage', stripePriceId: 'price_1SkuaM4DSSkujAMNd7syYxH0' },
-  { id: 'petrol-stage1', name: 'Petrol STAGE1', price: 60, category: 'stage', stripePriceId: 'price_1Skuba4DSSkujAMN8M5AWQIJ' },
-  { id: 'tcu-gearbox', name: 'TCU Gearbox', price: 60, category: 'stage', stripePriceId: 'price_1SkucA4DSSkujAMNXL13ZP4h' },
-  
+  { id: 'diesel-stage1', name: 'Diesel STAGE1', price: 60, category: 'stage' },
+  { id: 'petrol-stage1', name: 'Petrol STAGE1', price: 60, category: 'stage' },
+  { id: 'tcu-gearbox', name: 'TCU Gearbox', price: 60, category: 'stage' },
+
   // Removal services
-  { id: 'adblue', name: 'ADBlue', price: 35, category: 'removal', stripePriceId: 'price_1SkucO4DSSkujAMNFTmefXet' },
-  { id: 'dpf', name: 'DPF', price: 35, category: 'removal', stripePriceId: 'price_1Skucn4DSSkujAMNGBvX8rgp' },
-  { id: 'opf-gpf', name: 'OPF/GPF', price: 35, category: 'removal', stripePriceId: 'price_1SkudR4DSSkujAMNFx8AE7mD' },
-  { id: 'egr', name: 'EGR', price: 25, category: 'removal', stripePriceId: 'price_1Skudo4DSSkujAMNGRQYl11s' },
-  { id: 'swirl-flaps', name: 'SWIRL Flaps', price: 25, category: 'removal', stripePriceId: 'price_1SkueA4DSSkujAMNw2pmPUee' },
-  { id: 'lambda', name: 'Lambda', price: 25, category: 'removal', stripePriceId: 'price_1SkueO4DSSkujAMNO4xcNhdt' },
-  { id: 'immo', name: 'Immo', price: 25, category: 'removal', stripePriceId: 'price_1Skuec4DSSkujAMNt7DnzOoD' },
-  
+  { id: 'adblue', name: 'ADBlue', price: 35, category: 'removal' },
+  { id: 'dpf', name: 'DPF', price: 35, category: 'removal' },
+  { id: 'opf-gpf', name: 'OPF/GPF', price: 35, category: 'removal' },
+  { id: 'egr', name: 'EGR', price: 25, category: 'removal' },
+  { id: 'swirl-flaps', name: 'SWIRL Flaps', price: 25, category: 'removal' },
+  { id: 'lambda', name: 'Lambda', price: 25, category: 'removal' },
+  { id: 'immo', name: 'Immo', price: 25, category: 'removal' },
+
   // Modifications
-  { id: 'emission-ek-stk', name: 'Emission (EK/STK)', price: 35, category: 'modification', stripePriceId: 'price_1Skues4DSSkujAMNKzXupkZg' },
-  { id: 'vmax', name: 'V-Max', price: 25, category: 'modification', stripePriceId: 'price_1Skuf64DSSkujAMNjbbnbBt7' },
-  { id: 'hot-start', name: 'Hot Start', price: 25, category: 'modification', stripePriceId: 'price_1SkufO4DSSkujAMNGuBuDUFe' },
-  { id: 'cold-start', name: 'Cold Start', price: 25, category: 'modification', stripePriceId: 'price_1SkufZ4DSSkujAMNwjVQVppB' },
-  { id: 'idle-speed-rpm', name: 'Idle Speed RPM', price: 25, category: 'modification', stripePriceId: 'price_1Skufs4DSSkujAMNFCZc2YSb' },
-  { id: 'torque-limiter', name: 'Torque (Errors) Limiter', price: 35, category: 'modification', stripePriceId: 'price_1Skug84DSSkujAMNaisrDVmH' },
-  { id: 'dtc', name: 'DTC', price: 25, category: 'modification', stripePriceId: 'price_1SkugM4DSSkujAMN2WCVDTzr' },
-  { id: 'start-stop', name: 'Start Stop', price: 25, category: 'modification', stripePriceId: 'price_1SlYLw4DSSkujAMNyWpapcjg' },
-  { id: 'burbles', name: 'Burbles', price: 35, category: 'modification', stripePriceId: 'price_1Skugm4DSSkujAMNNBF1VgRy' },
-  { id: 'cylinder-shutdown', name: 'Cylinder Shutdown', price: 35, category: 'modification', stripePriceId: 'price_1Skugz4DSSkujAMNXhLq01r2' },
-  { id: 'oil-pressure', name: 'Oil Pressure', price: 35, category: 'modification', stripePriceId: 'price_1SkuiY4DSSkujAMNgBJeq8Ye' },
-  { id: 'glow-plugs-time', name: 'Glow Plugs Time', price: 35, category: 'modification', stripePriceId: 'price_1SkuhK4DSSkujAMN20cGsjEg' },
-  { id: 'eolys-off', name: 'Eolys (OFF)', price: 35, category: 'modification', stripePriceId: 'price_1SlYdv4DSSkujAMN91KzEtxi' },
+  { id: 'emission-ek-stk', name: 'Emission (EK/STK)', price: 35, category: 'modification' },
+  { id: 'vmax', name: 'V-Max', price: 25, category: 'modification' },
+  { id: 'hot-start', name: 'Hot Start', price: 25, category: 'modification' },
+  { id: 'cold-start', name: 'Cold Start', price: 25, category: 'modification' },
+  { id: 'idle-speed-rpm', name: 'Idle Speed RPM', price: 25, category: 'modification' },
+  { id: 'torque-limiter', name: 'Torque (Errors) Limiter', price: 35, category: 'modification' },
+  { id: 'dtc', name: 'DTC', price: 25, category: 'modification' },
+  { id: 'start-stop', name: 'Start Stop', price: 25, category: 'modification' },
+  { id: 'burbles', name: 'Burbles', price: 35, category: 'modification' },
+  { id: 'cylinder-shutdown', name: 'Cylinder Shutdown', price: 35, category: 'modification' },
+  { id: 'oil-pressure', name: 'Oil Pressure', price: 35, category: 'modification' },
+  { id: 'glow-plugs-time', name: 'Glow Plugs Time', price: 35, category: 'modification' },
+  { id: 'eolys-off', name: 'Eolys (OFF)', price: 35, category: 'modification' },
 ];
 
 export const CAR_BRANDS = [
