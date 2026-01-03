@@ -15,35 +15,45 @@ export const generateOrderId = (): string => {
 
 type CheckoutItem = {
   name: string;
-  price: number; // in EUR
+  amount: number; // in cents (EUR)
 };
 
 interface CheckoutOptions {
-  items: CheckoutItem[];
+  items: { name: string; price: number }[]; // price in EUR, will be converted to cents
   orderId: string;
   customerEmail: string;
   customerNote?: string;
 }
 
 export const redirectToCheckout = async ({ items, orderId, customerEmail, customerNote }: CheckoutOptions) => {
+  // Validate email
+  if (!customerEmail || !customerEmail.includes('@')) {
+    throw new Error('Valid email address is required.');
+  }
+
   // Validate items before calling edge function
   if (!items || items.length === 0) {
     throw new Error('No items selected for checkout.');
   }
 
-  for (const item of items) {
+  // Convert items to the format expected by edge function (amount in cents)
+  const formattedItems = items.map(item => {
     if (!item.name || item.price <= 0) {
       throw new Error(`Invalid item: ${item.name || 'unnamed'} with price ${item.price}`);
     }
-  }
+    return {
+      name: item.name,
+      amount: Math.round(item.price * 100) // Convert EUR to cents
+    };
+  });
 
   const successUrl = `https://remappro.eu/track?id=${encodeURIComponent(orderId)}&email=${encodeURIComponent(customerEmail)}`;
   const cancelUrl = `${window.location.origin}/order`;
 
   console.log('[Stripe] Creating checkout session:', { 
-    items, 
-    orderId, 
-    customerEmail,
+    items: formattedItems, 
+    email: customerEmail,
+    orderId,
     successUrl,
     cancelUrl 
   });
@@ -51,15 +61,15 @@ export const redirectToCheckout = async ({ items, orderId, customerEmail, custom
   try {
     const { data, error } = await supabase.functions.invoke('create-checkout', {
       body: {
-        items,
+        items: formattedItems,
+        email: customerEmail,
         successUrl,
         cancelUrl,
-        clientReferenceId: orderId,
-        customerEmail,
-        customerNote: customerNote || undefined,
         metadata: {
+          orderId,
           orderType: 'tuning',
-          source: 'web'
+          source: 'web',
+          ...(customerNote && { customerNote })
         }
       },
     });
@@ -68,7 +78,6 @@ export const redirectToCheckout = async ({ items, orderId, customerEmail, custom
     console.log('[Stripe] Edge function response:', { data, error });
 
     if (error) {
-      // Try to extract more details from FunctionsHttpError
       console.error('[Stripe] Edge function error details:', {
         message: error.message,
         name: error.name,
@@ -91,7 +100,6 @@ export const redirectToCheckout = async ({ items, orderId, customerEmail, custom
       throw new Error('Payment gateway did not return a valid session. Please contact support.');
     }
   } catch (err: any) {
-    // Catch and re-throw with full error details logged
     console.error('[Stripe] Full error object:', err);
     if (err.context?.body) {
       console.error('[Stripe] Error body:', err.context.body);
