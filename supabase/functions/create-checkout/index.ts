@@ -32,15 +32,23 @@ Deno.serve(async (req) => {
       throw new Error("At least one service is required");
     }
 
-    console.log("Creating checkout session for services:", services);
+    console.log("Creating checkout session for services:", JSON.stringify(services));
     console.log("Client reference ID:", clientReferenceId);
     console.log("Customer email:", customerEmail);
     console.log("Customer note:", customerNote);
 
-    // Calculate total price in cents
-    const totalAmountCents = services.reduce((sum: number, service: ServiceItem) => {
-      return sum + Math.round(service.price * 100);
-    }, 0);
+    // Validate and calculate total price in cents
+    let totalAmountCents = 0;
+    for (const service of services) {
+      const priceValue = typeof service.price === 'string' ? parseFloat(service.price) : service.price;
+      if (isNaN(priceValue) || priceValue <= 0) {
+        console.error("Invalid price for service:", service.name, "price:", service.price);
+        throw new Error(`Invalid price for service: ${service.name}`);
+      }
+      const priceInCents = Math.round(priceValue * 100);
+      console.log(`Service: ${service.name}, Price: €${priceValue}, Cents: ${priceInCents}`);
+      totalAmountCents += priceInCents;
+    }
 
     // Build service names for description
     const serviceNames = services.map((s: ServiceItem) => s.name).join(", ");
@@ -57,7 +65,11 @@ Deno.serve(async (req) => {
 
     // Add each service as a line item with price_data (dynamic pricing)
     services.forEach((service: ServiceItem, index: number) => {
-      const priceInCents = Math.round(service.price * 100);
+      const priceValue = typeof service.price === 'string' ? parseFloat(service.price) : service.price;
+      const priceInCents = Math.round(priceValue * 100);
+      
+      console.log(`Final amount being sent to Stripe for ${service.name}:`, priceInCents);
+      
       formData.append(`line_items[${index}][price_data][currency]`, "eur");
       formData.append(`line_items[${index}][price_data][product_data][name]`, service.name);
       formData.append(`line_items[${index}][price_data][unit_amount]`, priceInCents.toString());
