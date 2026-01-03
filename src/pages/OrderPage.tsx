@@ -39,29 +39,20 @@ const OrderPage = () => {
     return total + (service?.price || 0);
   }, 0);
 
-  // Get all selected services with their names and prices (for dynamic Stripe pricing)
-  const getSelectedServices = () => {
+  // Get all selected service names
+  const getSelectedServiceNames = () => {
     return formData.services
-      .map(id => {
-        const service = SERVICES.find(s => s.id === id);
-        if (service) {
-          return {
-            name: service.name,
-            price: service.price
-          };
-        }
-        return null;
-      })
-      .filter((s): s is { name: string; price: number } => s !== null);
+      .map(id => SERVICES.find(s => s.id === id)?.name)
+      .filter((name): name is string => name !== undefined);
   };
 
   const handleSubmit = async (legalConsentAgreed: boolean) => {
     setIsSubmitting(true);
     
     try {
-      const services = getSelectedServices();
+      const serviceNames = getSelectedServiceNames();
       
-      if (services.length === 0) {
+      if (serviceNames.length === 0) {
         toast.error('Please select at least one service');
         setIsSubmitting(false);
         return;
@@ -82,9 +73,10 @@ const OrderPage = () => {
         legalConsent: legalConsentAgreed,
       }));
 
-      // Redirect to Stripe checkout with all services
+      // Redirect to Stripe checkout with total amount
       await redirectToCheckout({
-        services,
+        serviceNames,
+        totalAmount: totalPrice,
         orderId,
         customerEmail: formData.customer.email,
         customerNote: formData.customerNote,
