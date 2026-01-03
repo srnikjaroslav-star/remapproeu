@@ -29,7 +29,7 @@ export const SERVICES: Service[] = [
   { id: 'idle-speed-rpm', name: 'Idle Speed RPM', price: 25, category: 'modification', stripePriceId: 'price_1Skufs4DSSkujAMNFCZc2YSb' },
   { id: 'torque-limiter', name: 'Torque (Errors) Limiter', price: 35, category: 'modification', stripePriceId: 'price_1Skug84DSSkujAMNaisrDVmH' },
   { id: 'dtc', name: 'DTC', price: 25, category: 'modification', stripePriceId: 'price_1SkugM4DSSkujAMN2WCVDTzr' },
-  { id: 'start-stop', name: 'Start Stop', price: 25, category: 'modification', stripePriceId: 'price_1SlYLw4DSSkujAMNyWpapcjg' },
+  { id: 'start-stop', name: 'Start Stop', price: 25, category: 'modification', stripePriceId: 'price_1Slamk4DSSkujAMNHe4x2ewa' },
   { id: 'burbles', name: 'Burbles', price: 35, category: 'modification', stripePriceId: 'price_1Skugm4DSSkujAMNNBF1VgRy' },
   { id: 'cylinder-shutdown', name: 'Cylinder Shutdown', price: 35, category: 'modification', stripePriceId: 'price_1Skugz4DSSkujAMNXhLq01r2' },
   { id: 'oil-pressure', name: 'Oil Pressure', price: 35, category: 'modification', stripePriceId: 'price_1SkuiY4DSSkujAMNgBJeq8Ye' },
