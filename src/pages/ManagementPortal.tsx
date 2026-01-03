@@ -315,7 +315,7 @@ const ManagementPortal = () => {
 
       {/* Header */}
       <header className="border-b border-border/50 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="w-full max-w-[90%] mx-auto px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link to="/">
               <Logo size="sm" />
@@ -346,7 +346,7 @@ const ManagementPortal = () => {
         </div>
       </header>
 
-      <main className="w-full max-w-[95%] mx-auto px-8 py-8">
+      <main className="w-full max-w-[90%] mx-auto px-8 py-8">
         {/* Revenue Header */}
         <div className="glass-card p-6 mb-8">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -452,17 +452,17 @@ const ManagementPortal = () => {
             <table className="w-full table-fixed">
               <thead>
                 <tr className="table-header bg-secondary/20">
-                  <th className="text-left p-4 w-[120px]">Order ID</th>
-                  <th className="text-left p-4 w-[180px]">Customer</th>
-                  <th className="text-left p-4 w-[200px]">Vehicle</th>
-                  <th className="text-left p-4 w-[140px]">ECU</th>
-                  <th className="text-left p-4 w-[200px]">Services</th>
-                  <th className="text-left p-4 w-[80px]">Price</th>
-                  <th className="text-left p-4 w-[100px]">Invoice</th>
-                  <th className="text-left p-4 w-[130px]">Status</th>
-                  <th className="text-left p-4 w-[120px]">Checksum (CRC)</th>
-                  <th className="text-left p-4 min-w-[280px]">Internal Note</th>
-                  <th className="text-right p-4 w-[140px]">Actions</th>
+                  <th className="text-left p-4 w-[100px]">Order ID</th>
+                  <th className="text-left p-4 w-[160px]">Customer</th>
+                  <th className="text-left p-4 min-w-[220px]">Vehicle</th>
+                  <th className="text-left p-4 w-[130px]">ECU</th>
+                  <th className="text-left p-4 w-[180px]">Services</th>
+                  <th className="text-left p-4 w-[70px]">Price</th>
+                  <th className="text-left p-4 w-[90px]">Invoice</th>
+                  <th className="text-left p-4 w-[120px]">Status</th>
+                  <th className="text-left p-4 w-[110px]">Checksum</th>
+                  <th className="text-left p-4 min-w-[300px]">Internal Note</th>
+                  <th className="text-right p-4 w-[130px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
