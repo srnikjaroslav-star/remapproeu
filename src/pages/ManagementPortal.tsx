@@ -450,22 +450,22 @@ const ManagementPortal = () => {
         </div>
 
         {/* Orders Table */}
-        <div className="glass-card overflow-hidden bg-background/40 backdrop-blur-xl border border-white/5">
+        <div className="rounded-xl overflow-hidden bg-background/40 backdrop-blur-xl border border-primary/20 shadow-[0_0_30px_rgba(59,130,246,0.15)]">
           <div className="overflow-x-auto">
             <table className="w-full table-fixed text-sm">
               <thead>
-                <tr className="table-header bg-secondary/20">
-                  <th className="text-left p-3 w-[85px] text-xs font-semibold uppercase tracking-wide align-middle">Order ID</th>
-                  <th className="text-left p-3 w-[130px] text-xs font-semibold uppercase tracking-wide align-middle">Customer</th>
-                  <th className="text-left p-3 w-[180px] text-xs font-semibold uppercase tracking-wide align-middle">Vehicle</th>
-                  <th className="text-left p-3 w-[100px] text-xs font-semibold uppercase tracking-wide align-middle">ECU</th>
-                  <th className="text-left p-3 w-[160px] text-xs font-semibold uppercase tracking-wide align-middle">Services</th>
-                  <th className="text-left p-3 w-[55px] text-xs font-semibold uppercase tracking-wide align-middle">Price</th>
-                  <th className="text-left p-3 w-[70px] text-xs font-semibold uppercase tracking-wide align-middle">Invoice</th>
-                  <th className="text-left p-3 w-[95px] text-xs font-semibold uppercase tracking-wide align-middle">Status</th>
-                  <th className="text-left p-3 w-[90px] text-xs font-semibold uppercase tracking-wide align-middle">Checksum</th>
-                  <th className="text-left p-3 w-[140px] text-xs font-semibold uppercase tracking-wide align-middle">Internal Note</th>
-                  <th className="text-right p-3 w-[100px] text-xs font-semibold uppercase tracking-wide align-middle">Actions</th>
+                <tr className="bg-primary/20 border border-primary/40">
+                  <th className="text-left p-3 w-[85px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Order ID</th>
+                  <th className="text-left p-3 w-[130px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Customer</th>
+                  <th className="text-left p-3 w-[180px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Vehicle</th>
+                  <th className="text-left p-3 w-[100px] text-xs font-semibold uppercase tracking-wide align-middle text-white">ECU</th>
+                  <th className="text-left p-3 w-[160px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Services</th>
+                  <th className="text-left p-3 w-[55px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Price</th>
+                  <th className="text-left p-3 w-[70px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Invoice</th>
+                  <th className="text-left p-3 w-[95px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Status</th>
+                  <th className="text-left p-3 w-[90px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Checksum</th>
+                  <th className="text-left p-3 w-[140px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Internal Note</th>
+                  <th className="text-right p-3 w-[100px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -483,7 +483,7 @@ const ManagementPortal = () => {
                     </tr>
                 ) : (
                   filteredOrders.map((order) => (
-                    <tr key={order.id} className="table-row align-top">
+                    <tr key={order.id} className="align-top border-b border-gray-700/50 hover:bg-white/5 transition-colors duration-150">
                       <td className="p-3">
                         <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
                           {order.order_number || order.id.slice(0, 8).toUpperCase()}
