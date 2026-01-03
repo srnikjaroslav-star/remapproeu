@@ -13,25 +13,22 @@ export const generateOrderId = (): string => {
   return id;
 };
 
-interface ServiceItem {
-  name: string;
-  price: number;
-}
-
 interface CheckoutOptions {
-  services: ServiceItem[];
+  serviceNames: string[];
+  totalAmount: number;
   orderId: string;
   customerEmail: string;
   customerNote?: string;
 }
 
-export const redirectToCheckout = async ({ services, orderId, customerEmail, customerNote }: CheckoutOptions) => {
+export const redirectToCheckout = async ({ serviceNames, totalAmount, orderId, customerEmail, customerNote }: CheckoutOptions) => {
   const successUrl = `https://remappro.eu/track?id=${encodeURIComponent(orderId)}&email=${encodeURIComponent(customerEmail)}`;
   const cancelUrl = `${window.location.origin}/order`;
 
   const { data, error } = await supabase.functions.invoke('create-checkout', {
     body: {
-      services,
+      serviceNames,
+      totalAmount,
       successUrl,
       cancelUrl,
       clientReferenceId: orderId,
