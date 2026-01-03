@@ -14,7 +14,6 @@ export const generateOrderId = (): string => {
 };
 
 interface ServiceItem {
-  priceId: string;
   name: string;
   price: number;
 }

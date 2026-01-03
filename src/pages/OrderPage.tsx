@@ -39,21 +39,20 @@ const OrderPage = () => {
     return total + (service?.price || 0);
   }, 0);
 
-  // Get all selected services with their Stripe Price IDs
+  // Get all selected services with their names and prices (for dynamic Stripe pricing)
   const getSelectedServices = () => {
     return formData.services
       .map(id => {
         const service = SERVICES.find(s => s.id === id);
-        if (service?.stripePriceId) {
+        if (service) {
           return {
-            priceId: service.stripePriceId,
             name: service.name,
             price: service.price
           };
         }
         return null;
       })
-      .filter((s): s is { priceId: string; name: string; price: number } => s !== null);
+      .filter((s): s is { name: string; price: number } => s !== null);
   };
 
   const handleSubmit = async (legalConsentAgreed: boolean) => {

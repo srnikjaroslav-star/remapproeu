@@ -5,7 +5,6 @@ const corsHeaders = {
 };
 
 interface ServiceItem {
-  priceId: string;
   name: string;
   price: number;
 }
