@@ -8,14 +8,15 @@ const Footer = () => {
           {/* Brand & Contact */}
           <div className="space-y-4">
             <Logo />
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <p className="font-medium text-foreground">Contact</p>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <p className="font-semibold text-foreground">REMAPPRO Digital Solutions</p>
               <a 
                 href="mailto:info@remappro.eu" 
-                className="hover:text-primary transition-colors"
+                className="block hover:text-primary transition-colors"
               >
                 info@remappro.eu
               </a>
+              <p>Slovakia, European Union</p>
             </div>
           </div>
 
@@ -82,6 +83,11 @@ const Footer = () => {
                   Privacy Policy
                 </a>
               </li>
+              <li>
+                <a href="/refunds" className="hover:text-primary transition-colors">
+                  Refund Policy
+                </a>
+              </li>
             </ul>
           </div>
         </div>
@@ -89,7 +95,7 @@ const Footer = () => {
         {/* Copyright */}
         <div className="mt-12 pt-8 border-t border-border/50">
           <p className="text-center text-sm text-muted-foreground">
-            Copyright © 2026 REMAPPRO. All rights reserved.
+            Copyright © 2026 REMAPPRO Digital Solutions. All rights reserved.
           </p>
         </div>
       </div>
