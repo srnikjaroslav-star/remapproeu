@@ -5,7 +5,7 @@ import {
   RefreshCw, Search, User, Power, Save
 } from 'lucide-react';
 import Logo from '@/components/Logo';
-import SystemStatus, { getSystemStatus, setSystemStatus, isSystemOnline, SystemStatusMode } from '@/components/SystemStatus';
+import SystemStatus, { fetchSystemStatusFromDB, setSystemStatusInDB, isSystemOnline, SystemStatusMode } from '@/components/SystemStatus';
 import { supabase, Order } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SERVICES } from '@/data/services';
@@ -20,9 +20,19 @@ const ManagementPortal = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [editingFields, setEditingFields] = useState<Record<string, { checksum_crc: string; internal_note: string }>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [statusMode, setStatusMode] = useState<SystemStatusMode>(getSystemStatus);
+  const [statusMode, setStatusMode] = useState<SystemStatusMode>('auto');
+  const [statusLoading, setStatusLoading] = useState(false);
 
-  const cycleStatusMode = () => {
+  // Load initial status from DB
+  useEffect(() => {
+    const loadStatus = async () => {
+      const mode = await fetchSystemStatusFromDB();
+      setStatusMode(mode);
+    };
+    loadStatus();
+  }, []);
+
+  const cycleStatusMode = async () => {
     // Cycle: auto -> online -> offline -> auto
     const nextMode: Record<SystemStatusMode, SystemStatusMode> = {
       'auto': 'online',
@@ -30,15 +40,22 @@ const ManagementPortal = () => {
       'offline': 'auto'
     };
     const newMode = nextMode[statusMode];
-    setStatusMode(newMode);
-    setSystemStatus(newMode);
     
-    const messages: Record<SystemStatusMode, string> = {
-      'auto': 'System status set to AUTO (follows schedule 08:00-20:00)',
-      'online': 'System forced ONLINE (visible to customers)',
-      'offline': 'System forced OFFLINE (visible to customers)'
-    };
-    toast.success(messages[newMode]);
+    setStatusLoading(true);
+    const success = await setSystemStatusInDB(newMode);
+    setStatusLoading(false);
+    
+    if (success) {
+      setStatusMode(newMode);
+      const messages: Record<SystemStatusMode, string> = {
+        'auto': 'System status set to AUTO (follows schedule 08:00-20:00)',
+        'online': 'System forced ONLINE (visible to customers)',
+        'offline': 'System forced OFFLINE (visible to customers)'
+      };
+      toast.success(messages[newMode]);
+    } else {
+      toast.error('Failed to update system status. Check RLS policies.');
+    }
   };
 
   const fetchOrders = async () => {
@@ -308,7 +325,8 @@ const ManagementPortal = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={cycleStatusMode}
-              className={`py-2 px-4 flex items-center gap-2 rounded-lg border transition-all ${
+              disabled={statusLoading}
+              className={`py-2 px-4 flex items-center gap-2 rounded-lg border transition-all disabled:opacity-50 ${
                 statusMode === 'online'
                   ? 'bg-green-500/20 border-green-500/50 text-green-400 hover:bg-green-500/30'
                   : statusMode === 'offline'
@@ -316,8 +334,8 @@ const ManagementPortal = () => {
                     : 'bg-primary/20 border-primary/50 text-primary hover:bg-primary/30'
               }`}
             >
-              <Power className="w-4 h-4" />
-              {statusMode === 'online' ? 'Force ONLINE' : statusMode === 'offline' ? 'Force OFFLINE' : 'Auto (Schedule)'}
+              <Power className={`w-4 h-4 ${statusLoading ? 'animate-spin' : ''}`} />
+              {statusLoading ? 'Updating...' : statusMode === 'online' ? 'Force ONLINE' : statusMode === 'offline' ? 'Force OFFLINE' : 'Auto (Schedule)'}
             </button>
             <span className="text-sm text-muted-foreground">Admin Portal</span>
             <button onClick={fetchOrders} className="btn-secondary py-2 px-4 flex items-center gap-2">
