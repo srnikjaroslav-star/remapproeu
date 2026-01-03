@@ -11,6 +11,7 @@ import PricingPage from "./pages/PricingPage";
 import SuccessPage from "./pages/SuccessPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
+import RefundsPage from "./pages/RefundsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/success" element={<SuccessPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/refunds" element={<RefundsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

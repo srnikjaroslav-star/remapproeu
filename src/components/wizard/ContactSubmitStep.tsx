@@ -97,7 +97,12 @@ const ContactSubmitStep = ({
         <div className="p-4 border border-amber-500/40 bg-amber-500/10 rounded-lg flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-amber-200">
-            <strong>Non-Refundable:</strong> By starting the download of the modified file, you waive your right to a refund as this is custom-made digital content.
+            <strong>Non-Refundable:</strong> Due to the nature of digital goods, all sales are final. 
+            Under EU law (Directive 2011/83/EU), you lose your right of withdrawal once the service 
+            has begun with your express consent. See our{' '}
+            <a href="/refunds" target="_blank" className="text-amber-400 underline hover:text-amber-300">
+              Refund Policy
+            </a>.
           </p>
         </div>
 
@@ -121,7 +126,21 @@ const ContactSubmitStep = ({
             className="mt-1 w-5 h-5 accent-primary"
           />
           <span className="text-sm text-muted-foreground leading-relaxed">
-            I confirm that I have read the <a href="/terms" target="_blank" className="text-primary underline hover:text-primary/80">Terms and Conditions</a> and I am aware that some modifications (e.g., DPF/EGR/AdBlue removal) are strictly for <strong className="text-foreground">motorsport/off-road use</strong>. I take full responsibility for the use of the software in compliance with local laws.
+            I confirm that I have read and agree to the{' '}
+            <a href="/terms" target="_blank" className="text-primary underline hover:text-primary/80">
+              Terms &amp; Conditions
+            </a>
+            ,{' '}
+            <a href="/privacy" target="_blank" className="text-primary underline hover:text-primary/80">
+              Privacy Policy
+            </a>
+            , and{' '}
+            <a href="/refunds" target="_blank" className="text-primary underline hover:text-primary/80">
+              Refund Policy
+            </a>
+            . I acknowledge that some modifications (e.g., DPF/EGR/AdBlue removal) are strictly for{' '}
+            <strong className="text-foreground">motorsport/off-road use only</strong> and I take full 
+            responsibility for ensuring compliance with local laws.
           </span>
         </label>
         {errors.consent && <p className="text-destructive text-sm">{errors.consent}</p>}
