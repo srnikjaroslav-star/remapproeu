@@ -346,7 +346,7 @@ const ManagementPortal = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="w-full max-w-[95%] mx-auto px-8 py-8">
         {/* Revenue Header */}
         <div className="glass-card p-6 mb-8">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -447,22 +447,22 @@ const ManagementPortal = () => {
         </div>
 
         {/* Orders Table */}
-        <div className="glass-card overflow-hidden">
+        <div className="glass-card overflow-hidden bg-background/40 backdrop-blur-xl border border-white/5">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full table-fixed">
               <thead>
-                <tr className="table-header">
-                  <th className="text-left p-4">Order ID</th>
-                  <th className="text-left p-4">Customer</th>
-                  <th className="text-left p-4">Vehicle</th>
-                  <th className="text-left p-4">ECU</th>
-                  <th className="text-left p-4">Services</th>
-                  <th className="text-left p-4">Price</th>
-                  <th className="text-left p-4">Invoice</th>
-                  <th className="text-left p-4">Status</th>
-                  <th className="text-left p-4">Checksum (CRC)</th>
-                  <th className="text-left p-4">Internal Note</th>
-                  <th className="text-left p-4">Actions</th>
+                <tr className="table-header bg-secondary/20">
+                  <th className="text-left p-4 w-[120px]">Order ID</th>
+                  <th className="text-left p-4 w-[180px]">Customer</th>
+                  <th className="text-left p-4 w-[200px]">Vehicle</th>
+                  <th className="text-left p-4 w-[140px]">ECU</th>
+                  <th className="text-left p-4 w-[200px]">Services</th>
+                  <th className="text-left p-4 w-[80px]">Price</th>
+                  <th className="text-left p-4 w-[100px]">Invoice</th>
+                  <th className="text-left p-4 w-[130px]">Status</th>
+                  <th className="text-left p-4 w-[120px]">Checksum (CRC)</th>
+                  <th className="text-left p-4 min-w-[280px]">Internal Note</th>
+                  <th className="text-right p-4 w-[140px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -552,13 +552,13 @@ const ManagementPortal = () => {
                             onChange={(e) => handleFieldChange(order.id, 'internal_note', e.target.value)}
                             onBlur={() => handleFieldBlur(order.id, 'internal_note')}
                             placeholder="Internal note..."
-                            rows={2}
-                            className="w-full min-w-[200px] bg-secondary/50 border border-border/50 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 resize-y min-h-[60px] max-h-[200px]"
+                            rows={3}
+                            className="w-full min-w-[250px] bg-secondary/30 border border-border/30 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 resize-y min-h-[80px] max-h-[200px]"
                           />
                         </div>
                       </td>
                       <td className="p-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-end gap-2">
                           {editingFields[order.id] && (
                             <button
                               onClick={() => handleSaveFields(order.id)}
