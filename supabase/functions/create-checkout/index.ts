@@ -23,50 +23,62 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(STRIPE_SECRET_KEY);
 
-    const { serviceNames, totalAmount, clientReferenceId } = await req.json();
+    const { items, successUrl, cancelUrl, clientReferenceId, customerEmail, customerNote } = await req.json();
 
-    // Validate totalAmount
-    if (typeof totalAmount !== 'number' || totalAmount <= 0) {
-      throw new Error("Invalid totalAmount: must be a positive number");
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      throw new Error('At least one line item is required');
     }
 
-    // Validate serviceNames
-    if (!serviceNames || !Array.isArray(serviceNames) || serviceNames.length === 0) {
-      throw new Error("At least one service name is required");
+    // Validate items
+    for (const item of items) {
+      if (!item || typeof item.name !== 'string' || item.name.trim().length === 0) {
+        throw new Error('Each item must have a valid name');
+      }
+      if (typeof item.price !== 'number' || item.price <= 0) {
+        throw new Error('Each item must have a positive price');
+      }
     }
 
-    const origin = req.headers.get('origin');
-    if (!origin) {
-      throw new Error('Missing Origin header');
+    const origin = req.headers.get('origin') || '';
+    const finalSuccessUrl = successUrl || (origin ? `${origin}/success` : '');
+    const finalCancelUrl = cancelUrl || (origin ? `${origin}/order` : '');
+
+    if (!finalSuccessUrl || !finalCancelUrl) {
+      throw new Error('Missing successUrl/cancelUrl (and Origin header fallback was empty)');
     }
 
-    const orderId = clientReferenceId;
+    const totalAmount = items.reduce((sum: number, item: any) => sum + item.price, 0);
+    const description = items.map((i: any) => i.name).join(', ');
 
-    console.log("Creating checkout session:");
-    console.log("Total amount (EUR):", totalAmount);
-    console.log("Order ID:", orderId);
+    console.log('Creating checkout session:');
+    console.log('Items:', items);
+    console.log('Total amount (EUR):', totalAmount);
+    console.log('Client reference ID:', clientReferenceId);
 
-    // Prevod celkovej ceny na centy (integer)
-    const unitAmount = Math.round(totalAmount * 100);
+    const line_items = items.map((item: any) => ({
+      price_data: {
+        currency: 'eur',
+        product_data: {
+          name: item.name,
+        },
+        unit_amount: Math.round(item.price * 100),
+      },
+      quantity: 1,
+    }));
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [{
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: 'Chiptuning Service - Custom Order',
-            description: 'Professional software optimization',
-          },
-          unit_amount: unitAmount,
-        },
-        quantity: 1,
-      }],
+      line_items,
       mode: 'payment',
-      success_url: `${origin}/success`,
-      cancel_url: `${origin}/order`,
+      success_url: finalSuccessUrl,
+      cancel_url: finalCancelUrl,
+      client_reference_id: clientReferenceId || undefined,
+      customer_email: customerEmail || undefined,
       metadata: {
-        order_id: orderId || '',
+        order_id: clientReferenceId || '',
+        services: description,
+        total_amount: totalAmount.toFixed(2),
+        ...(customerNote && { customer_note: customerNote }),
       },
     });
 

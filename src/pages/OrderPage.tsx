@@ -39,20 +39,21 @@ const OrderPage = () => {
     return total + (service?.price || 0);
   }, 0);
 
-  // Get all selected service names
-  const getSelectedServiceNames = () => {
+  // Get all selected service items for Stripe checkout
+  const getSelectedServiceItems = () => {
     return formData.services
-      .map(id => SERVICES.find(s => s.id === id)?.name)
-      .filter((name): name is string => name !== undefined);
+      .map((id) => SERVICES.find((s) => s.id === id))
+      .filter((service): service is (typeof SERVICES)[number] => Boolean(service))
+      .map((service) => ({ name: service.name, price: service.price }));
   };
 
   const handleSubmit = async (legalConsentAgreed: boolean) => {
     setIsSubmitting(true);
     
     try {
-      const serviceNames = getSelectedServiceNames();
-      
-      if (serviceNames.length === 0) {
+      const items = getSelectedServiceItems();
+
+      if (items.length === 0) {
         toast.error('Please select at least one service');
         setIsSubmitting(false);
         return;
@@ -60,7 +61,7 @@ const OrderPage = () => {
 
       // Generate unique order ID
       const orderId = generateOrderId();
-      
+
       // Store form data in sessionStorage for after payment
       sessionStorage.setItem('pendingOrder', JSON.stringify({
         orderId,
@@ -73,15 +74,13 @@ const OrderPage = () => {
         legalConsent: legalConsentAgreed,
       }));
 
-      // Redirect to Stripe checkout with total amount
+      // Redirect to Stripe checkout with dynamic line items
       await redirectToCheckout({
-        serviceNames,
-        totalAmount: totalPrice,
+        items,
         orderId,
         customerEmail: formData.customer.email,
         customerNote: formData.customerNote,
       });
-      
     } catch (error) {
       console.error('Submit error:', error);
       toast.error('Payment initialization failed. Please try again.');

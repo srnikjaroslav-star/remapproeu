@@ -26,8 +26,7 @@ const PricingPage = () => {
     try {
       const orderId = generateOrderId();
       await redirectToCheckout({
-        serviceNames: [service.name],
-        totalAmount: service.price,
+        items: [{ name: service.name, price: service.price }],
         orderId,
         customerEmail,
       });
