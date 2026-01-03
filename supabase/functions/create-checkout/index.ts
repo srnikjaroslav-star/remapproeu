@@ -23,19 +23,25 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(STRIPE_SECRET_KEY);
 
-    const { items, successUrl, cancelUrl, clientReferenceId, customerEmail, customerNote } = await req.json();
+    const { items, email, successUrl, cancelUrl, metadata } = await req.json();
+
+    console.log('Received request body:', { items, email, metadata });
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       throw new Error('At least one line item is required');
     }
 
-    // Validate items
+    if (!email || !email.includes('@')) {
+      throw new Error('Valid email address is required');
+    }
+
+    // Validate items - expect { name, amount } where amount is in cents
     for (const item of items) {
       if (!item || typeof item.name !== 'string' || item.name.trim().length === 0) {
         throw new Error('Each item must have a valid name');
       }
-      if (typeof item.price !== 'number' || item.price <= 0) {
-        throw new Error('Each item must have a positive price');
+      if (typeof item.amount !== 'number' || item.amount <= 0) {
+        throw new Error('Each item must have a positive amount (in cents)');
       }
     }
 
@@ -47,13 +53,13 @@ Deno.serve(async (req) => {
       throw new Error('Missing successUrl/cancelUrl (and Origin header fallback was empty)');
     }
 
-    const totalAmount = items.reduce((sum: number, item: any) => sum + item.price, 0);
+    const totalAmount = items.reduce((sum: number, item: any) => sum + item.amount, 0);
     const description = items.map((i: any) => i.name).join(', ');
 
     console.log('Creating checkout session:');
     console.log('Items:', items);
-    console.log('Total amount (EUR):', totalAmount);
-    console.log('Client reference ID:', clientReferenceId);
+    console.log('Total amount (cents):', totalAmount);
+    console.log('Metadata:', metadata);
 
     const line_items = items.map((item: any) => ({
       price_data: {
@@ -61,7 +67,7 @@ Deno.serve(async (req) => {
         product_data: {
           name: item.name,
         },
-        unit_amount: Math.round(item.price * 100),
+        unit_amount: item.amount, // Already in cents
       },
       quantity: 1,
     }));
@@ -72,14 +78,16 @@ Deno.serve(async (req) => {
       mode: 'payment',
       success_url: finalSuccessUrl,
       cancel_url: finalCancelUrl,
-      client_reference_id: clientReferenceId || undefined,
-      customer_email: customerEmail || undefined,
-      allow_promotion_codes: true, // Enable promo/coupon codes for testing
+      client_reference_id: metadata?.orderId || undefined,
+      customer_email: email,
+      allow_promotion_codes: true,
       metadata: {
-        order_id: clientReferenceId || '',
+        order_id: metadata?.orderId || '',
         services: description,
-        total_amount: totalAmount.toFixed(2),
-        ...(customerNote && { customer_note: customerNote }),
+        total_amount: (totalAmount / 100).toFixed(2),
+        order_type: metadata?.orderType || 'tuning',
+        source: metadata?.source || 'web',
+        ...(metadata?.customerNote && { customer_note: metadata.customerNote }),
       },
     });
 
