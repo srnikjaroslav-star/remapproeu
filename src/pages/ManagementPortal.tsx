@@ -86,10 +86,43 @@ const ManagementPortal = () => {
     setEditingFields(prev => ({
       ...prev,
       [orderId]: {
-        ...prev[orderId],
+        checksum_crc: prev[orderId]?.checksum_crc ?? orders.find(o => o.id === orderId)?.checksum_crc ?? '',
+        internal_note: prev[orderId]?.internal_note ?? orders.find(o => o.id === orderId)?.internal_note ?? '',
         [field]: value
       }
     }));
+  };
+
+  const handleFieldBlur = async (orderId: string, field: 'checksum_crc' | 'internal_note') => {
+    const order = orders.find(o => o.id === orderId);
+    const editedValue = editingFields[orderId]?.[field];
+    const originalValue = order?.[field] ?? '';
+    
+    // Only save if value actually changed
+    if (editedValue === undefined || editedValue === originalValue) return;
+    
+    setSavingId(orderId);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ [field]: editedValue || null })
+        .eq('id', orderId);
+
+      if (error) throw error;
+      toast.success(`${field === 'checksum_crc' ? 'Checksum CRC' : 'Internal Note'} saved`);
+      await fetchOrders();
+      // Clear the editing state for this order
+      setEditingFields(prev => {
+        const newState = { ...prev };
+        delete newState[orderId];
+        return newState;
+      });
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save field');
+    } finally {
+      setSavingId(null);
+    }
   };
 
   const handleSaveFields = async (orderId: string) => {
@@ -109,6 +142,12 @@ const ManagementPortal = () => {
       if (error) throw error;
       toast.success('Admin fields saved');
       await fetchOrders();
+      // Clear the editing state
+      setEditingFields(prev => {
+        const newState = { ...prev };
+        delete newState[orderId];
+        return newState;
+      });
     } catch (error) {
       console.error('Save error:', error);
       toast.error('Failed to save fields');
@@ -455,6 +494,7 @@ const ManagementPortal = () => {
                           type="text"
                           value={getEditableValue(order, 'checksum_crc')}
                           onChange={(e) => handleFieldChange(order.id, 'checksum_crc', e.target.value)}
+                          onBlur={() => handleFieldBlur(order.id, 'checksum_crc')}
                           placeholder="CRC..."
                           className="w-full bg-secondary/50 border border-border/50 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
                         />
@@ -464,6 +504,7 @@ const ManagementPortal = () => {
                           type="text"
                           value={getEditableValue(order, 'internal_note')}
                           onChange={(e) => handleFieldChange(order.id, 'internal_note', e.target.value)}
+                          onBlur={() => handleFieldBlur(order.id, 'internal_note')}
                           placeholder="Internal note..."
                           className="w-full bg-secondary/50 border border-border/50 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
                         />
