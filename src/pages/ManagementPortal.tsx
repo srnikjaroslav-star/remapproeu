@@ -54,22 +54,30 @@ const ManagementPortal = () => {
   }, []);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    console.log('Updating order status:', { orderId, newStatus });
+    
     // Optimistic UI update
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('orders')
         .update({ status: newStatus })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .select();
 
-      if (error) throw error;
+      console.log('Update response:', { data, error });
+
+      if (error) {
+        console.error('Supabase update error:', error);
+        throw error;
+      }
 
       toast.success(`Status updated to ${newStatus.charAt(0).toUpperCase()}${newStatus.slice(1)}`);
       await fetchOrders();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Update error:', error);
-      toast.error('Failed to update status');
+      toast.error(`Failed to update status: ${error.message || 'Unknown error'}`);
       await fetchOrders();
     }
   };
