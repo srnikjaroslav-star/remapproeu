@@ -318,7 +318,7 @@ const ManagementPortal = () => {
 
       {/* Header */}
       <header className="border-b border-border/50 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
-        <div className="w-full max-w-[70%] mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="w-full max-w-[1440px] mx-auto px-12 py-4 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link to="/">
               <Logo size="sm" />
@@ -349,7 +349,7 @@ const ManagementPortal = () => {
         </div>
       </header>
 
-      <main className="w-full max-w-[70%] mx-auto px-6 py-8">
+      <main className="w-full max-w-[1440px] mx-auto px-12 py-8">
         {/* Revenue Header */}
         <div className="glass-card p-6 mb-8">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
@@ -452,20 +452,20 @@ const ManagementPortal = () => {
         {/* Orders Table */}
         <div className="rounded-xl overflow-hidden bg-background/40 backdrop-blur-xl border border-primary/20 shadow-[0_0_30px_rgba(59,130,246,0.15)]">
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed text-sm">
+            <table className="w-full table-fixed text-base">
               <thead>
                 <tr className="bg-primary/20 border border-primary/40">
-                  <th className="text-left p-3 w-[85px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Order ID</th>
-                  <th className="text-left p-3 w-[130px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Customer</th>
-                  <th className="text-left p-3 w-[180px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Vehicle</th>
-                  <th className="text-left p-3 w-[100px] text-xs font-semibold uppercase tracking-wide align-middle text-white">ECU</th>
-                  <th className="text-left p-3 w-[160px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Services</th>
-                  <th className="text-left p-3 w-[55px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Price</th>
-                  <th className="text-left p-3 w-[70px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Invoice</th>
-                  <th className="text-left p-3 w-[95px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Status</th>
-                  <th className="text-left p-3 w-[90px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Checksum</th>
-                  <th className="text-left p-3 w-[140px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Internal Note</th>
-                  <th className="text-right p-3 w-[100px] text-xs font-semibold uppercase tracking-wide align-middle text-white">Actions</th>
+                  <th className="text-left p-3 w-[100px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Order ID</th>
+                  <th className="text-left p-3 w-[150px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Customer</th>
+                  <th className="text-left p-3 w-[200px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Vehicle</th>
+                  <th className="text-left p-3 w-[110px] text-sm font-semibold uppercase tracking-wide align-middle text-white">ECU</th>
+                  <th className="text-left p-3 w-[180px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Services</th>
+                  <th className="text-left p-3 w-[70px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Price</th>
+                  <th className="text-left p-3 w-[85px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Invoice</th>
+                  <th className="text-left p-3 w-[110px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Status</th>
+                  <th className="text-left p-3 w-[100px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Checksum</th>
+                  <th className="text-left p-3 w-[160px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Internal Note</th>
+                  <th className="text-right p-3 w-[110px] text-sm font-semibold uppercase tracking-wide align-middle text-white sticky right-0 bg-primary/30 backdrop-blur-sm">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -591,7 +591,7 @@ const ManagementPortal = () => {
                           );
                         })()}
                       </td>
-                      <td className="p-3">
+                      <td className="p-3 sticky right-0 bg-background/95 backdrop-blur-sm">
                         <div className="flex items-center justify-end gap-1">
                           {editingFields[order.id] && (
                             <button
@@ -600,7 +600,7 @@ const ManagementPortal = () => {
                               className="p-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
                               title="Save Admin Fields"
                             >
-                              <Save className={`w-3.5 h-3.5 ${savingId === order.id ? 'animate-pulse' : ''}`} />
+                              <Save className={`w-4 h-4 ${savingId === order.id ? 'animate-pulse' : ''}`} />
                             </button>
                           )}
                           {order.file_url && (
@@ -610,7 +610,7 @@ const ManagementPortal = () => {
                               className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
                               title="Download Original"
                             >
-                              <Download className="w-3.5 h-3.5" />
+                              <Download className="w-4 h-4" />
                             </a>
                           )}
                           <button
@@ -619,7 +619,7 @@ const ManagementPortal = () => {
                             className="p-1.5 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary transition-colors"
                             title="Upload Result"
                           >
-                            <Upload className={`w-3.5 h-3.5 ${uploadingId === order.id ? 'animate-pulse' : ''}`} />
+                            <Upload className={`w-4 h-4 ${uploadingId === order.id ? 'animate-pulse' : ''}`} />
                           </button>
                           {order.result_file_url && (
                             <a
@@ -628,7 +628,7 @@ const ManagementPortal = () => {
                               className="p-1.5 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-500 transition-colors"
                               title="Download Result"
                             >
-                              <Eye className="w-3.5 h-3.5" />
+                              <Eye className="w-4 h-4" />
                             </a>
                           )}
                         </div>
