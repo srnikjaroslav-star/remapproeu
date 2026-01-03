@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Zap, Shield, Clock, Car, ChevronRight, Gauge, Settings } from 'lucide-react';
 import Logo from '@/components/Logo';
+import SystemStatus from '@/components/SystemStatus';
 
 const Index = () => {
   return (
@@ -14,7 +15,10 @@ const Index = () => {
       {/* Header */}
       <header className="relative border-b border-border/50 backdrop-blur-sm bg-background/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Logo size="md" />
+          <div className="flex items-center gap-6">
+            <Logo size="md" />
+            <SystemStatus />
+          </div>
           <nav className="hidden md:flex items-center gap-8">
             <Link to="/track" className="text-muted-foreground hover:text-foreground transition-colors">
               Track Order

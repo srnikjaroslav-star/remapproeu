@@ -19,6 +19,7 @@ export interface Order {
   file_url: string | null;
   result_file_url: string | null;
   legal_consent: boolean;
+  customer_note: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -37,6 +38,7 @@ export interface OrderInsert {
   file_url?: string | null;
   result_file_url?: string | null;
   legal_consent: boolean;
+  customer_note?: string | null;
 }
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

@@ -10,6 +10,7 @@ import { SERVICES } from '@/data/services';
 import { redirectToCheckout, generateOrderId } from '@/lib/stripe';
 import { ArrowLeft, Zap, Shield, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SystemStatus from '@/components/SystemStatus';
 
 const WIZARD_STEPS = ['Vehicle', 'Services & Upload', 'Contact'];
 
@@ -18,6 +19,7 @@ interface FormData {
   vehicle: { brand: string; model: string; fuelType: string; year: number; ecuType: string; engineDisplacement?: string; enginePower?: string };
   services: string[];
   fileUrl: string;
+  customerNote: string;
 }
 
 const OrderPage = () => {
@@ -29,6 +31,7 @@ const OrderPage = () => {
     vehicle: { brand: '', model: '', fuelType: '', year: 0, ecuType: '', engineDisplacement: '', enginePower: '' },
     services: [],
     fileUrl: '',
+    customerNote: '',
   });
 
   const totalPrice = formData.services.reduce((total, id) => {
@@ -69,15 +72,17 @@ const OrderPage = () => {
         vehicle: formData.vehicle,
         services: formData.services,
         fileUrl: formData.fileUrl,
+        customerNote: formData.customerNote,
         totalPrice,
         legalConsent: legalConsentAgreed,
       }));
 
-      // Redirect to Stripe checkout with order ID and email
+      // Redirect to Stripe checkout with order ID, email, and customer note
       await redirectToCheckout({
         priceId,
         orderId,
         customerEmail: formData.customer.email,
+        customerNote: formData.customerNote,
       });
       
     } catch (error) {
@@ -105,6 +110,8 @@ const OrderPage = () => {
             onServicesUpdate={(services) => setFormData({ ...formData, services })}
             onFileUploaded={(url) => setFormData({ ...formData, fileUrl: url })}
             fileUrl={formData.fileUrl}
+            customerNote={formData.customerNote}
+            onCustomerNoteUpdate={(note) => setFormData({ ...formData, customerNote: note })}
             onNext={() => setCurrentStep(2)}
             onBack={() => setCurrentStep(0)}
           />
@@ -135,6 +142,7 @@ const OrderPage = () => {
             <Logo size="sm" />
           </Link>
           <div className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
+            <SystemStatus />
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-primary" />
               Fast Delivery

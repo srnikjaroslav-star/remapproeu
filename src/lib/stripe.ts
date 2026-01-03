@@ -17,9 +17,10 @@ interface CheckoutOptions {
   priceId: string;
   orderId: string;
   customerEmail: string;
+  customerNote?: string;
 }
 
-export const redirectToCheckout = async ({ priceId, orderId, customerEmail }: CheckoutOptions) => {
+export const redirectToCheckout = async ({ priceId, orderId, customerEmail, customerNote }: CheckoutOptions) => {
   const successUrl = `https://remappro.eu/track?id=${encodeURIComponent(orderId)}&email=${encodeURIComponent(customerEmail)}`;
   const cancelUrl = `${window.location.origin}/order`;
 
@@ -30,6 +31,7 @@ export const redirectToCheckout = async ({ priceId, orderId, customerEmail }: Ch
       cancelUrl,
       clientReferenceId: orderId,
       customerEmail,
+      customerNote,
     },
   });
 

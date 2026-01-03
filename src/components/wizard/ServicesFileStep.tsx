@@ -8,6 +8,8 @@ interface ServicesFileStepProps {
   onServicesUpdate: (services: string[]) => void;
   onFileUploaded: (url: string) => void;
   fileUrl: string;
+  customerNote: string;
+  onCustomerNoteUpdate: (note: string) => void;
   onNext: () => void;
   onBack: () => void;
 }
@@ -17,6 +19,8 @@ const ServicesFileStep = ({
   onServicesUpdate, 
   onFileUploaded,
   fileUrl,
+  customerNote,
+  onCustomerNoteUpdate,
   onNext, 
   onBack 
 }: ServicesFileStepProps) => {
@@ -224,6 +228,18 @@ const ServicesFileStep = ({
             <p>{error}</p>
           </div>
         )}
+        
+        {/* Customer Note Field */}
+        <div className="mt-6">
+          <input
+            type="text"
+            value={customerNote}
+            onChange={(e) => onCustomerNoteUpdate(e.target.value)}
+            placeholder="Additional info or problem description"
+            className="input-field w-full"
+            maxLength={500}
+          />
+        </div>
       </div>
       
       <div className="flex justify-between">

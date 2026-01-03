@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const SENDER = "REMAPPRO <info@remappro.eu>";
 const SITE_URL = "https://remappro.eu";
+const ADMIN_EMAIL = "info@remappro.eu";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,9 +48,12 @@ serve(async (req) => {
       const customerEmail = session.customer_details?.email || session.customer_email;
       const customerName = session.customer_details?.name || "Customer";
       const orderId = session.client_reference_id || session.metadata?.order_id;
+      const customerNote = session.metadata?.customer_note || "";
+      const amountTotal = session.amount_total ? (session.amount_total / 100).toFixed(2) : "N/A";
       
       console.log("Customer email:", customerEmail);
       console.log("Order ID from session:", orderId);
+      console.log("Customer note:", customerNote);
 
       // Create Supabase client
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -58,7 +62,7 @@ serve(async (req) => {
 
       // Try to find or create order
       let order = null;
-      let orderNumber = null;
+      let orderNumber = orderId || `RP-${Date.now().toString(36).toUpperCase()}`;
 
       if (orderId) {
         // Fetch order by ID
@@ -69,12 +73,14 @@ serve(async (req) => {
           .single();
         
         order = existingOrder;
-        orderNumber = order?.order_number || `RP-${orderId.slice(0, 6).toUpperCase()}`;
+        if (order?.order_number) {
+          orderNumber = order.order_number;
+        }
       }
 
-      // Send confirmation email via Resend
+      // Send confirmation email to customer via Resend
       if (customerEmail && RESEND_API_KEY) {
-        const trackingLink = `${SITE_URL}/check-order`;
+        const trackingLink = `${SITE_URL}/track?id=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(customerEmail)}`;
         
         const emailHtml = `
           <!DOCTYPE html>
@@ -115,7 +121,6 @@ serve(async (req) => {
                           Thank you for your purchase! Your tuning file is being processed by our engineers.
                         </p>
                         
-                        ${orderNumber ? `
                         <!-- Order Box -->
                         <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 12px; margin-bottom: 30px;">
                           <tr>
@@ -129,7 +134,6 @@ serve(async (req) => {
                             </td>
                           </tr>
                         </table>
-                        ` : ''}
                         
                         <p style="margin: 0 0 20px; color: #cccccc; font-size: 16px; line-height: 1.6;">
                           You can track your order progress using the link below:
@@ -181,13 +185,140 @@ serve(async (req) => {
           body: JSON.stringify({
             from: SENDER,
             to: [customerEmail],
-            subject: orderNumber ? `Order Confirmed - ${orderNumber}` : `Order Confirmed - Your Tuning File is being processed!`,
+            subject: `Order Confirmed - ${orderNumber}`,
             html: emailHtml,
           }),
         });
 
         const emailResult = await emailRes.text();
-        console.log("Confirmation email sent:", emailRes.ok, emailResult);
+        console.log("Customer confirmation email sent:", emailRes.ok, emailResult);
+      }
+
+      // Send admin notification email
+      if (RESEND_API_KEY) {
+        const adminEmailHtml = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; padding: 40px 20px;">
+              <tr>
+                <td align="center">
+                  <table width="600" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%); border-radius: 16px; border: 1px solid #333;">
+                    <!-- Header -->
+                    <tr>
+                      <td style="padding: 40px 40px 20px; text-align: center; border-bottom: 1px solid #333;">
+                        <h1 style="margin: 0; font-size: 28px; font-weight: bold; color: #ff6b00;">
+                          🔔 NEW ORDER RECEIVED
+                        </h1>
+                      </td>
+                    </tr>
+                    
+                    <!-- Main Content -->
+                    <tr>
+                      <td style="padding: 40px;">
+                        <!-- Order Info -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(255, 107, 0, 0.1); border: 1px solid rgba(255, 107, 0, 0.3); border-radius: 12px; margin-bottom: 20px;">
+                          <tr>
+                            <td style="padding: 20px;">
+                              <p style="margin: 0 0 8px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                                Order ID
+                              </p>
+                              <p style="margin: 0 0 15px; color: #ff6b00; font-size: 24px; font-weight: bold; font-family: 'Monaco', 'Consolas', monospace;">
+                                ${orderNumber}
+                              </p>
+                              <p style="margin: 0 0 8px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                                Amount
+                              </p>
+                              <p style="margin: 0; color: #00ff88; font-size: 20px; font-weight: bold;">
+                                €${amountTotal}
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        <!-- Customer Info -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 12px; margin-bottom: 20px;">
+                          <tr>
+                            <td style="padding: 20px;">
+                              <p style="margin: 0 0 8px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                                Customer
+                              </p>
+                              <p style="margin: 0 0 5px; color: #ffffff; font-size: 16px;">
+                                ${customerName}
+                              </p>
+                              <p style="margin: 0; color: #00d4ff; font-size: 14px;">
+                                ${customerEmail}
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        ${customerNote ? `
+                        <!-- Customer Note -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(255, 255, 0, 0.1); border: 1px solid rgba(255, 255, 0, 0.3); border-radius: 12px; margin-bottom: 20px;">
+                          <tr>
+                            <td style="padding: 20px;">
+                              <p style="margin: 0 0 8px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                                ⚠️ Customer Note
+                              </p>
+                              <p style="margin: 0; color: #ffff88; font-size: 14px; line-height: 1.6;">
+                                ${customerNote}
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+                        ` : ''}
+                        
+                        <!-- CTA Button -->
+                        <table width="100%" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td align="center">
+                              <a href="${SITE_URL}/manage" 
+                                 style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #ff6b00 0%, #ff9500 100%); color: #000000; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px;">
+                                Open Admin Portal
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                      <td style="padding: 20px 40px; border-top: 1px solid #333; text-align: center;">
+                        <p style="margin: 0; color: #666; font-size: 12px;">
+                          REMAPPRO Admin Notification
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `;
+
+        const adminEmailRes = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${RESEND_API_KEY}`,
+          },
+          body: JSON.stringify({
+            from: SENDER,
+            to: [ADMIN_EMAIL],
+            subject: `🔔 New Order: ${orderNumber} - €${amountTotal}`,
+            html: adminEmailHtml,
+          }),
+        });
+
+        const adminEmailResult = await adminEmailRes.text();
+        console.log("Admin notification email sent:", adminEmailRes.ok, adminEmailResult);
       }
 
       return new Response(JSON.stringify({ received: true }), {
