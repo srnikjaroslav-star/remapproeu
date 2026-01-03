@@ -7,7 +7,7 @@ import VehicleSpecsStep from '@/components/wizard/VehicleSpecsStep';
 import ServicesFileStep from '@/components/wizard/ServicesFileStep';
 import ContactSubmitStep from '@/components/wizard/ContactSubmitStep';
 import { SERVICES } from '@/data/services';
-import { redirectToCheckout } from '@/lib/stripe';
+import { redirectToCheckout, generateOrderId } from '@/lib/stripe';
 import { ArrowLeft, Zap, Shield, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -36,30 +36,35 @@ const OrderPage = () => {
     return total + (service?.price || 0);
   }, 0);
 
-  // Get all selected services with their Stripe Price IDs
-  const getSelectedServicesWithPriceIds = () => {
-    return formData.services
-      .map(id => SERVICES.find(s => s.id === id))
-      .filter(s => s && s.stripePriceId);
+  // Get first selected service with Stripe Price ID
+  const getFirstServicePriceId = (): string | null => {
+    for (const id of formData.services) {
+      const service = SERVICES.find(s => s.id === id);
+      if (service?.stripePriceId) {
+        return service.stripePriceId;
+      }
+    }
+    return null;
   };
 
   const handleSubmit = async (legalConsentAgreed: boolean) => {
-    console.log('Starting order submission...');
-    console.log('Selected services:', formData.services);
-    
     setIsSubmitting(true);
     
     try {
-      // Get selected services with price IDs
-      const selectedServicesWithPrices = getSelectedServicesWithPriceIds();
+      const priceId = getFirstServicePriceId();
       
-      // Use first service's price ID or test price ID
-      const priceId = selectedServicesWithPrices[0]?.stripePriceId || 'price_1Skvfv4DSSkujAMNfohdnL2A';
-      
-      console.log('Starting payment for:', priceId);
+      if (!priceId) {
+        toast.error('Please select at least one service');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Generate unique order ID
+      const orderId = generateOrderId();
       
       // Store form data in sessionStorage for after payment
       sessionStorage.setItem('pendingOrder', JSON.stringify({
+        orderId,
         customer: formData.customer,
         vehicle: formData.vehicle,
         services: formData.services,
@@ -68,8 +73,12 @@ const OrderPage = () => {
         legalConsent: legalConsentAgreed,
       }));
 
-      // Redirect to Stripe checkout
-      await redirectToCheckout(priceId);
+      // Redirect to Stripe checkout with order ID and email
+      await redirectToCheckout({
+        priceId,
+        orderId,
+        customerEmail: formData.customer.email,
+      });
       
     } catch (error) {
       console.error('Submit error:', error);

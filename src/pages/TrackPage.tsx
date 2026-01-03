@@ -73,6 +73,32 @@ const TrackPage = () => {
     }
   }, [searchParams, hasAutoSearched]);
 
+  // Real-time subscription for order updates
+  useEffect(() => {
+    if (!order?.id) return;
+
+    const channel = supabase
+      .channel(`order-${order.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${order.id}`,
+        },
+        (payload) => {
+          console.log('Order updated:', payload);
+          setOrder(payload.new as Order);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [order?.id]);
+
   const getStatusInfo = (status: string) => {
     switch (status) {
       case 'pending':
@@ -178,6 +204,12 @@ const TrackPage = () => {
                   {new Date(order.created_at).toLocaleDateString()}
                 </p>
               </div>
+            </div>
+
+            {/* Real-time indicator */}
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+              Live updates enabled
             </div>
 
             {/* Status Card */}
