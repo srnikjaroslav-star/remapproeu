@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Search, Package, Clock, CheckCircle, Download, AlertCircle, Mail, Hash } from 'lucide-react';
+import { Search, Package, Clock, CheckCircle, Download, AlertCircle, Mail, Hash, XCircle } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { supabase, Order } from '@/integrations/supabase/client';
 import { SERVICES } from '@/data/services';
@@ -102,13 +102,53 @@ const TrackPage = () => {
   const getStatusInfo = (status: string) => {
     switch (status) {
       case 'pending':
-        return { icon: Clock, color: 'text-orange-500', bg: 'bg-orange-500/10', label: 'Pending', progress: 25 };
+      case 'paid':
+        return { 
+          icon: Clock, 
+          color: 'text-amber-500', 
+          bg: 'bg-amber-500/10', 
+          borderColor: 'border-amber-500/30',
+          label: 'File Received - Waiting for Engineer', 
+          progress: 25 
+        };
       case 'processing':
-        return { icon: Package, color: 'text-primary', bg: 'bg-primary/10', label: 'Processing', progress: 50 };
+        return { 
+          icon: Package, 
+          color: 'text-blue-500', 
+          bg: 'bg-blue-500/10', 
+          borderColor: 'border-blue-500/30',
+          label: 'Optimization in Progress', 
+          progress: 50 
+        };
       case 'completed':
-        return { icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', label: 'Completed', progress: 100 };
+      case 'ready':
+        return { 
+          icon: CheckCircle, 
+          color: 'text-green-500', 
+          bg: 'bg-green-500/10', 
+          borderColor: 'border-green-500/30',
+          label: 'File Ready for Download', 
+          progress: 100 
+        };
+      case 'canceled':
+      case 'cancelled':
+        return { 
+          icon: XCircle, 
+          color: 'text-red-500', 
+          bg: 'bg-red-500/10', 
+          borderColor: 'border-red-500/30',
+          label: 'Order Issue - Contact Support', 
+          progress: 0 
+        };
       default:
-        return { icon: Clock, color: 'text-muted-foreground', bg: 'bg-muted', label: status, progress: 0 };
+        return { 
+          icon: Clock, 
+          color: 'text-muted-foreground', 
+          bg: 'bg-muted', 
+          borderColor: 'border-border',
+          label: status, 
+          progress: 0 
+        };
     }
   };
 
@@ -213,7 +253,7 @@ const TrackPage = () => {
             </div>
 
             {/* Status Card */}
-            <div className="glass-card p-8">
+            <div className={`glass-card p-8 ${getStatusInfo(order.status).borderColor}`}>
               {(() => {
                 const statusInfo = getStatusInfo(order.status);
                 const StatusIcon = statusInfo.icon;
@@ -222,9 +262,11 @@ const TrackPage = () => {
                     <div className="flex items-center justify-between mb-6">
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Order Status</p>
-                        <div className="flex items-center gap-2">
-                          <StatusIcon className={`w-6 h-6 ${statusInfo.color}`} />
-                          <span className={`text-xl font-bold ${statusInfo.color}`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-full ${statusInfo.bg}`}>
+                            <StatusIcon className={`w-6 h-6 ${statusInfo.color}`} />
+                          </div>
+                          <span className={`text-lg font-bold ${statusInfo.color}`}>
                             {statusInfo.label}
                           </span>
                         </div>
@@ -233,9 +275,17 @@ const TrackPage = () => {
                         {statusInfo.progress}%
                       </div>
                     </div>
-                    <div className="progress-bar">
+                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
                       <div 
-                        className="progress-bar-fill"
+                        className={`h-full transition-all duration-500 rounded-full ${
+                          order.status === 'canceled' || order.status === 'cancelled' 
+                            ? 'bg-red-500' 
+                            : order.status === 'completed' || order.status === 'ready'
+                              ? 'bg-green-500'
+                              : order.status === 'processing'
+                                ? 'bg-blue-500'
+                                : 'bg-amber-500'
+                        }`}
                         style={{ width: `${statusInfo.progress}%` }}
                       />
                     </div>
@@ -303,12 +353,22 @@ const TrackPage = () => {
             )}
 
             {/* Pending/Processing Message */}
-            {order.status !== 'completed' && (
-              <div className="glass-card p-6 text-center">
+            {order.status !== 'completed' && order.status !== 'ready' && order.status !== 'canceled' && order.status !== 'cancelled' && (
+              <div className={`glass-card p-6 text-center ${getStatusInfo(order.status).borderColor}`}>
                 <p className="text-muted-foreground">
-                  {order.status === 'pending' 
-                    ? 'Your order is in queue. Our engineers will start processing soon.'
-                    : 'Your file is being processed. You will receive an email when ready.'}
+                  {order.status === 'pending' || order.status === 'paid'
+                    ? 'Your file has been received. Our engineers will begin processing shortly.'
+                    : 'Your file is being optimized. You will receive an email notification when it\'s ready.'}
+                </p>
+              </div>
+            )}
+
+            {/* Canceled Message */}
+            {(order.status === 'canceled' || order.status === 'cancelled') && (
+              <div className="glass-card p-6 text-center border-red-500/30">
+                <p className="text-red-400 font-medium mb-2">There was an issue with your order.</p>
+                <p className="text-muted-foreground text-sm">
+                  Please contact support at <a href="mailto:info@remappro.eu" className="text-primary hover:underline">info@remappro.eu</a>
                 </p>
               </div>
             )}
