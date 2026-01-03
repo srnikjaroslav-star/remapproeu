@@ -558,7 +558,7 @@ const ManagementPortal = () => {
                           onChange={(e) => handleFieldChange(order.id, 'checksum_crc', e.target.value)}
                           onBlur={() => handleFieldBlur(order.id, 'checksum_crc')}
                           placeholder="CRC..."
-                          className="w-full bg-secondary/50 border border-border/50 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          className="w-full h-8 bg-secondary/50 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/50"
                         />
                       </td>
                       <td className="p-3">
@@ -567,24 +567,24 @@ const ManagementPortal = () => {
                           return (
                             <div 
                               onClick={() => setNoteModalOrder(order)}
-                              className="cursor-pointer group"
+                              className="h-8 flex items-center cursor-pointer group border border-gray-600 rounded px-2 bg-secondary/50 hover:bg-secondary/70 transition-colors"
                             >
                               {note && note.length > 25 ? (
                                 <SmartTooltip content={note} maxWidth="400px">
-                                  <div className="flex items-center gap-1">
-                                    <p className="text-xs truncate max-w-[110px] text-muted-foreground group-hover:text-foreground transition-colors">{note}</p>
-                                    <Edit3 className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                                  <div className="flex items-center gap-1 w-full">
+                                    <p className="text-xs truncate max-w-[100px] text-white">{note}</p>
+                                    <Edit3 className="w-3 h-3 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0 ml-auto" />
                                   </div>
                                 </SmartTooltip>
                               ) : note ? (
-                                <div className="flex items-center gap-1">
-                                  <p className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">{note}</p>
-                                  <Edit3 className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                                <div className="flex items-center gap-1 w-full">
+                                  <p className="text-xs text-white">{note}</p>
+                                  <Edit3 className="w-3 h-3 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0 ml-auto" />
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-1 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors">
-                                  <span className="text-xs">Add note</span>
-                                  <Edit3 className="w-3 h-3" />
+                                <div className="flex items-center gap-1 w-full text-gray-400 group-hover:text-white transition-colors">
+                                  <span className="text-xs">Add note...</span>
+                                  <Edit3 className="w-3 h-3 ml-auto" />
                                 </div>
                               )}
                             </div>
