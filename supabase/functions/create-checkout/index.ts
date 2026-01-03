@@ -35,13 +35,13 @@ Deno.serve(async (req) => {
       throw new Error('Valid email address is required');
     }
 
-    // Validate items - expect { name, amount } where amount is in cents
+    // Validate items - expect { name, amount } where amount is in EUR
     for (const item of items) {
       if (!item || typeof item.name !== 'string' || item.name.trim().length === 0) {
         throw new Error('Each item must have a valid name');
       }
       if (typeof item.amount !== 'number' || item.amount <= 0) {
-        throw new Error('Each item must have a positive amount (in cents)');
+        throw new Error('Each item must have a positive amount (in EUR)');
       }
     }
 
@@ -53,12 +53,12 @@ Deno.serve(async (req) => {
       throw new Error('Missing successUrl/cancelUrl (and Origin header fallback was empty)');
     }
 
-    const totalAmount = items.reduce((sum: number, item: any) => sum + item.amount, 0);
+    const totalAmountEur = items.reduce((sum: number, item: any) => sum + item.amount, 0);
     const description = items.map((i: any) => i.name).join(', ');
 
     console.log('Creating checkout session:');
     console.log('Items:', items);
-    console.log('Total amount (cents):', totalAmount);
+    console.log('Total amount (EUR):', totalAmountEur);
     console.log('Metadata:', metadata);
 
     const line_items = items.map((item: any) => ({
@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
         product_data: {
           name: item.name,
         },
-        unit_amount: item.amount, // Already in cents
+        unit_amount: Math.round(item.amount * 100), // Convert EUR to cents for Stripe
       },
       quantity: 1,
     }));
@@ -84,10 +84,10 @@ Deno.serve(async (req) => {
       metadata: {
         order_id: metadata?.orderId || '',
         services: description,
-        total_amount: (totalAmount / 100).toFixed(2),
+        total_amount_eur: totalAmountEur.toFixed(2),
         order_type: metadata?.orderType || 'tuning',
         source: metadata?.source || 'web',
-        ...(metadata?.customerNote && { customer_note: metadata.customerNote }),
+        customer_note: metadata?.customerNote || '',
       },
     });
 
