@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 import { Zap, ShoppingCart, Loader2 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { SERVICES, Service } from '@/data/services';
-import { redirectToCheckout } from '@/lib/stripe';
+import { redirectToCheckout, generateOrderId } from '@/lib/stripe';
 import { toast } from 'sonner';
 
 const PricingPage = () => {
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [email, setEmail] = useState('');
 
   const stageServices = SERVICES.filter((s) => s.category === 'stage');
   const removalServices = SERVICES.filter((s) => s.category === 'removal');
@@ -19,9 +20,21 @@ const PricingPage = () => {
       return;
     }
 
+    // For quick purchases, we need an email - prompt user
+    const customerEmail = prompt('Please enter your email address for order confirmation:');
+    if (!customerEmail || !customerEmail.includes('@')) {
+      toast.error('A valid email address is required to proceed.');
+      return;
+    }
+
     setLoadingId(service.id);
     try {
-      await redirectToCheckout(service.stripePriceId);
+      const orderId = generateOrderId();
+      await redirectToCheckout({
+        priceId: service.stripePriceId,
+        orderId,
+        customerEmail,
+      });
     } catch (error: any) {
       console.error('Checkout error:', error);
       toast.error(error.message || 'Failed to initiate checkout. Please try again.');
