@@ -31,7 +31,11 @@ const PricingPage = () => {
     try {
       const orderId = generateOrderId();
       await redirectToCheckout({
-        priceId: service.stripePriceId,
+        services: [{
+          priceId: service.stripePriceId,
+          name: service.name,
+          price: service.price
+        }],
         orderId,
         customerEmail,
       });
