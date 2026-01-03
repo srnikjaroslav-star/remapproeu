@@ -74,6 +74,7 @@ Deno.serve(async (req) => {
       cancel_url: finalCancelUrl,
       client_reference_id: clientReferenceId || undefined,
       customer_email: customerEmail || undefined,
+      allow_promotion_codes: true, // Enable promo/coupon codes for testing
       metadata: {
         order_id: clientReferenceId || '',
         services: description,

@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const SENDER = "REMAPPRO <info@remappro.eu>";
 const SITE_URL = "https://remappro.eu";
-const ADMIN_EMAIL = "info@remappro.eu";
+const ADMIN_EMAIL = "srnik.jaroslav@gmail.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
