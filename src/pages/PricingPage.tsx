@@ -15,11 +15,6 @@ const PricingPage = () => {
   const modificationServices = SERVICES.filter((s) => s.category === 'modification');
 
   const handleBuy = async (service: Service) => {
-    if (!service.stripePriceId) {
-      toast.error('This service is not available for purchase yet.');
-      return;
-    }
-
     // For quick purchases, we need an email - prompt user
     const customerEmail = prompt('Please enter your email address for order confirmation:');
     if (!customerEmail || !customerEmail.includes('@')) {
@@ -32,7 +27,6 @@ const PricingPage = () => {
       const orderId = generateOrderId();
       await redirectToCheckout({
         services: [{
-          priceId: service.stripePriceId,
           name: service.name,
           price: service.price
         }],
