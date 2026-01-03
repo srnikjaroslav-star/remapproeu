@@ -39,24 +39,30 @@ const OrderPage = () => {
     return total + (service?.price || 0);
   }, 0);
 
-  // Get first selected service with Stripe Price ID
-  const getFirstServicePriceId = (): string | null => {
-    for (const id of formData.services) {
-      const service = SERVICES.find(s => s.id === id);
-      if (service?.stripePriceId) {
-        return service.stripePriceId;
-      }
-    }
-    return null;
+  // Get all selected services with their Stripe Price IDs
+  const getSelectedServices = () => {
+    return formData.services
+      .map(id => {
+        const service = SERVICES.find(s => s.id === id);
+        if (service?.stripePriceId) {
+          return {
+            priceId: service.stripePriceId,
+            name: service.name,
+            price: service.price
+          };
+        }
+        return null;
+      })
+      .filter((s): s is { priceId: string; name: string; price: number } => s !== null);
   };
 
   const handleSubmit = async (legalConsentAgreed: boolean) => {
     setIsSubmitting(true);
     
     try {
-      const priceId = getFirstServicePriceId();
+      const services = getSelectedServices();
       
-      if (!priceId) {
+      if (services.length === 0) {
         toast.error('Please select at least one service');
         setIsSubmitting(false);
         return;
@@ -77,9 +83,9 @@ const OrderPage = () => {
         legalConsent: legalConsentAgreed,
       }));
 
-      // Redirect to Stripe checkout with order ID, email, and customer note
+      // Redirect to Stripe checkout with all services
       await redirectToCheckout({
-        priceId,
+        services,
         orderId,
         customerEmail: formData.customer.email,
         customerNote: formData.customerNote,

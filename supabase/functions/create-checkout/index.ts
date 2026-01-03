@@ -4,6 +4,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface ServiceItem {
+  priceId: string;
+  name: string;
+  price: number;
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -19,24 +25,43 @@ Deno.serve(async (req) => {
       throw new Error("STRIPE_SECRET_KEY is not configured");
     }
 
-    const { priceId, successUrl, cancelUrl, clientReferenceId, customerEmail, customerNote } = await req.json();
+    const { services, successUrl, cancelUrl, clientReferenceId, customerEmail, customerNote } = await req.json();
 
-    if (!priceId) {
-      throw new Error("priceId is required");
+    // Validate services array
+    if (!services || !Array.isArray(services) || services.length === 0) {
+      throw new Error("At least one service is required");
     }
 
-    console.log("Creating checkout session for priceId:", priceId);
+    console.log("Creating checkout session for services:", services);
     console.log("Client reference ID:", clientReferenceId);
     console.log("Customer email:", customerEmail);
     console.log("Customer note:", customerNote);
 
-    // Build form data for Stripe API
+    // Calculate total price in cents
+    const totalAmountCents = services.reduce((sum: number, service: ServiceItem) => {
+      return sum + Math.round(service.price * 100);
+    }, 0);
+
+    // Build service names for description
+    const serviceNames = services.map((s: ServiceItem) => s.name).join(", ");
+
+    console.log("Total amount (cents):", totalAmountCents);
+    console.log("Services:", serviceNames);
+
+    // Build form data for Stripe API with dynamic pricing
     const formData = new URLSearchParams({
-      "line_items[0][price]": priceId,
-      "line_items[0][quantity]": "1",
       "mode": "payment",
       "success_url": successUrl || `${req.headers.get("origin")}/success`,
       "cancel_url": cancelUrl || `${req.headers.get("origin")}/order`,
+    });
+
+    // Add each service as a line item with price_data (dynamic pricing)
+    services.forEach((service: ServiceItem, index: number) => {
+      const priceInCents = Math.round(service.price * 100);
+      formData.append(`line_items[${index}][price_data][currency]`, "eur");
+      formData.append(`line_items[${index}][price_data][product_data][name]`, service.name);
+      formData.append(`line_items[${index}][price_data][unit_amount]`, priceInCents.toString());
+      formData.append(`line_items[${index}][quantity]`, "1");
     });
 
     // Add client_reference_id if provided (for order tracking)
@@ -49,7 +74,10 @@ Deno.serve(async (req) => {
       formData.append("customer_email", customerEmail);
     }
 
-    // Add customer note to metadata
+    // Add metadata
+    formData.append("metadata[services]", serviceNames);
+    formData.append("metadata[total_amount]", (totalAmountCents / 100).toFixed(2));
+    
     if (customerNote) {
       formData.append("metadata[customer_note]", customerNote);
     }
