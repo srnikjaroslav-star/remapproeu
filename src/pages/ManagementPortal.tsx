@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Download, Upload, Eye, CheckCircle, Clock, Package, 
-  RefreshCw, Search, User, Power
+  RefreshCw, Search, User, Power, Save
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import SystemStatus from '@/components/SystemStatus';
@@ -18,6 +18,8 @@ const ManagementPortal = () => {
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [editingFields, setEditingFields] = useState<Record<string, { checksum_crc: string; internal_note: string }>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [forceOffline, setForceOffline] = useState(() => {
     return localStorage.getItem('remappro_force_offline') === 'true';
   });
@@ -70,6 +72,48 @@ const ManagementPortal = () => {
       toast.error('Failed to update status');
       await fetchOrders();
     }
+  };
+
+  const handleFieldChange = (orderId: string, field: 'checksum_crc' | 'internal_note', value: string) => {
+    setEditingFields(prev => ({
+      ...prev,
+      [orderId]: {
+        ...prev[orderId],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleSaveFields = async (orderId: string) => {
+    const fields = editingFields[orderId];
+    if (!fields) return;
+
+    setSavingId(orderId);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({
+          checksum_crc: fields.checksum_crc || null,
+          internal_note: fields.internal_note || null
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+      toast.success('Admin fields saved');
+      await fetchOrders();
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save fields');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const getEditableValue = (order: Order, field: 'checksum_crc' | 'internal_note') => {
+    if (editingFields[order.id]?.[field] !== undefined) {
+      return editingFields[order.id][field];
+    }
+    return order[field] || '';
   };
 
   const handleResultUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -338,22 +382,24 @@ const ManagementPortal = () => {
                   <th className="text-left p-4">Services</th>
                   <th className="text-left p-4">Price</th>
                   <th className="text-left p-4">Status</th>
+                  <th className="text-left p-4">Checksum (CRC)</th>
+                  <th className="text-left p-4">Internal Note</th>
                   <th className="text-left p-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-12 text-muted-foreground">
-                      Loading orders...
-                    </td>
-                  </tr>
-                ) : filteredOrders.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="text-center py-12 text-muted-foreground">
-                      No orders found
-                    </td>
-                  </tr>
+                      <td colSpan={10} className="text-center py-12 text-muted-foreground">
+                        Loading orders...
+                      </td>
+                    </tr>
+                  ) : filteredOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={10} className="text-center py-12 text-muted-foreground">
+                        No orders found
+                      </td>
+                    </tr>
                 ) : (
                   filteredOrders.map((order) => (
                     <tr key={order.id} className="table-row">
@@ -397,7 +443,35 @@ const ManagementPortal = () => {
                         </select>
                       </td>
                       <td className="p-4">
+                        <input
+                          type="text"
+                          value={getEditableValue(order, 'checksum_crc')}
+                          onChange={(e) => handleFieldChange(order.id, 'checksum_crc', e.target.value)}
+                          placeholder="CRC..."
+                          className="w-full bg-secondary/50 border border-border/50 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        />
+                      </td>
+                      <td className="p-4">
+                        <input
+                          type="text"
+                          value={getEditableValue(order, 'internal_note')}
+                          onChange={(e) => handleFieldChange(order.id, 'internal_note', e.target.value)}
+                          placeholder="Internal note..."
+                          className="w-full bg-secondary/50 border border-border/50 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                        />
+                      </td>
+                      <td className="p-4">
                         <div className="flex items-center gap-2">
+                          {editingFields[order.id] && (
+                            <button
+                              onClick={() => handleSaveFields(order.id)}
+                              disabled={savingId === order.id}
+                              className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                              title="Save Admin Fields"
+                            >
+                              <Save className={`w-4 h-4 ${savingId === order.id ? 'animate-pulse' : ''}`} />
+                            </button>
+                          )}
                           {order.file_url && (
                             <a
                               href={order.file_url}
