@@ -340,8 +340,21 @@ const TrackPage = () => {
               </div>
             </div>
 
+            {/* Checksum CRC - Only shown when completed */}
+            {(order.status === 'completed' || order.status === 'ready') && order.checksum_crc && (
+              <div className="glass-card p-6 border-green-500/30">
+                <h3 className="font-semibold mb-2 text-green-500">File Verification</h3>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Checksum (CRC)</span>
+                  <span className="font-mono text-lg font-bold text-green-400 bg-green-500/10 px-3 py-1 rounded">
+                    {order.checksum_crc}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Download Button */}
-            {order.status === 'completed' && order.result_file_url && (
+            {(order.status === 'completed' || order.status === 'ready') && order.result_file_url && (
               <a
                 href={order.result_file_url}
                 download
