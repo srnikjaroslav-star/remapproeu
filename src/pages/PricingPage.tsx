@@ -32,8 +32,9 @@ const PricingPage = () => {
         customerEmail,
       });
     } catch (error: any) {
-      console.error('Checkout error:', error);
-      toast.error(error.message || 'Failed to initiate checkout. Please try again.');
+      console.error('[PricingPage] Checkout error:', error);
+      const errorMessage = error?.message || 'Failed to initiate checkout. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setLoadingId(null);
     }
