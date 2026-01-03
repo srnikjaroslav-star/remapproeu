@@ -2,10 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Download, Upload, Eye, CheckCircle, Clock, Package, 
-  RefreshCw, Search, User, Power, Save
+  RefreshCw, Search, User, Power, Save, Edit3
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import SystemStatus, { fetchSystemStatusFromDB, setSystemStatusInDB, isSystemOnline, SystemStatusMode } from '@/components/SystemStatus';
+import SmartTooltip from '@/components/SmartTooltip';
+import InternalNoteModal from '@/components/InternalNoteModal';
 import { supabase, Order } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SERVICES } from '@/data/services';
@@ -22,6 +24,7 @@ const ManagementPortal = () => {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [statusMode, setStatusMode] = useState<SystemStatusMode>('auto');
   const [statusLoading, setStatusLoading] = useState(false);
+  const [noteModalOrder, setNoteModalOrder] = useState<Order | null>(null);
 
   // Load initial status from DB
   useEffect(() => {
@@ -449,20 +452,20 @@ const ManagementPortal = () => {
         {/* Orders Table */}
         <div className="glass-card overflow-hidden bg-background/40 backdrop-blur-xl border border-white/5">
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed">
+            <table className="w-full table-fixed text-sm">
               <thead>
                 <tr className="table-header bg-secondary/20">
-                  <th className="text-left p-3 w-[90px]">Order ID</th>
-                  <th className="text-left p-3 w-[140px]">Customer</th>
-                  <th className="text-left p-3 min-w-[180px]">Vehicle</th>
-                  <th className="text-left p-3 w-[110px]">ECU</th>
-                  <th className="text-left p-3 w-[150px]">Services</th>
-                  <th className="text-left p-3 w-[60px]">Price</th>
-                  <th className="text-left p-3 w-[80px]">Invoice</th>
-                  <th className="text-left p-3 w-[110px]">Status</th>
-                  <th className="text-left p-3 w-[100px]">Checksum</th>
-                  <th className="text-left p-3 min-w-[250px]">Internal Note</th>
-                  <th className="text-right p-3 w-[110px]">Actions</th>
+                  <th className="text-left p-3 w-[85px] text-xs font-semibold uppercase tracking-wide align-middle">Order ID</th>
+                  <th className="text-left p-3 w-[130px] text-xs font-semibold uppercase tracking-wide align-middle">Customer</th>
+                  <th className="text-left p-3 w-[180px] text-xs font-semibold uppercase tracking-wide align-middle">Vehicle</th>
+                  <th className="text-left p-3 w-[100px] text-xs font-semibold uppercase tracking-wide align-middle">ECU</th>
+                  <th className="text-left p-3 w-[160px] text-xs font-semibold uppercase tracking-wide align-middle">Services</th>
+                  <th className="text-left p-3 w-[55px] text-xs font-semibold uppercase tracking-wide align-middle">Price</th>
+                  <th className="text-left p-3 w-[70px] text-xs font-semibold uppercase tracking-wide align-middle">Invoice</th>
+                  <th className="text-left p-3 w-[95px] text-xs font-semibold uppercase tracking-wide align-middle">Status</th>
+                  <th className="text-left p-3 w-[90px] text-xs font-semibold uppercase tracking-wide align-middle">Checksum</th>
+                  <th className="text-left p-3 w-[140px] text-xs font-semibold uppercase tracking-wide align-middle">Internal Note</th>
+                  <th className="text-right p-3 w-[100px] text-xs font-semibold uppercase tracking-wide align-middle">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -480,36 +483,49 @@ const ManagementPortal = () => {
                     </tr>
                 ) : (
                   filteredOrders.map((order) => (
-                    <tr key={order.id} className="table-row">
-                      <td className="p-4">
-                        <span className="font-mono text-sm font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
+                    <tr key={order.id} className="table-row align-top">
+                      <td className="p-3">
+                        <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
                           {order.order_number || order.id.slice(0, 8).toUpperCase()}
                         </span>
                       </td>
-                      <td className="p-4">
+                      <td className="p-3">
                         <div>
-                          <p className="font-medium">{order.customer_name}</p>
-                          <p className="text-sm text-muted-foreground">{order.customer_email}</p>
+                          <p className="font-medium text-sm truncate">{order.customer_name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{order.customer_email}</p>
                         </div>
                       </td>
-                      <td className="p-4">
+                      <td className="p-3">
                         <div>
-                          <p className="font-medium">{order.car_brand} {order.car_model}</p>
-                          <p className="text-sm text-muted-foreground">{order.fuel_type} • {order.year}</p>
+                          <p className="font-medium text-sm">{order.car_brand} {order.car_model}</p>
+                          <p className="text-xs text-muted-foreground">{order.fuel_type} • {order.year}</p>
                         </div>
                       </td>
-                      <td className="p-4">
-                        <p className="text-sm">{order.ecu_type}</p>
+                      <td className="p-3">
+                        {order.ecu_type && order.ecu_type.length > 12 ? (
+                          <SmartTooltip content={order.ecu_type}>
+                            <p className="text-sm truncate cursor-help max-w-[90px]">{order.ecu_type}</p>
+                          </SmartTooltip>
+                        ) : (
+                          <p className="text-sm">{order.ecu_type || '—'}</p>
+                        )}
                       </td>
-                      <td className="p-4">
-                        <p className="text-sm max-w-[200px] truncate" title={getServiceNames(order.service_type)}>
-                          {getServiceNames(order.service_type)}
-                        </p>
+                      <td className="p-3">
+                        {(() => {
+                          const services = getServiceNames(order.service_type);
+                          return services.length > 20 ? (
+                            <SmartTooltip content={services} maxWidth="350px">
+                              <p className="text-sm truncate cursor-help max-w-[150px]">{services}</p>
+                            </SmartTooltip>
+                          ) : (
+                            <p className="text-sm">{services}</p>
+                          );
+                        })()}
                       </td>
-                      <td className="p-4">
-                        <p className="font-semibold text-primary">{order.total_price}€</p>
+                      <td className="p-3">
+                        <p className="font-semibold text-primary text-sm">{order.total_price}€</p>
                       </td>
-                      <td className="p-4">
+                      <td className="p-3">
                         {order.invoice_number ? (
                           <a
                             href={order.invoice_url || '#'}
@@ -524,77 +540,95 @@ const ManagementPortal = () => {
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </td>
-                      <td className="p-4">
+                      <td className="p-3">
                         <select
                           value={order.status}
                           onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                          className={`admin-status-select ${getStatusClass(order.status)}`}
+                          className={`admin-status-select text-xs ${getStatusClass(order.status)}`}
                         >
                           <option value="pending">Pending</option>
                           <option value="processing">Processing</option>
                           <option value="completed">Completed</option>
                         </select>
                       </td>
-                      <td className="p-4">
+                      <td className="p-3">
                         <input
                           type="text"
                           value={getEditableValue(order, 'checksum_crc')}
                           onChange={(e) => handleFieldChange(order.id, 'checksum_crc', e.target.value)}
                           onBlur={() => handleFieldBlur(order.id, 'checksum_crc')}
                           placeholder="CRC..."
-                          className="w-full bg-secondary/50 border border-border/50 rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          className="w-full bg-secondary/50 border border-border/50 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
                         />
                       </td>
-                      <td className="p-4">
-                        <div className="relative group">
-                          <textarea
-                            value={getEditableValue(order, 'internal_note')}
-                            onChange={(e) => handleFieldChange(order.id, 'internal_note', e.target.value)}
-                            onBlur={() => handleFieldBlur(order.id, 'internal_note')}
-                            placeholder="Internal note..."
-                            rows={3}
-                            className="w-full min-w-[250px] bg-secondary/30 border border-border/30 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary/50 resize-y min-h-[80px] max-h-[200px]"
-                          />
-                        </div>
+                      <td className="p-3">
+                        {(() => {
+                          const note = getEditableValue(order, 'internal_note');
+                          return (
+                            <div 
+                              onClick={() => setNoteModalOrder(order)}
+                              className="cursor-pointer group"
+                            >
+                              {note && note.length > 25 ? (
+                                <SmartTooltip content={note} maxWidth="400px">
+                                  <div className="flex items-center gap-1">
+                                    <p className="text-xs truncate max-w-[110px] text-muted-foreground group-hover:text-foreground transition-colors">{note}</p>
+                                    <Edit3 className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                                  </div>
+                                </SmartTooltip>
+                              ) : note ? (
+                                <div className="flex items-center gap-1">
+                                  <p className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">{note}</p>
+                                  <Edit3 className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1 text-muted-foreground/50 group-hover:text-muted-foreground transition-colors">
+                                  <span className="text-xs">Add note</span>
+                                  <Edit3 className="w-3 h-3" />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
-                      <td className="p-4">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="p-3">
+                        <div className="flex items-center justify-end gap-1">
                           {editingFields[order.id] && (
                             <button
                               onClick={() => handleSaveFields(order.id)}
                               disabled={savingId === order.id}
-                              className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                              className="p-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
                               title="Save Admin Fields"
                             >
-                              <Save className={`w-4 h-4 ${savingId === order.id ? 'animate-pulse' : ''}`} />
+                              <Save className={`w-3.5 h-3.5 ${savingId === order.id ? 'animate-pulse' : ''}`} />
                             </button>
                           )}
                           {order.file_url && (
                             <a
                               href={order.file_url}
                               download
-                              className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
+                              className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
                               title="Download Original"
                             >
-                              <Download className="w-4 h-4" />
+                              <Download className="w-3.5 h-3.5" />
                             </a>
                           )}
                           <button
                             onClick={() => triggerUpload(order.id)}
                             disabled={uploadingId === order.id}
-                            className="p-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary transition-colors"
+                            className="p-1.5 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary transition-colors"
                             title="Upload Result"
                           >
-                            <Upload className={`w-4 h-4 ${uploadingId === order.id ? 'animate-pulse' : ''}`} />
+                            <Upload className={`w-3.5 h-3.5 ${uploadingId === order.id ? 'animate-pulse' : ''}`} />
                           </button>
                           {order.result_file_url && (
                             <a
                               href={order.result_file_url}
                               download
-                              className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-500 transition-colors"
+                              className="p-1.5 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-500 transition-colors"
                               title="Download Result"
                             >
-                              <Eye className="w-4 h-4" />
+                              <Eye className="w-3.5 h-3.5" />
                             </a>
                           )}
                         </div>
@@ -606,6 +640,22 @@ const ManagementPortal = () => {
             </table>
           </div>
         </div>
+
+        {/* Internal Note Modal */}
+        <InternalNoteModal
+          isOpen={!!noteModalOrder}
+          onClose={() => setNoteModalOrder(null)}
+          orderId={noteModalOrder?.id || ''}
+          orderNumber={noteModalOrder?.order_number || noteModalOrder?.id.slice(0, 8).toUpperCase() || ''}
+          initialNote={noteModalOrder ? getEditableValue(noteModalOrder, 'internal_note') : ''}
+          onSave={async (note) => {
+            if (!noteModalOrder) return;
+            handleFieldChange(noteModalOrder.id, 'internal_note', note);
+            await handleSaveFields(noteModalOrder.id);
+            setNoteModalOrder(null);
+          }}
+          isSaving={savingId === noteModalOrder?.id}
+        />
       </main>
     </div>
   );
