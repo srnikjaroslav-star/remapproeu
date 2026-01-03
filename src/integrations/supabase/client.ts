@@ -20,6 +20,8 @@ export interface Order {
   result_file_url: string | null;
   legal_consent: boolean;
   customer_note: string | null;
+  checksum_crc: string | null;
+  internal_note: string | null;
   created_at: string;
   updated_at: string;
 }
