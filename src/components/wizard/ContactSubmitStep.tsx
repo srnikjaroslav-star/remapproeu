@@ -146,18 +146,23 @@ const ContactSubmitStep = ({
         {errors.consent && <p className="text-destructive text-sm">{errors.consent}</p>}
       </div>
       
-      <div className="mt-8 flex justify-between">
-        <button onClick={onBack} className="btn-secondary">
-          Back
-        </button>
-        <button 
-          onClick={validateAndSubmit} 
-          disabled={isSubmitting}
-          className={`btn-primary flex items-center gap-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-          {isSubmitting ? 'Submitting...' : 'Submit Order'}
-        </button>
+      <div className="mt-8 flex flex-col gap-2">
+        <div className="flex justify-between">
+          <button onClick={onBack} className="btn-secondary">
+            Back
+          </button>
+          <button 
+            onClick={validateAndSubmit} 
+            disabled={isSubmitting}
+            className={`btn-primary flex items-center gap-2 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isSubmitting ? 'Submitting...' : 'Submit Order'}
+          </button>
+        </div>
+        <p className="text-xs text-muted-foreground text-right">
+          Promotion codes can be applied on the next step.
+        </p>
       </div>
     </div>
   );

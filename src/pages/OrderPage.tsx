@@ -82,9 +82,10 @@ const OrderPage = () => {
         customerEmail: formData.customer.email,
         customerNote: formData.customerNote,
       });
-    } catch (error) {
-      console.error('Submit error:', error);
-      toast.error('Payment initialization failed. Please try again.');
+    } catch (error: any) {
+      console.error('[OrderPage] Payment error:', error);
+      const errorMessage = error?.message || 'Payment initialization failed. Please try again.';
+      toast.error(errorMessage);
       setIsSubmitting(false);
     }
   };
