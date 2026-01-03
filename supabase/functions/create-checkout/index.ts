@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
       throw new Error("STRIPE_SECRET_KEY is not configured");
     }
 
-    const { priceId, successUrl, cancelUrl, clientReferenceId, customerEmail } = await req.json();
+    const { priceId, successUrl, cancelUrl, clientReferenceId, customerEmail, customerNote } = await req.json();
 
     if (!priceId) {
       throw new Error("priceId is required");
@@ -28,6 +28,7 @@ Deno.serve(async (req) => {
     console.log("Creating checkout session for priceId:", priceId);
     console.log("Client reference ID:", clientReferenceId);
     console.log("Customer email:", customerEmail);
+    console.log("Customer note:", customerNote);
 
     // Build form data for Stripe API
     const formData = new URLSearchParams({
@@ -46,6 +47,11 @@ Deno.serve(async (req) => {
     // Add customer email if provided
     if (customerEmail) {
       formData.append("customer_email", customerEmail);
+    }
+
+    // Add customer note to metadata
+    if (customerNote) {
+      formData.append("metadata[customer_note]", customerNote);
     }
 
     // Create checkout session using Stripe REST API

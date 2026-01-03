@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Download, Upload, Eye, CheckCircle, Clock, Package, 
-  RefreshCw, Search, User
+  RefreshCw, Search, User, Power
 } from 'lucide-react';
 import Logo from '@/components/Logo';
+import SystemStatus from '@/components/SystemStatus';
 import { supabase, Order } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SERVICES } from '@/data/services';
@@ -17,6 +18,16 @@ const ManagementPortal = () => {
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [forceOffline, setForceOffline] = useState(() => {
+    return localStorage.getItem('remappro_force_offline') === 'true';
+  });
+
+  const toggleForceOffline = () => {
+    const newValue = !forceOffline;
+    setForceOffline(newValue);
+    localStorage.setItem('remappro_force_offline', String(newValue));
+    toast.success(newValue ? 'System set to OFFLINE' : 'System status returned to schedule');
+  };
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -187,10 +198,24 @@ const ManagementPortal = () => {
       {/* Header */}
       <header className="border-b border-border/50 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/">
-            <Logo size="sm" />
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link to="/">
+              <Logo size="sm" />
+            </Link>
+            <SystemStatus forceOffline={forceOffline} />
+          </div>
           <div className="flex items-center gap-4">
+            <button
+              onClick={toggleForceOffline}
+              className={`py-2 px-4 flex items-center gap-2 rounded-lg border transition-all ${
+                forceOffline 
+                  ? 'bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30' 
+                  : 'bg-green-500/20 border-green-500/50 text-green-400 hover:bg-green-500/30'
+              }`}
+            >
+              <Power className="w-4 h-4" />
+              {forceOffline ? 'Force OFFLINE' : 'Auto Status'}
+            </button>
             <span className="text-sm text-muted-foreground">Admin Portal</span>
             <button onClick={fetchOrders} className="btn-secondary py-2 px-4 flex items-center gap-2">
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
