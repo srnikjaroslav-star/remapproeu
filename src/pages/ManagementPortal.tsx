@@ -440,6 +440,7 @@ const ManagementPortal = () => {
                   <th className="text-left p-4">ECU</th>
                   <th className="text-left p-4">Services</th>
                   <th className="text-left p-4">Price</th>
+                  <th className="text-left p-4">Invoice</th>
                   <th className="text-left p-4">Status</th>
                   <th className="text-left p-4">Checksum (CRC)</th>
                   <th className="text-left p-4">Internal Note</th>
@@ -449,13 +450,13 @@ const ManagementPortal = () => {
               <tbody>
                 {loading ? (
                   <tr>
-                      <td colSpan={10} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={11} className="text-center py-12 text-muted-foreground">
                         Loading orders...
                       </td>
                     </tr>
                   ) : filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={11} className="text-center py-12 text-muted-foreground">
                         No orders found
                       </td>
                     </tr>
@@ -489,6 +490,21 @@ const ManagementPortal = () => {
                       </td>
                       <td className="p-4">
                         <p className="font-semibold text-primary">{order.total_price}€</p>
+                      </td>
+                      <td className="p-4">
+                        {order.invoice_number ? (
+                          <a
+                            href={order.invoice_url || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-mono text-green-400 hover:text-green-300 underline"
+                            title="View Invoice PDF"
+                          >
+                            {order.invoice_number}
+                          </a>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
                       </td>
                       <td className="p-4">
                         <select

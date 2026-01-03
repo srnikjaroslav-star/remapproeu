@@ -78,6 +78,50 @@ serve(async (req) => {
         }
       }
 
+      // Get line items from session for invoice
+      const lineItems: { name: string; price: number }[] = [];
+      if (session.line_items?.data) {
+        for (const item of session.line_items.data) {
+          lineItems.push({
+            name: item.description || item.price?.product?.name || "Service",
+            price: (item.amount_total || 0) / 100,
+          });
+        }
+      } else if (session.amount_total) {
+        // Fallback if no line items
+        lineItems.push({
+          name: "ECU Tuning Service",
+          price: session.amount_total / 100,
+        });
+      }
+
+      // Generate and send invoice
+      try {
+        const invoiceRes = await fetch(`${supabaseUrl}/functions/v1/generate-invoice`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({
+            orderId: order?.id || orderId,
+            orderNumber,
+            customerName,
+            customerEmail,
+            items: lineItems,
+            totalAmount: session.amount_total ? session.amount_total / 100 : 0,
+            carBrand: order?.car_brand,
+            carModel: order?.car_model,
+          }),
+        });
+        
+        const invoiceResult = await invoiceRes.json();
+        console.log("Invoice generation result:", invoiceResult);
+      } catch (invoiceError) {
+        console.error("Invoice generation failed:", invoiceError);
+        // Continue - don't fail the webhook just because invoice failed
+      }
+
       // Send confirmation email to customer via Resend
       if (customerEmail && RESEND_API_KEY) {
         const trackingLink = `${SITE_URL}/track?id=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(customerEmail)}`;

@@ -22,6 +22,8 @@ export interface Order {
   customer_note: string | null;
   checksum_crc: string | null;
   internal_note: string | null;
+  invoice_number: string | null;
+  invoice_url: string | null;
   created_at: string;
   updated_at: string;
 }
