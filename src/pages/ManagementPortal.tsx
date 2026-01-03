@@ -5,7 +5,7 @@ import {
   RefreshCw, Search, User, Power, Save
 } from 'lucide-react';
 import Logo from '@/components/Logo';
-import SystemStatus from '@/components/SystemStatus';
+import SystemStatus, { getSystemStatus, setSystemStatus, isSystemOnline, SystemStatusMode } from '@/components/SystemStatus';
 import { supabase, Order } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SERVICES } from '@/data/services';
@@ -20,15 +20,25 @@ const ManagementPortal = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [editingFields, setEditingFields] = useState<Record<string, { checksum_crc: string; internal_note: string }>>({});
   const [savingId, setSavingId] = useState<string | null>(null);
-  const [forceOffline, setForceOffline] = useState(() => {
-    return localStorage.getItem('remappro_force_offline') === 'true';
-  });
+  const [statusMode, setStatusMode] = useState<SystemStatusMode>(getSystemStatus);
 
-  const toggleForceOffline = () => {
-    const newValue = !forceOffline;
-    setForceOffline(newValue);
-    localStorage.setItem('remappro_force_offline', String(newValue));
-    toast.success(newValue ? 'System set to OFFLINE' : 'System status returned to schedule');
+  const cycleStatusMode = () => {
+    // Cycle: auto -> online -> offline -> auto
+    const nextMode: Record<SystemStatusMode, SystemStatusMode> = {
+      'auto': 'online',
+      'online': 'offline',
+      'offline': 'auto'
+    };
+    const newMode = nextMode[statusMode];
+    setStatusMode(newMode);
+    setSystemStatus(newMode);
+    
+    const messages: Record<SystemStatusMode, string> = {
+      'auto': 'System status set to AUTO (follows schedule 08:00-20:00)',
+      'online': 'System forced ONLINE (visible to customers)',
+      'offline': 'System forced OFFLINE (visible to customers)'
+    };
+    toast.success(messages[newMode]);
   };
 
   const fetchOrders = async () => {
@@ -293,19 +303,21 @@ const ManagementPortal = () => {
             <Link to="/">
               <Logo size="sm" />
             </Link>
-            <SystemStatus forceOffline={forceOffline} />
+            <SystemStatus />
           </div>
           <div className="flex items-center gap-4">
             <button
-              onClick={toggleForceOffline}
+              onClick={cycleStatusMode}
               className={`py-2 px-4 flex items-center gap-2 rounded-lg border transition-all ${
-                forceOffline 
-                  ? 'bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30' 
-                  : 'bg-green-500/20 border-green-500/50 text-green-400 hover:bg-green-500/30'
+                statusMode === 'online'
+                  ? 'bg-green-500/20 border-green-500/50 text-green-400 hover:bg-green-500/30'
+                  : statusMode === 'offline'
+                    ? 'bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500/30'
+                    : 'bg-primary/20 border-primary/50 text-primary hover:bg-primary/30'
               }`}
             >
               <Power className="w-4 h-4" />
-              {forceOffline ? 'Force OFFLINE' : 'Auto Status'}
+              {statusMode === 'online' ? 'Force ONLINE' : statusMode === 'offline' ? 'Force OFFLINE' : 'Auto (Schedule)'}
             </button>
             <span className="text-sm text-muted-foreground">Admin Portal</span>
             <button onClick={fetchOrders} className="btn-secondary py-2 px-4 flex items-center gap-2">
