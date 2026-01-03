@@ -15,11 +15,11 @@ export const generateOrderId = (): string => {
 
 type CheckoutItem = {
   name: string;
-  amount: number; // in cents (EUR)
+  amount: number; // in EUR
 };
 
 interface CheckoutOptions {
-  items: { name: string; price: number }[]; // price in EUR, will be converted to cents
+  items: { name: string; price: number }[]; // price in EUR
   orderId: string;
   customerEmail: string;
   customerNote?: string;
@@ -36,53 +36,50 @@ export const redirectToCheckout = async ({ items, orderId, customerEmail, custom
     throw new Error('No items selected for checkout.');
   }
 
-  // Convert items to the format expected by edge function (amount in cents)
-  const formattedItems = items.map(item => {
+  // Convert items to the format expected by edge function (amount in EUR)
+  const formattedItems: CheckoutItem[] = items.map(item => {
     if (!item.name || item.price <= 0) {
       throw new Error(`Invalid item: ${item.name || 'unnamed'} with price ${item.price}`);
     }
     return {
       name: item.name,
-      amount: Math.round(item.price * 100) // Convert EUR to cents
+      amount: item.price // Keep in EUR, edge function will convert to cents
     };
   });
 
   const successUrl = `https://remappro.eu/track?id=${encodeURIComponent(orderId)}&email=${encodeURIComponent(customerEmail)}`;
   const cancelUrl = `${window.location.origin}/order`;
 
-  console.log('[Stripe] Creating checkout session:', { 
-    items: formattedItems, 
+  const requestBody = {
+    items: formattedItems,
     email: customerEmail,
-    orderId,
     successUrl,
-    cancelUrl 
-  });
+    cancelUrl,
+    metadata: {
+      orderId,
+      orderType: 'tuning',
+      source: 'web',
+      customerNote: customerNote || ''
+    }
+  };
+
+  console.log('[Stripe] Creating checkout session:', requestBody);
 
   try {
     const { data, error } = await supabase.functions.invoke('create-checkout', {
-      body: {
-        items: formattedItems,
-        email: customerEmail,
-        successUrl,
-        cancelUrl,
-        metadata: {
-          orderId,
-          orderType: 'tuning',
-          source: 'web',
-          ...(customerNote && { customerNote })
-        }
-      },
+      body: requestBody,
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
 
-    // Log full response for debugging
     console.log('[Stripe] Edge function response:', { data, error });
 
     if (error) {
       console.error('[Stripe] Edge function error details:', {
         message: error.message,
         name: error.name,
-        context: error.context,
-        stack: error.stack
+        context: error.context
       });
       throw new Error(error.message || 'Checkout service unavailable. Please try again later.');
     }
@@ -101,9 +98,6 @@ export const redirectToCheckout = async ({ items, orderId, customerEmail, custom
     }
   } catch (err: any) {
     console.error('[Stripe] Full error object:', err);
-    if (err.context?.body) {
-      console.error('[Stripe] Error body:', err.context.body);
-    }
     throw err;
   }
 };

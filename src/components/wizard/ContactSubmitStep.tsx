@@ -161,7 +161,7 @@ const ContactSubmitStep = ({
           </button>
         </div>
         <p className="text-xs text-muted-foreground text-right">
-          Zľavový kód môžete zadať v nasledujúcom kroku na stránke platby.
+          Možnosť zadať promo kód bude dostupná v nasledujúcom kroku na platobnej bráne.
         </p>
       </div>
     </div>
