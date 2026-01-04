@@ -23,9 +23,21 @@ Deno.serve(async (req) => {
 
     const stripe = new Stripe(STRIPE_SECRET_KEY);
 
-    const { items, email, successUrl, cancelUrl, metadata } = await req.json();
+    // Debug: log raw body text before parsing
+    const rawBody = await req.text();
+    console.log('Raw body received:', rawBody);
+    
+    let parsedBody;
+    try {
+      parsedBody = JSON.parse(rawBody);
+    } catch (parseErr) {
+      console.error('JSON parse error:', parseErr);
+      throw new Error(`Invalid JSON body: ${rawBody.substring(0, 200)}`);
+    }
 
-    console.log('Received request body:', { items, email, metadata });
+    const { items, email, successUrl, cancelUrl, metadata } = parsedBody;
+
+    console.log('Parsed request body:', { items, email, metadata });
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       throw new Error('At least one line item is required');
