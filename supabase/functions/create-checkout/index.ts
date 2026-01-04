@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     const totalAmountEur = items.reduce((sum: number, item: any) => sum + item.amount, 0);
     const description = items.map((i: any) => i.name).join(', ');
 
-    console.log('Creating checkout session with promo codes enabled (v2):');
+    console.log('Creating checkout session with promo codes enabled (v3 redeploy):');
     console.log('Items:', items);
     console.log('Total amount (EUR):', totalAmountEur);
     console.log('Metadata:', metadata);
