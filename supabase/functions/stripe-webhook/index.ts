@@ -148,11 +148,12 @@ serve(async (req) => {
       const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseKey);
 
-      // Generate unique order number
-      const orderNumber = `RP-${Date.now().toString(36).toUpperCase()}`;
+      // Generate unique order number with random suffix for uniqueness
+      const timestamp = Date.now().toString(36).toUpperCase();
+      const randomSuffix = Math.random().toString(36).substring(2, 5).toUpperCase();
+      const orderNumber = `RP-${timestamp}${randomSuffix}`;
       
-      // Create order in database with stripe_session_id for lookup
-      let order = null;
+      // ATOMIC: Create order in database FIRST - this is the source of truth
       const orderData = {
         order_number: orderNumber,
         customer_name: customerName,
@@ -168,30 +169,33 @@ serve(async (req) => {
         file_url: fileUrl,
         legal_consent: legalConsent,
         customer_note: customerNote || null,
-        stripe_session_id: sessionId, // Store session ID for lookup
+        stripe_session_id: sessionId,
       };
       
-      console.log("Creating order with data:", JSON.stringify(orderData));
+      console.log("ATOMIC: Creating order with data:", JSON.stringify(orderData));
       
+      // Use RETURNING to get the actual order_number from DB
       const { data: newOrder, error: insertError } = await supabase
         .from("orders")
         .insert([orderData])
-        .select()
+        .select("id, order_number, customer_email")
         .single();
       
-      if (insertError) {
-        console.error("Failed to create order:", insertError);
-        // Return error - we need the order to be created
-        return new Response(JSON.stringify({ error: "Failed to create order" }), {
+      if (insertError || !newOrder) {
+        console.error("CRITICAL: Failed to create order:", insertError);
+        // Return 500 to tell Stripe to retry
+        return new Response(JSON.stringify({ error: "Failed to create order", details: insertError?.message }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       
-      order = newOrder;
-      console.log("Order created successfully:", order.id, order.order_number);
+      // CRITICAL: Use the order_number returned from DB, not the generated one
+      const confirmedOrderNumber = newOrder.order_number;
+      const confirmedOrderId = newOrder.id;
+      console.log("ATOMIC: Order created successfully:", confirmedOrderId, confirmedOrderNumber);
 
-      // Get line items from session for invoice
+      // Build line items for invoice from session
       const lineItems: { name: string; price: number }[] = [];
       if (session.line_items?.data) {
         for (const item of session.line_items.data) {
@@ -201,15 +205,25 @@ serve(async (req) => {
           });
         }
       } else if (session.amount_total) {
-        // Fallback if no line items
-        lineItems.push({
-          name: "ECU Tuning Service",
-          price: session.amount_total / 100,
-        });
+        // Fallback: use services from metadata if available
+        if (serviceTypes.length > 0) {
+          const pricePerService = (session.amount_total / 100) / serviceTypes.length;
+          for (const service of serviceTypes) {
+            lineItems.push({
+              name: service,
+              price: pricePerService,
+            });
+          }
+        } else {
+          lineItems.push({
+            name: "ECU Tuning Service",
+            price: session.amount_total / 100,
+          });
+        }
       }
 
-      // Generate and send invoice via the generate-invoice function
-      // This will create PDF, upload to storage, and send customer email with BCC
+      // ATOMIC: Only generate invoice AFTER we have confirmed order from DB
+      console.log("ATOMIC: Generating invoice for order:", confirmedOrderNumber);
       try {
         const invoiceRes = await fetch(`${supabaseUrl}/functions/v1/generate-invoice`, {
           method: "POST",
@@ -218,25 +232,25 @@ serve(async (req) => {
             "Authorization": `Bearer ${supabaseKey}`,
           },
           body: JSON.stringify({
-            orderId: order?.id || session.id,
-            orderNumber: order?.order_number || orderNumber,
+            orderId: confirmedOrderId,
+            orderNumber: confirmedOrderNumber,
             customerName,
             customerEmail,
             items: lineItems,
             totalAmount: session.amount_total ? session.amount_total / 100 : 0,
-            carBrand: order?.car_brand || carBrand,
-            carModel: order?.car_model || carModel,
-            fuelType: order?.fuel_type || fuelType,
-            year: order?.year || year,
-            ecuType: order?.ecu_type || ecuType,
+            carBrand,
+            carModel,
+            fuelType,
+            year,
+            ecuType,
           }),
         });
         
         const invoiceResult = await invoiceRes.json();
-        console.log("Invoice generation result:", invoiceResult);
+        console.log("ATOMIC: Invoice generation result:", invoiceResult);
       } catch (invoiceError) {
-        console.error("Invoice generation failed:", invoiceError);
-        // Continue - don't fail the webhook just because invoice failed
+        console.error("Invoice generation failed (non-fatal):", invoiceError);
+        // Continue - don't fail the webhook, order is already saved
       }
 
       // Note: Customer email with PDF invoice is sent by generate-invoice function
@@ -276,7 +290,7 @@ serve(async (req) => {
                                 Order ID
                               </p>
                               <p style="margin: 0 0 15px; color: #ff6b00; font-size: 24px; font-weight: bold; font-family: 'Monaco', 'Consolas', monospace;">
-                                ${orderNumber}
+                                ${confirmedOrderNumber}
                               </p>
                               <p style="margin: 0 0 8px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
                                 Amount
@@ -360,7 +374,7 @@ serve(async (req) => {
           body: JSON.stringify({
             from: SENDER,
             to: [ADMIN_EMAIL],
-            subject: `🔔 New Order: ${orderNumber} - €${amountTotal}`,
+            subject: `🔔 New Order: ${confirmedOrderNumber} - €${amountTotal}`,
             html: adminEmailHtml,
           }),
         });
