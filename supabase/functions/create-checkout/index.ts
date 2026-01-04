@@ -95,11 +95,18 @@ Deno.serve(async (req) => {
       allow_promotion_codes: true,
       metadata: {
         order_id: metadata?.orderId || '',
-        services: description,
+        services: metadata?.services || description,
         total_amount_eur: totalAmountEur.toFixed(2),
         order_type: metadata?.orderType || 'tuning',
         source: metadata?.source || 'web',
         customer_note: metadata?.customerNote || '',
+        customer_name: metadata?.customer_name || '',
+        car_brand: metadata?.car_brand || '',
+        car_model: metadata?.car_model || '',
+        fuel_type: metadata?.fuel_type || '',
+        year: metadata?.year || '',
+        ecu_type: metadata?.ecu_type || '',
+        file_url: metadata?.file_url || '',
       },
     });
 

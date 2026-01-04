@@ -16,28 +16,9 @@ const PricingPage = () => {
   const modificationServices = SERVICES.filter((s) => s.category === 'modification');
 
   const handleBuy = async (service: Service) => {
-    // For quick purchases, we need an email - prompt user
-    const customerEmail = prompt('Please enter your email address for order confirmation:');
-    if (!customerEmail || !customerEmail.includes('@')) {
-      toast.error('A valid email address is required to proceed.');
-      return;
-    }
-
-    setLoadingId(service.id);
-    try {
-      const orderId = generateOrderId();
-      await redirectToCheckout({
-        items: [{ name: service.name, price: service.price }],
-        orderId,
-        customerEmail,
-      });
-    } catch (error: any) {
-      console.error('[PricingPage] Checkout error:', error);
-      const errorMessage = error?.message || 'Failed to initiate checkout. Please try again.';
-      toast.error(errorMessage);
-    } finally {
-      setLoadingId(null);
-    }
+    // For quick purchases, redirect to the full order flow
+    toast.info('Please use the full order form to provide vehicle details.');
+    window.location.href = '/order';
   };
 
   const renderServiceCard = (service: Service) => (

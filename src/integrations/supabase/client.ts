@@ -24,6 +24,7 @@ export interface Order {
   internal_note: string | null;
   invoice_number: string | null;
   invoice_url: string | null;
+  stripe_session_id: string | null;
   created_at: string;
   updated_at: string;
 }

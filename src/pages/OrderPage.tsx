@@ -75,12 +75,16 @@ const OrderPage = () => {
         legalConsent: legalConsentAgreed,
       }));
 
-      // Redirect to Stripe checkout with dynamic line items
+      // Redirect to Stripe checkout with dynamic line items and car data
       await redirectToCheckout({
         items,
         orderId,
         customerEmail: formData.customer.email,
+        customerName: formData.customer.name,
         customerNote: formData.customerNote,
+        vehicle: formData.vehicle,
+        fileUrl: formData.fileUrl,
+        services: formData.services,
       });
     } catch (error: any) {
       console.error('[OrderPage] Payment error:', error);
