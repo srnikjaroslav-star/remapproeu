@@ -44,38 +44,75 @@ serve(async (req) => {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
       console.log("Checkout session completed:", session.id);
+      console.log("Session metadata:", JSON.stringify(session.metadata));
       
       const customerEmail = session.customer_details?.email || session.customer_email;
-      const customerName = session.customer_details?.name || "Customer";
-      const orderId = session.client_reference_id || session.metadata?.order_id;
+      const customerName = session.customer_details?.name || session.metadata?.customer_name || "Customer";
       const customerNote = session.metadata?.customer_note || "";
-      const amountTotal = session.amount_total ? (session.amount_total / 100).toFixed(2) : "N/A";
+      const amountTotal = session.amount_total ? (session.amount_total / 100).toFixed(2) : "0";
+      
+      // Extract car details from metadata
+      const carBrand = session.metadata?.car_brand || "";
+      const carModel = session.metadata?.car_model || "";
+      const fuelType = session.metadata?.fuel_type || "";
+      const year = parseInt(session.metadata?.year || "0") || new Date().getFullYear();
+      const ecuType = session.metadata?.ecu_type || "";
+      const fileUrl = session.metadata?.file_url || null;
+      const legalConsent = session.metadata?.legal_consent === "true";
+      
+      // Parse services from metadata
+      let serviceTypes: string[] = [];
+      try {
+        serviceTypes = session.metadata?.services ? JSON.parse(session.metadata.services) : [];
+      } catch {
+        serviceTypes = session.metadata?.services ? [session.metadata.services] : [];
+      }
       
       console.log("Customer email:", customerEmail);
-      console.log("Order ID from session:", orderId);
-      console.log("Customer note:", customerNote);
+      console.log("Customer name:", customerName);
+      console.log("Car:", carBrand, carModel, fuelType, year);
+      console.log("Services:", serviceTypes);
 
       // Create Supabase client
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseKey);
 
-      // Try to find or create order
+      // Generate unique order number
+      const orderNumber = `RP-${Date.now().toString(36).toUpperCase()}`;
+      
+      // Create order in database
       let order = null;
-      let orderNumber = orderId || `RP-${Date.now().toString(36).toUpperCase()}`;
-
-      if (orderId) {
-        // Fetch order by ID
-        const { data: existingOrder } = await supabase
-          .from("orders")
-          .select("*")
-          .eq("id", orderId)
-          .single();
-        
-        order = existingOrder;
-        if (order?.order_number) {
-          orderNumber = order.order_number;
-        }
+      const orderData = {
+        order_number: orderNumber,
+        customer_name: customerName,
+        customer_email: customerEmail?.toLowerCase() || "",
+        car_brand: carBrand,
+        car_model: carModel,
+        fuel_type: fuelType,
+        year: year,
+        ecu_type: ecuType,
+        service_type: serviceTypes,
+        total_price: parseFloat(amountTotal),
+        status: "paid",
+        file_url: fileUrl,
+        legal_consent: legalConsent,
+        customer_note: customerNote || null,
+      };
+      
+      console.log("Creating order with data:", JSON.stringify(orderData));
+      
+      const { data: newOrder, error: insertError } = await supabase
+        .from("orders")
+        .insert([orderData])
+        .select()
+        .single();
+      
+      if (insertError) {
+        console.error("Failed to create order:", insertError);
+      } else {
+        order = newOrder;
+        console.log("Order created successfully:", order.id, order.order_number);
       }
 
       // Get line items from session for invoice
@@ -104,14 +141,14 @@ serve(async (req) => {
             "Authorization": `Bearer ${supabaseKey}`,
           },
           body: JSON.stringify({
-            orderId: order?.id || orderId,
-            orderNumber,
+            orderId: order?.id || session.id,
+            orderNumber: order?.order_number || orderNumber,
             customerName,
             customerEmail,
             items: lineItems,
             totalAmount: session.amount_total ? session.amount_total / 100 : 0,
-            carBrand: order?.car_brand,
-            carModel: order?.car_model,
+            carBrand: order?.car_brand || carBrand,
+            carModel: order?.car_model || carModel,
           }),
         });
         

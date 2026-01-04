@@ -452,20 +452,33 @@ const ManagementPortal = () => {
         {/* Orders Table */}
         <div className="rounded-xl overflow-hidden bg-background/40 backdrop-blur-xl border border-primary/20 shadow-[0_0_30px_rgba(59,130,246,0.15)]">
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed text-base">
+            <table className="w-full text-base" style={{ tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: '90px' }} />   {/* Order ID - narrow fixed */}
+                <col style={{ width: '180px' }} />  {/* Customer - wider with truncate */}
+                <col style={{ width: '160px' }} />  {/* Vehicle */}
+                <col style={{ width: '90px' }} />   {/* ECU */}
+                <col style={{ width: '150px' }} />  {/* Services */}
+                <col style={{ width: '60px' }} />   {/* Price - narrow */}
+                <col style={{ width: '70px' }} />   {/* Invoice */}
+                <col style={{ width: '90px' }} />   {/* Status - narrow fixed */}
+                <col style={{ width: '90px' }} />   {/* Checksum */}
+                <col style={{ width: '130px' }} />  {/* Internal Note */}
+                <col style={{ width: '130px' }} />  {/* Actions - wider for buttons */}
+              </colgroup>
               <thead>
                 <tr className="bg-primary/20 border border-primary/40">
-                  <th className="text-left p-3 w-[100px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Order ID</th>
-                  <th className="text-left p-3 w-[150px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Customer</th>
-                  <th className="text-left p-3 w-[200px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Vehicle</th>
-                  <th className="text-left p-3 w-[110px] text-sm font-semibold uppercase tracking-wide align-middle text-white">ECU</th>
-                  <th className="text-left p-3 w-[180px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Services</th>
-                  <th className="text-left p-3 w-[70px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Price</th>
-                  <th className="text-left p-3 w-[85px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Invoice</th>
-                  <th className="text-left p-3 w-[110px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Status</th>
-                  <th className="text-left p-3 w-[100px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Checksum</th>
-                  <th className="text-left p-3 w-[160px] text-sm font-semibold uppercase tracking-wide align-middle text-white">Internal Note</th>
-                  <th className="text-right p-3 w-[110px] text-sm font-semibold uppercase tracking-wide align-middle text-white sticky right-0 bg-primary/30 backdrop-blur-sm">Actions</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">ID</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Customer</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Vehicle</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">ECU</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Services</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Price</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Invoice</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Status</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">CRC</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Note</th>
+                  <th className="text-right p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white sticky right-0 bg-primary/30 backdrop-blur-sm">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -484,54 +497,56 @@ const ManagementPortal = () => {
                 ) : (
                   filteredOrders.map((order) => (
                     <tr key={order.id} className="align-top border-b border-gray-700/50 hover:bg-white/5 transition-colors duration-150">
-                      <td className="p-3">
-                        <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
-                          {order.order_number || order.id.slice(0, 8).toUpperCase()}
+                      <td className="p-2">
+                        <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded block truncate">
+                          {order.order_number || order.id.slice(0, 6).toUpperCase()}
                         </span>
                       </td>
-                      <td className="p-3">
-                        <div>
-                          <p className="font-medium text-sm truncate">{order.customer_name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{order.customer_email}</p>
+                      <td className="p-2">
+                        <div className="overflow-hidden">
+                          <p className="font-medium text-xs truncate" title={order.customer_name}>{order.customer_name}</p>
+                          <p className="text-xs text-muted-foreground truncate" title={order.customer_email}>{order.customer_email}</p>
                         </div>
                       </td>
-                      <td className="p-3">
-                        <div>
-                          <p className="font-medium text-sm">{order.car_brand} {order.car_model}</p>
+                      <td className="p-2">
+                        <div className="overflow-hidden">
+                          <p className="font-medium text-xs truncate" title={`${order.car_brand} ${order.car_model}`}>
+                            {order.car_brand} {order.car_model}
+                          </p>
                           <p className="text-xs text-muted-foreground">{order.fuel_type} • {order.year}</p>
                         </div>
                       </td>
-                      <td className="p-3">
-                        {order.ecu_type && order.ecu_type.length > 12 ? (
+                      <td className="p-2">
+                        {order.ecu_type && order.ecu_type.length > 10 ? (
                           <SmartTooltip content={order.ecu_type}>
-                            <p className="text-sm truncate cursor-help max-w-[90px]">{order.ecu_type}</p>
+                            <p className="text-xs truncate cursor-help">{order.ecu_type}</p>
                           </SmartTooltip>
                         ) : (
-                          <p className="text-sm">{order.ecu_type || '—'}</p>
+                          <p className="text-xs truncate">{order.ecu_type || '—'}</p>
                         )}
                       </td>
-                      <td className="p-3">
+                      <td className="p-2">
                         {(() => {
                           const services = getServiceNames(order.service_type);
-                          return services.length > 20 ? (
+                          return services.length > 18 ? (
                             <SmartTooltip content={services} maxWidth="350px">
-                              <p className="text-sm truncate cursor-help max-w-[150px]">{services}</p>
+                              <p className="text-xs truncate cursor-help">{services}</p>
                             </SmartTooltip>
                           ) : (
-                            <p className="text-sm">{services}</p>
+                            <p className="text-xs truncate">{services || '—'}</p>
                           );
                         })()}
                       </td>
-                      <td className="p-3">
-                        <p className="font-semibold text-primary text-sm">{order.total_price}€</p>
+                      <td className="p-2">
+                        <p className="font-semibold text-primary text-xs">{order.total_price}€</p>
                       </td>
-                      <td className="p-3">
+                      <td className="p-2">
                         {order.invoice_number ? (
                           <a
                             href={order.invoice_url || '#'}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs font-mono text-green-400 hover:text-green-300 underline"
+                            className="text-xs font-mono text-green-400 hover:text-green-300 underline truncate block"
                             title="View Invoice PDF"
                           >
                             {order.invoice_number}
@@ -540,64 +555,59 @@ const ManagementPortal = () => {
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </td>
-                      <td className="p-3">
+                      <td className="p-2">
                         <select
                           value={order.status}
                           onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                          className={`admin-status-select text-xs ${getStatusClass(order.status)}`}
+                          className={`admin-status-select text-xs w-full ${getStatusClass(order.status)}`}
                         >
                           <option value="pending">Pending</option>
                           <option value="processing">Processing</option>
                           <option value="completed">Completed</option>
                         </select>
                       </td>
-                      <td className="p-3">
+                      <td className="p-2">
                         <input
                           type="text"
                           value={getEditableValue(order, 'checksum_crc')}
                           onChange={(e) => handleFieldChange(order.id, 'checksum_crc', e.target.value)}
                           onBlur={() => handleFieldBlur(order.id, 'checksum_crc')}
                           placeholder="CRC..."
-                          className="w-full h-8 bg-secondary/50 border border-gray-600 rounded px-2 py-1.5 text-xs text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/50"
+                          className="w-full h-7 bg-secondary/50 border border-gray-600 rounded px-1.5 py-1 text-xs text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/50"
                         />
                       </td>
-                      <td className="p-3">
+                      <td className="p-2">
                         {(() => {
                           const note = getEditableValue(order, 'internal_note');
                           return (
                             <div 
                               onClick={() => setNoteModalOrder(order)}
-                              className="h-8 flex items-center cursor-pointer group border border-gray-600 rounded px-2 bg-secondary/50 hover:bg-secondary/70 transition-colors"
+                              className="h-7 flex items-center cursor-pointer group border border-gray-600 rounded px-1.5 bg-secondary/50 hover:bg-secondary/70 transition-colors"
                             >
-                              {note && note.length > 25 ? (
+                              {note ? (
                                 <SmartTooltip content={note} maxWidth="400px">
                                   <div className="flex items-center gap-1 w-full">
-                                    <p className="text-xs truncate max-w-[100px] text-white">{note}</p>
-                                    <Edit3 className="w-3 h-3 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0 ml-auto" />
+                                    <p className="text-xs truncate text-white flex-1">{note}</p>
+                                    <Edit3 className="w-3 h-3 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0" />
                                   </div>
                                 </SmartTooltip>
-                              ) : note ? (
-                                <div className="flex items-center gap-1 w-full">
-                                  <p className="text-xs text-white">{note}</p>
-                                  <Edit3 className="w-3 h-3 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0 ml-auto" />
-                                </div>
                               ) : (
                                 <div className="flex items-center gap-1 w-full text-gray-400 group-hover:text-white transition-colors">
-                                  <span className="text-xs">Add note...</span>
-                                  <Edit3 className="w-3 h-3 ml-auto" />
+                                  <span className="text-xs flex-1">Note...</span>
+                                  <Edit3 className="w-3 h-3 flex-shrink-0" />
                                 </div>
                               )}
                             </div>
                           );
                         })()}
                       </td>
-                      <td className="p-3 sticky right-0 bg-background/95 backdrop-blur-sm">
-                        <div className="flex items-center justify-end gap-1">
+                      <td className="p-2 sticky right-0 bg-background/95 backdrop-blur-sm">
+                        <div className="flex items-center justify-end gap-1.5">
                           {editingFields[order.id] && (
                             <button
                               onClick={() => handleSaveFields(order.id)}
                               disabled={savingId === order.id}
-                              className="p-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
+                              className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
                               title="Save Admin Fields"
                             >
                               <Save className={`w-4 h-4 ${savingId === order.id ? 'animate-pulse' : ''}`} />
@@ -607,7 +617,7 @@ const ManagementPortal = () => {
                             <a
                               href={order.file_url}
                               download
-                              className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
+                              className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
                               title="Download Original"
                             >
                               <Download className="w-4 h-4" />
@@ -616,7 +626,7 @@ const ManagementPortal = () => {
                           <button
                             onClick={() => triggerUpload(order.id)}
                             disabled={uploadingId === order.id}
-                            className="p-1.5 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary transition-colors"
+                            className="p-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary transition-colors"
                             title="Upload Result"
                           >
                             <Upload className={`w-4 h-4 ${uploadingId === order.id ? 'animate-pulse' : ''}`} />
@@ -625,7 +635,7 @@ const ManagementPortal = () => {
                             <a
                               href={order.result_file_url}
                               download
-                              className="p-1.5 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-500 transition-colors"
+                              className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-500 transition-colors"
                               title="Download Result"
                             >
                               <Eye className="w-4 h-4" />

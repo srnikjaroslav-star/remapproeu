@@ -1,79 +1,83 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle, Home, FileText, Loader2, Search } from 'lucide-react';
-import { toast } from 'sonner';
+import { Link, useSearchParams } from 'react-router-dom';
+import { CheckCircle, Home, Loader2, Search } from 'lucide-react';
 import Logo from '@/components/Logo';
 import Footer from '@/components/Footer';
-import { supabase, OrderInsert } from '@/integrations/supabase/client';
+import { supabase, Order } from '@/integrations/supabase/client';
 
 const SuccessPage = () => {
-  const navigate = useNavigate();
-  const [isProcessing, setIsProcessing] = useState(true);
-  const [orderId, setOrderId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const [isLoading, setIsLoading] = useState(true);
+  const [order, setOrder] = useState<Order | null>(null);
 
   useEffect(() => {
-    const processPendingOrder = async () => {
-      const pendingOrderData = sessionStorage.getItem('pendingOrder');
+    const fetchOrderBySession = async () => {
+      // Get session_id from URL (Stripe redirects with this)
+      const sessionId = searchParams.get('session_id');
       
-      if (!pendingOrderData) {
-        setIsProcessing(false);
+      if (!sessionId) {
+        // No session_id - might be direct visit or old flow
+        // Clear any old pending order data
+        sessionStorage.removeItem('pendingOrder');
+        setIsLoading(false);
         return;
       }
 
-      try {
-        const orderData = JSON.parse(pendingOrderData);
-        
-        const insertData: OrderInsert = {
-          customer_name: orderData.customer.name,
-          customer_email: orderData.customer.email,
-          car_brand: orderData.vehicle.brand,
-          car_model: orderData.vehicle.model,
-          fuel_type: orderData.vehicle.fuelType,
-          year: orderData.vehicle.year,
-          ecu_type: orderData.vehicle.ecuType,
-          service_type: orderData.services,
-          total_price: orderData.totalPrice,
-          status: 'paid',
-          file_url: orderData.fileUrl || null,
-          legal_consent: orderData.legalConsent,
-        };
+      // Wait briefly for webhook to process the order
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
+      // Try to find the most recent order (webhook should have created it)
+      // We poll a few times in case webhook is slow
+      let attempts = 0;
+      const maxAttempts = 5;
+      
+      while (attempts < maxAttempts) {
         const { data, error } = await supabase
           .from('orders')
-          .insert([insertData])
-          .select()
-          .single();
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        if (error) {
-          console.error('Error creating order:', error);
-          toast.error('Order was paid but failed to save. Please contact support.');
-        } else {
-          const displayOrderId = data.order_number || `RP-${data.id.slice(0, 6).toUpperCase()}`;
-          setOrderId(displayOrderId);
-          toast.success(`Order ${displayOrderId} has been created!`);
-          sessionStorage.removeItem('pendingOrder');
+        if (data && !error) {
+          // Check if this order was created in the last 2 minutes
+          const orderTime = new Date(data.created_at).getTime();
+          const now = Date.now();
+          const twoMinutes = 2 * 60 * 1000;
+          
+          if (now - orderTime < twoMinutes) {
+            setOrder(data as Order);
+            sessionStorage.removeItem('pendingOrder');
+            break;
+          }
         }
-      } catch (error) {
-        console.error('Error processing order:', error);
-        toast.error('Error processing your order. Please contact support.');
-      } finally {
-        setIsProcessing(false);
+        
+        attempts++;
+        if (attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
       }
+
+      setIsLoading(false);
     };
 
-    processPendingOrder();
-  }, []);
+    fetchOrderBySession();
+  }, [searchParams]);
 
-  if (isProcessing) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
           <p className="text-lg text-muted-foreground">Processing your order...</p>
+          <p className="text-sm text-muted-foreground mt-2">This may take a few seconds</p>
         </div>
       </div>
     );
   }
+
+  const orderId = order?.order_number || order?.id?.slice(0, 8).toUpperCase();
+  const customerEmail = order?.customer_email;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -101,7 +105,7 @@ const SuccessPage = () => {
             <h1 className="text-3xl font-bold mb-4">Payment Successful!</h1>
             
             {orderId && (
-              <div className="mb-6">
+              <div className="mb-4">
                 <p className="text-muted-foreground mb-2">Your Order ID is</p>
                 <p className="text-2xl font-mono font-bold text-primary">
                   {orderId}
@@ -109,8 +113,19 @@ const SuccessPage = () => {
               </div>
             )}
             
+            {customerEmail && (
+              <div className="mb-6">
+                <p className="text-muted-foreground mb-1">Email</p>
+                <p className="text-lg font-medium text-foreground">
+                  {customerEmail}
+                </p>
+              </div>
+            )}
+            
             <p className="text-muted-foreground mb-8">
-              Use this ID to track your order status. You will shortly receive an email with instructions.
+              {orderId 
+                ? 'Use this ID to track your order status. You will shortly receive an email with instructions.'
+                : 'Your payment has been received. You will receive a confirmation email shortly.'}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -118,17 +133,15 @@ const SuccessPage = () => {
                 <Home className="w-4 h-4" />
                 Back to Home
               </Link>
-              <Link to="/track" className="btn-primary flex items-center justify-center gap-2">
-                <Search className="w-4 h-4" />
-                Track Order
-              </Link>
-            </div>
-            
-            <div className="mt-6 pt-6 border-t border-border">
-              <Link to="/order" className="text-primary hover:underline flex items-center justify-center gap-2">
-                <FileText className="w-4 h-4" />
-                Place Another Order
-              </Link>
+              {orderId && customerEmail && (
+                <Link 
+                  to={`/track?id=${encodeURIComponent(orderId)}&email=${encodeURIComponent(customerEmail)}`} 
+                  className="btn-primary flex items-center justify-center gap-2"
+                >
+                  <Search className="w-4 h-4" />
+                  Track Order
+                </Link>
+              )}
             </div>
           </div>
         </div>
