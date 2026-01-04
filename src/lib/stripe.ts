@@ -67,10 +67,7 @@ export const redirectToCheckout = async ({ items, orderId, customerEmail, custom
 
   try {
     const { data, error } = await supabase.functions.invoke('create-checkout', {
-      body: requestBody,
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      body: requestBody
     });
 
     console.log('[Stripe] Edge function response:', { data, error });
