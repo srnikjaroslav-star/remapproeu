@@ -592,7 +592,7 @@ serve(async (req) => {
           from: SENDER,
           to: [customerEmail],
           bcc: [BCC_EMAIL],
-          subject: `✅ Order Confirmed - ${orderNumber} | REMAPPRO Invoice`,
+          subject: `Potvrdenie objednávky č. ${orderNumber} - REMAPPRO`,
           html: emailHtml,
           attachments: [
             {

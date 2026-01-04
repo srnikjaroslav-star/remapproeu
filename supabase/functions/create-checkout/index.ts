@@ -106,6 +106,7 @@ Deno.serve(async (req) => {
         fuel_type: metadata?.fuel_type || '',
         year: metadata?.year || '',
         ecu_type: metadata?.ecu_type || '',
+        vin: metadata?.vin || '',
         file_url: metadata?.file_url || '',
       },
     });
