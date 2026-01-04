@@ -515,7 +515,7 @@ serve(async (req) => {
                             ${invoiceUrl ? `
                             <a href="${invoiceUrl}" 
                                style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); color: #000000; font-size: 14px; font-weight: bold; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; margin-right: 10px;">
-                              📄 Download Invoice
+                              📄 Stiahnuť faktúru
                             </a>
                             ` : ''}
                           </td>
@@ -524,7 +524,7 @@ serve(async (req) => {
                           <td align="center">
                             <a href="${trackingLink}" 
                                style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #ff6b00 0%, #ff9500 100%); color: #000000; font-size: 14px; font-weight: bold; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px;">
-                              🔍 Track Your Order
+                              🔍 Sledovať objednávku
                             </a>
                           </td>
                         </tr>
