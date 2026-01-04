@@ -231,19 +231,25 @@ const TrackPage = () => {
         {/* Order Details */}
         {order && (
           <div className="space-y-6 animate-fadeIn">
-            {/* Order ID Banner */}
-            <div className="glass-card p-4 bg-primary/5 border-primary/30 flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Order ID</p>
-                <p className="text-xl font-mono font-bold text-primary">
-                  {order.order_number || order.id.slice(0, 8).toUpperCase()}
-                </p>
+            {/* Order ID & Email Banner */}
+            <div className="glass-card p-5 bg-primary/5 border-primary/30">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Order ID</p>
+                  <p className="text-2xl font-mono font-bold text-primary">
+                    {order.order_number || order.id.slice(0, 8).toUpperCase()}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Created</p>
+                  <p className="font-medium">
+                    {new Date(order.created_at).toLocaleDateString()}
+                  </p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">Created</p>
-                <p className="font-medium">
-                  {new Date(order.created_at).toLocaleDateString()}
-                </p>
+              <div className="pt-3 border-t border-border/50">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Customer Email</p>
+                <p className="font-medium text-foreground">{order.customer_email}</p>
               </div>
             </div>
 
