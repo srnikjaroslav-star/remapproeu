@@ -36,7 +36,13 @@ interface InvoiceRequest {
   totalAmount: number;
   carBrand?: string;
   carModel?: string;
+  fuelType?: string;
+  year?: number;
+  ecuType?: string;
 }
+
+const BCC_EMAIL = "richard.srnik2@gmail.com";
+const SITE_URL = "https://remappro.eu";
 
 function generateInvoiceNumber(): string {
   const year = new Date().getFullYear();
@@ -279,7 +285,7 @@ serve(async (req) => {
     const data: InvoiceRequest = await req.json();
     console.log("Invoice request data:", JSON.stringify(data));
     
-    const { orderId, orderNumber, customerName, customerEmail, items, totalAmount, carBrand, carModel } = data;
+    const { orderId, orderNumber, customerName, customerEmail, items, totalAmount, carBrand, carModel, fuelType, year, ecuType } = data;
     
     if (!orderId || !customerEmail || !items || items.length === 0) {
       throw new Error("Missing required invoice data");
@@ -366,6 +372,9 @@ serve(async (req) => {
     
     // Send email with PDF attachment via Resend
     if (RESEND_API_KEY) {
+      const trackingLink = `${SITE_URL}/track?id=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(customerEmail)}`;
+      const carInfo = carBrand && carModel ? `${carBrand} ${carModel}` : '';
+      
       const emailHtml = `
         <!DOCTYPE html>
         <html>
@@ -377,47 +386,73 @@ serve(async (req) => {
           <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; padding: 40px 20px;">
             <tr>
               <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #1A1F2C 0%, #111111 100%); border-radius: 16px; border: 1px solid #333;">
-                  <!-- Header -->
+                <table width="650" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%); border-radius: 16px; border: 1px solid #333; overflow: hidden;">
+                  
+                  <!-- Header with Logo -->
                   <tr>
-                    <td style="padding: 40px 40px 20px; text-align: center; border-bottom: 1px solid #333; background: #1A1F2C; border-radius: 16px 16px 0 0;">
-                      <h1 style="margin: 0; font-size: 32px; font-weight: bold;">
-                        <span style="color: #ffffff;">REMAP</span><span style="color: #00d4ff;">PRO</span>
-                      </h1>
-                      <p style="margin: 10px 0 0; color: #888; font-size: 14px;">
-                        Digital Solutions
-                      </p>
+                    <td style="padding: 30px 40px; background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%); border-bottom: 2px solid #ff6b00;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="vertical-align: top;">
+                            <h1 style="margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -1px;">
+                              <span style="color: #ffffff;">REMAP</span><span style="color: #ff6b00;">PRO</span>
+                            </h1>
+                            <p style="margin: 5px 0 0; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">
+                              Professional ECU Tuning
+                            </p>
+                          </td>
+                          <td style="vertical-align: top; text-align: right;">
+                            <p style="margin: 0; color: #00ff88; font-size: 16px; font-weight: bold;">
+                              ✅ Payment Confirmed
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
-                  
-                  <!-- Main Content -->
+
+                  <!-- Order Confirmation -->
                   <tr>
-                    <td style="padding: 40px;">
-                      <h2 style="margin: 0 0 20px; color: #00ffcc; font-size: 22px; text-align: center;">
-                        🧾 Your Invoice
+                    <td style="padding: 30px 40px;">
+                      <h2 style="margin: 0 0 20px; color: #ffffff; font-size: 24px; text-align: center;">
+                        Thank you for your order!
                       </h2>
                       
-                      <p style="margin: 0 0 20px; color: #ffffff; font-size: 16px; line-height: 1.6;">
-                        Hello,
-                      </p>
-                      
-                      <p style="margin: 0 0 25px; color: #cccccc; font-size: 16px; line-height: 1.6;">
-                        Thank you for your payment. Please find your official invoice for your software optimization service attached below.
-                      </p>
-                      
-                      <!-- Invoice Details Box -->
-                      <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 12px; margin-bottom: 25px;">
+                      <!-- Order ID Banner -->
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, rgba(255, 107, 0, 0.15) 0%, rgba(255, 149, 0, 0.1) 100%); border: 1px solid rgba(255, 107, 0, 0.4); border-radius: 12px; margin-bottom: 20px;">
                         <tr>
-                          <td style="padding: 25px;">
-                            <table width="100%" cellpadding="0" cellspacing="0">
+                          <td style="padding: 20px; text-align: center;">
+                            <p style="margin: 0 0 8px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                              Your Order ID
+                            </p>
+                            <p style="margin: 0; color: #ff6b00; font-size: 28px; font-weight: bold; font-family: 'Monaco', 'Consolas', monospace; letter-spacing: 2px;">
+                              ${orderNumber}
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                      <!-- Customer & Invoice Details -->
+                      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 20px;">
+                        <tr>
+                          <td style="vertical-align: top; width: 50%; padding-right: 10px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(0, 212, 255, 0.08); border: 1px solid rgba(0, 212, 255, 0.25); border-radius: 10px;">
                               <tr>
-                                <td style="width: 50%;">
-                                  <p style="margin: 0 0 5px; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Invoice Number</p>
-                                  <p style="margin: 0; color: #00d4ff; font-size: 18px; font-weight: bold; font-family: 'Monaco', monospace;">${invoiceNumber}</p>
+                                <td style="padding: 16px;">
+                                  <p style="margin: 0 0 8px; color: #00d4ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Customer</p>
+                                  <p style="margin: 0 0 4px; color: #ffffff; font-size: 14px; font-weight: 600;">${customerName || 'Customer'}</p>
+                                  <p style="margin: 0; color: #aaa; font-size: 13px;">${customerEmail}</p>
                                 </td>
-                                <td style="width: 50%; text-align: right;">
-                                  <p style="margin: 0 0 5px; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Amount Paid</p>
-                                  <p style="margin: 0; color: #00ff88; font-size: 22px; font-weight: bold;">€${totalAmount.toFixed(2)}</p>
+                              </tr>
+                            </table>
+                          </td>
+                          <td style="vertical-align: top; width: 50%; padding-left: 10px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(0, 255, 136, 0.08); border: 1px solid rgba(0, 255, 136, 0.25); border-radius: 10px;">
+                              <tr>
+                                <td style="padding: 16px;">
+                                  <p style="margin: 0 0 8px; color: #00ff88; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Invoice</p>
+                                  <p style="margin: 0 0 4px; color: #ffffff; font-size: 14px; font-weight: 600;">${invoiceNumber}</p>
+                                  <p style="margin: 0; color: #00ff88; font-size: 18px; font-weight: bold;">€${totalAmount.toFixed(2)}</p>
                                 </td>
                               </tr>
                             </table>
@@ -425,32 +460,117 @@ serve(async (req) => {
                         </tr>
                       </table>
                       
-                      <!-- Order Reference -->
-                      <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(255, 107, 0, 0.1); border: 1px solid rgba(255, 107, 0, 0.3); border-radius: 12px; margin-bottom: 25px;">
+                      ${carInfo ? `
+                      <!-- Vehicle Details -->
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(255, 107, 0, 0.08); border: 1px solid rgba(255, 107, 0, 0.25); border-radius: 10px; margin-bottom: 20px;">
                         <tr>
-                          <td style="padding: 18px; text-align: center;">
-                            <p style="margin: 0 0 5px; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Order Reference</p>
-                            <p style="margin: 0; color: #ff9500; font-size: 16px; font-weight: bold; font-family: 'Monaco', monospace;">${orderNumber}</p>
+                          <td style="padding: 16px;">
+                            <p style="margin: 0 0 10px; color: #ff6b00; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">
+                              🚗 Vehicle Details
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                              <tr>
+                                <td style="color: #888; font-size: 12px; padding: 2px 0;">Brand:</td>
+                                <td style="color: #ffffff; font-size: 12px; padding: 2px 0; font-weight: 500;">${carBrand || '-'}</td>
+                                <td style="color: #888; font-size: 12px; padding: 2px 0; padding-left: 20px;">Model:</td>
+                                <td style="color: #ffffff; font-size: 12px; padding: 2px 0; font-weight: 500;">${carModel || '-'}</td>
+                              </tr>
+                              <tr>
+                                <td style="color: #888; font-size: 12px; padding: 2px 0;">Year:</td>
+                                <td style="color: #ffffff; font-size: 12px; padding: 2px 0; font-weight: 500;">${year || '-'}</td>
+                                <td style="color: #888; font-size: 12px; padding: 2px 0; padding-left: 20px;">Fuel:</td>
+                                <td style="color: #ffffff; font-size: 12px; padding: 2px 0; font-weight: 500;">${fuelType || '-'}</td>
+                              </tr>
+                              ${ecuType ? `
+                              <tr>
+                                <td style="color: #888; font-size: 12px; padding: 2px 0;">ECU:</td>
+                                <td colspan="3" style="color: #00d4ff; font-size: 12px; padding: 2px 0; font-weight: 500;">${ecuType}</td>
+                              </tr>
+                              ` : ''}
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                      ` : ''}
+                      
+                      <!-- What's Next -->
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; margin-bottom: 25px;">
+                        <tr>
+                          <td style="padding: 20px; text-align: center;">
+                            <p style="margin: 0 0 10px; color: #ffffff; font-size: 14px; font-weight: 600;">
+                              What happens next?
+                            </p>
+                            <p style="margin: 0; color: #999; font-size: 13px; line-height: 1.6;">
+                              Our engineers are now processing your file. You will receive<br>
+                              an email notification when your optimized file is ready for download.
+                            </p>
                           </td>
                         </tr>
                       </table>
                       
-                      <p style="margin: 0; color: #999; font-size: 14px; line-height: 1.6; text-align: center;">
-                        Your order is now being processed by our engineering team.<br>
-                        You will receive another email once your tuning file is ready.
-                      </p>
+                      <!-- CTA Buttons -->
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td align="center" style="padding-bottom: 12px;">
+                            ${invoiceUrl ? `
+                            <a href="${invoiceUrl}" 
+                               style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #00d4ff 0%, #0099cc 100%); color: #000000; font-size: 14px; font-weight: bold; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; margin-right: 10px;">
+                              📄 Download Invoice
+                            </a>
+                            ` : ''}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td align="center">
+                            <a href="${trackingLink}" 
+                               style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #ff6b00 0%, #ff9500 100%); color: #000000; font-size: 14px; font-weight: bold; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px;">
+                              🔍 Track Your Order
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
                     </td>
                   </tr>
                   
-                  <!-- Footer -->
+                  <!-- Company Footer -->
                   <tr>
-                    <td style="padding: 25px 40px; border-top: 1px solid #333; text-align: center;">
-                      <p style="margin: 0 0 8px; color: #888; font-size: 13px;">
-                        For technical support, contact ${SUPPLIER.email}
-                      </p>
+                    <td style="padding: 25px 40px; background: #0d0d0d; border-top: 1px solid #333;">
+                      <table width="100%" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="vertical-align: top;">
+                            <p style="margin: 0 0 4px; color: #ffffff; font-size: 14px; font-weight: 600;">REMAPPRO</p>
+                            <p style="margin: 0; color: #888; font-size: 12px; line-height: 1.6;">
+                              ${SUPPLIER.address}<br>
+                              ${SUPPLIER.city}<br>
+                              ${SUPPLIER.country}
+                            </p>
+                          </td>
+                          <td style="vertical-align: top; text-align: right;">
+                            <table cellpadding="0" cellspacing="0" style="margin-left: auto;">
+                              <tr>
+                                <td style="padding: 2px 0; color: #888; font-size: 12px;">IČO:</td>
+                                <td style="padding: 2px 0 2px 8px; color: #ffffff; font-size: 12px;">${SUPPLIER.ico}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 2px 0; color: #888; font-size: 12px;">DIČ:</td>
+                                <td style="padding: 2px 0 2px 8px; color: #ffffff; font-size: 12px;">${SUPPLIER.dic}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding: 2px 0; color: #888; font-size: 12px;">Email:</td>
+                                <td style="padding: 2px 0 2px 8px; color: #00d4ff; font-size: 12px;">${SUPPLIER.email}</td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+
+                  <!-- Copyright -->
+                  <tr>
+                    <td style="padding: 15px 40px; background: #080808; text-align: center;">
                       <p style="margin: 0; color: #555; font-size: 11px;">
-                        © ${new Date().getFullYear()} ${SUPPLIER.brandName}<br>
-                        ${SUPPLIER.address}, ${SUPPLIER.city}, ${SUPPLIER.country}
+                        © ${new Date().getFullYear()} REMAPPRO. Professional ECU Tuning Services. All rights reserved.
                       </p>
                     </td>
                   </tr>
@@ -471,7 +591,8 @@ serve(async (req) => {
         body: JSON.stringify({
           from: SENDER,
           to: [customerEmail],
-          subject: `Your REMAPPRO Invoice - Order #${orderNumber}`,
+          bcc: [BCC_EMAIL],
+          subject: `✅ Order Confirmed - ${orderNumber} | REMAPPRO Invoice`,
           html: emailHtml,
           attachments: [
             {
