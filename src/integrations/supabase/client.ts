@@ -13,6 +13,7 @@ export interface Order {
   fuel_type: string;
   year: number;
   ecu_type: string;
+  vin: string | null;
   service_type: string[];
   total_price: number;
   status: string;

@@ -130,6 +130,10 @@ serve(async (req) => {
       const fileUrl = session.metadata?.file_url || null;
       const legalConsent = session.metadata?.legal_consent === "true";
       
+      // VIN: Use null if empty or not provided (matches DB column type)
+      const vinRaw = session.metadata?.vin || "";
+      const vin = vinRaw.trim() ? vinRaw.trim().toUpperCase() : null;
+      
       // Parse services from metadata
       let serviceTypes: string[] = [];
       try {
@@ -140,7 +144,7 @@ serve(async (req) => {
       
       console.log("Customer email:", customerEmail);
       console.log("Customer name:", customerName);
-      console.log("Car:", carBrand, carModel, fuelType, year);
+      console.log("Car:", carBrand, carModel, fuelType, year, "VIN:", vin);
       console.log("Services:", serviceTypes);
 
       // Create Supabase client
@@ -163,6 +167,7 @@ serve(async (req) => {
         fuel_type: fuelType,
         year: year,
         ecu_type: ecuType,
+        vin: vin,  // VIN column - null if not provided
         service_type: serviceTypes,
         total_price: parseFloat(amountTotal),
         status: "paid",
@@ -182,9 +187,19 @@ serve(async (req) => {
         .single();
       
       if (insertError || !newOrder) {
-        console.error("CRITICAL: Failed to create order:", insertError);
+        console.error("CRITICAL DB ERROR - Failed to create order:", JSON.stringify({
+          error: insertError?.message,
+          code: insertError?.code,
+          details: insertError?.details,
+          hint: insertError?.hint,
+          orderData: { ...orderData, file_url: "[REDACTED]" }
+        }));
         // Return 500 to tell Stripe to retry
-        return new Response(JSON.stringify({ error: "Failed to create order", details: insertError?.message }), {
+        return new Response(JSON.stringify({ 
+          error: "Failed to create order", 
+          details: insertError?.message,
+          code: insertError?.code 
+        }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -193,7 +208,19 @@ serve(async (req) => {
       // CRITICAL: Use the order_number returned from DB, not the generated one
       const confirmedOrderNumber = newOrder.order_number;
       const confirmedOrderId = newOrder.id;
-      console.log("ATOMIC: Order created successfully:", confirmedOrderId, confirmedOrderNumber);
+      
+      if (!confirmedOrderNumber) {
+        console.error("CRITICAL: DB returned order but order_number is null/empty:", newOrder);
+        return new Response(JSON.stringify({ 
+          error: "Order created but order_number is missing",
+          orderId: confirmedOrderId
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      console.log("ATOMIC: Order created successfully - ID:", confirmedOrderId, "Order#:", confirmedOrderNumber);
 
       // Build line items for invoice from session
       const lineItems: { name: string; price: number }[] = [];
@@ -223,7 +250,7 @@ serve(async (req) => {
       }
 
       // ATOMIC: Only generate invoice AFTER we have confirmed order from DB
-      console.log("ATOMIC: Generating invoice for order:", confirmedOrderNumber);
+      console.log("ATOMIC: Generating invoice for confirmed order:", confirmedOrderNumber, "ID:", confirmedOrderId);
       try {
         const invoiceRes = await fetch(`${supabaseUrl}/functions/v1/generate-invoice`, {
           method: "POST",
@@ -243,6 +270,7 @@ serve(async (req) => {
             fuelType,
             year,
             ecuType,
+            vin,
           }),
         });
         
