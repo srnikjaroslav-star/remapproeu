@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from '@/integrations/supabase/client';
 
 // LIVE MODE - Stripe Publishable Key
 export const STRIPE_PUBLISHABLE_KEY = 'pk_live_51Sjj4V4DSSkujAMNClROw2Dr8RmeNqgZjTbboTaLB8cS0BfpxYOacvGqBIn8SQEJ29ey5q6ryYnMsNV3hIyc1oWI00fpWzzYKb';
@@ -66,22 +66,23 @@ export const redirectToCheckout = async ({ items, orderId, customerEmail, custom
   console.log('[Stripe] Creating checkout session:', requestBody);
 
   try {
-    const { data, error } = await supabase.functions.invoke('create-checkout', {
-      body: requestBody,
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout`, {
+      method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        apikey: SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify(requestBody)
     });
 
-    console.log('[Stripe] Edge function response:', { data, error });
+    const data = await response.json().catch(() => null);
 
-    if (error) {
-      console.error('[Stripe] Edge function error details:', {
-        message: error.message,
-        name: error.name,
-        context: error.context
-      });
-      throw new Error(error.message || 'Checkout service unavailable. Please try again later.');
+    console.log('[Stripe] Edge function response:', { status: response.status, data });
+
+    if (!response.ok) {
+      console.error('[Stripe] create-checkout HTTP error:', response.status, data);
+      throw new Error((data as any)?.error || `Checkout service error (${response.status}).`);
     }
 
     if (data?.error) {
