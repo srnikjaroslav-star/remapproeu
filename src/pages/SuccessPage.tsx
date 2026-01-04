@@ -12,50 +12,47 @@ const SuccessPage = () => {
 
   useEffect(() => {
     const fetchOrderBySession = async () => {
-      // Get session_id from URL (Stripe redirects with this)
       const sessionId = searchParams.get('session_id');
       
       if (!sessionId) {
-        // No session_id - might be direct visit or old flow
-        // Clear any old pending order data
-        sessionStorage.removeItem('pendingOrder');
         setIsLoading(false);
         return;
       }
 
-      // Wait briefly for webhook to process the order
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Try to find the most recent order (webhook should have created it)
-      // We poll a few times in case webhook is slow
+      // Poll for the order with exponential backoff
       let attempts = 0;
-      const maxAttempts = 5;
+      const maxAttempts = 10;
+      let delay = 1000;
       
       while (attempts < maxAttempts) {
+        console.log(`[SuccessPage] Attempt ${attempts + 1}: Fetching order by session_id: ${sessionId}`);
+        
         const { data, error } = await supabase
           .from('orders')
           .select('*')
-          .order('created_at', { ascending: false })
-          .limit(1)
+          .eq('stripe_session_id', sessionId)
           .maybeSingle();
 
         if (data && !error) {
-          // Check if this order was created in the last 2 minutes
-          const orderTime = new Date(data.created_at).getTime();
-          const now = Date.now();
-          const twoMinutes = 2 * 60 * 1000;
-          
-          if (now - orderTime < twoMinutes) {
-            setOrder(data as Order);
-            sessionStorage.removeItem('pendingOrder');
-            break;
-          }
+          console.log('[SuccessPage] Order found:', data.order_number);
+          setOrder(data as Order);
+          break;
+        }
+        
+        if (error) {
+          console.error('[SuccessPage] Supabase error:', error);
         }
         
         attempts++;
         if (attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          console.log(`[SuccessPage] Order not found yet, waiting ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          delay = Math.min(delay * 1.5, 5000); // Exponential backoff, max 5s
         }
+      }
+
+      if (!order && attempts >= maxAttempts) {
+        console.warn('[SuccessPage] Max attempts reached, order not found');
       }
 
       setIsLoading(false);

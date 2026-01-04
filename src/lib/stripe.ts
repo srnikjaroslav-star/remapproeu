@@ -18,14 +18,35 @@ type CheckoutItem = {
   amount: number; // in EUR
 };
 
+interface VehicleData {
+  brand: string;
+  model: string;
+  fuelType: string;
+  year: number;
+  ecuType: string;
+}
+
 interface CheckoutOptions {
   items: { name: string; price: number }[]; // price in EUR
   orderId: string;
   customerEmail: string;
+  customerName: string;
   customerNote?: string;
+  vehicle: VehicleData;
+  fileUrl?: string;
+  services: string[];
 }
 
-export const redirectToCheckout = async ({ items, orderId, customerEmail, customerNote }: CheckoutOptions) => {
+export const redirectToCheckout = async ({ 
+  items, 
+  orderId, 
+  customerEmail, 
+  customerName,
+  customerNote, 
+  vehicle,
+  fileUrl,
+  services 
+}: CheckoutOptions) => {
   // Validate email
   if (!customerEmail || !customerEmail.includes('@')) {
     throw new Error('Valid email address is required.');
@@ -47,7 +68,7 @@ export const redirectToCheckout = async ({ items, orderId, customerEmail, custom
     };
   });
 
-  const successUrl = `https://remappro.eu/track?id=${encodeURIComponent(orderId)}&email=${encodeURIComponent(customerEmail)}`;
+  const successUrl = `https://remappro.eu/success?session_id={CHECKOUT_SESSION_ID}`;
   const cancelUrl = `${window.location.origin}/order`;
 
   const requestBody = {
@@ -59,7 +80,15 @@ export const redirectToCheckout = async ({ items, orderId, customerEmail, custom
       orderId,
       orderType: 'tuning',
       source: 'web',
-      customerNote: customerNote || ''
+      customerNote: customerNote || '',
+      customer_name: customerName,
+      car_brand: vehicle.brand,
+      car_model: vehicle.model,
+      fuel_type: vehicle.fuelType,
+      year: String(vehicle.year),
+      ecu_type: vehicle.ecuType,
+      file_url: fileUrl || '',
+      services: JSON.stringify(services),
     }
   };
 

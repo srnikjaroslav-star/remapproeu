@@ -27,7 +27,76 @@ serve(async (req) => {
     const body = await req.text();
     console.log("Received body length:", body.length);
 
+    // Verify webhook signature if secret is configured
+    const STRIPE_WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    const signature = req.headers.get("stripe-signature");
+    
     let event;
+    
+    if (STRIPE_WEBHOOK_SECRET && signature) {
+      // Use Stripe signature verification
+      const crypto = await import("https://deno.land/std@0.190.0/crypto/mod.ts");
+      const encoder = new TextEncoder();
+      
+      // Parse signature header
+      const sigParts = signature.split(",").reduce((acc, part) => {
+        const [key, value] = part.split("=");
+        acc[key] = value;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      const timestamp = sigParts["t"];
+      const expectedSig = sigParts["v1"];
+      
+      if (!timestamp || !expectedSig) {
+        console.error("Invalid signature format");
+        return new Response(JSON.stringify({ error: "Invalid signature" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      // Check timestamp tolerance (5 minutes)
+      const tolerance = 300;
+      const timestampNum = parseInt(timestamp, 10);
+      const now = Math.floor(Date.now() / 1000);
+      if (Math.abs(now - timestampNum) > tolerance) {
+        console.error("Webhook timestamp too old");
+        return new Response(JSON.stringify({ error: "Timestamp too old" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      // Compute expected signature
+      const signedPayload = `${timestamp}.${body}`;
+      const key = await crypto.crypto.subtle.importKey(
+        "raw",
+        encoder.encode(STRIPE_WEBHOOK_SECRET),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+      );
+      const signatureBytes = await crypto.crypto.subtle.sign(
+        "HMAC",
+        key,
+        encoder.encode(signedPayload)
+      );
+      const computedSig = Array.from(new Uint8Array(signatureBytes))
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+      
+      if (computedSig !== expectedSig) {
+        console.error("Signature mismatch");
+        return new Response(JSON.stringify({ error: "Invalid signature" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      console.log("Webhook signature verified successfully");
+    }
+    
     try {
       event = JSON.parse(body);
     } catch (parseError) {
@@ -43,7 +112,8 @@ serve(async (req) => {
     // Handle checkout.session.completed event
     if (event.type === "checkout.session.completed") {
       const session = event.data.object;
-      console.log("Checkout session completed:", session.id);
+      const sessionId = session.id; // cs_live_... or cs_test_...
+      console.log("Checkout session completed:", sessionId);
       console.log("Session metadata:", JSON.stringify(session.metadata));
       
       const customerEmail = session.customer_details?.email || session.customer_email;
@@ -81,7 +151,7 @@ serve(async (req) => {
       // Generate unique order number
       const orderNumber = `RP-${Date.now().toString(36).toUpperCase()}`;
       
-      // Create order in database
+      // Create order in database with stripe_session_id for lookup
       let order = null;
       const orderData = {
         order_number: orderNumber,
@@ -98,6 +168,7 @@ serve(async (req) => {
         file_url: fileUrl,
         legal_consent: legalConsent,
         customer_note: customerNote || null,
+        stripe_session_id: sessionId, // Store session ID for lookup
       };
       
       console.log("Creating order with data:", JSON.stringify(orderData));
@@ -110,10 +181,15 @@ serve(async (req) => {
       
       if (insertError) {
         console.error("Failed to create order:", insertError);
-      } else {
-        order = newOrder;
-        console.log("Order created successfully:", order.id, order.order_number);
+        // Return error - we need the order to be created
+        return new Response(JSON.stringify({ error: "Failed to create order" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
+      
+      order = newOrder;
+      console.log("Order created successfully:", order.id, order.order_number);
 
       // Get line items from session for invoice
       const lineItems: { name: string; price: number }[] = [];
