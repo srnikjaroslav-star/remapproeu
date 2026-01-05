@@ -22,15 +22,14 @@ const TrackPage = () => {
 
     const syncOrder = async () => {
       const { data } = await supabase.from("orders").select("*").eq("order_number", id.toUpperCase()).maybeSingle();
-
       if (data) {
         setOrder(data);
       } else {
-        // Instant Preview while Webhook processes in the background
+        // Instant preview from URL params to avoid "Order not found"
         setOrder({
           order_number: id.toUpperCase(),
           status: "paid",
-          brand: brand || "Performance Vehicle",
+          brand: brand || "Vehicle",
           model: model || "",
         });
       }
@@ -39,9 +38,8 @@ const TrackPage = () => {
 
     syncOrder();
 
-    // Real-time synchronization
     const channel = supabase
-      .channel("order_update")
+      .channel("order_sync")
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders", filter: `order_number=eq.${id.toUpperCase()}` },
@@ -57,46 +55,43 @@ const TrackPage = () => {
   if (loading)
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="animate-spin text-[#00eeee]" />
+        <Loader2 className="animate-spin text-[#00eeee]" size={40} />
       </div>
     );
 
-  // COLOR LOGIC (ORANGE -> BLUE -> GREEN)
   const status = order.status?.toLowerCase();
   let step = 1;
-  let accentColor = "#f59e0b"; // PAID -> Orange
+  let accentColor = "#f59e0b"; // Orange for PAID
 
   if (status === "processing" || status === "working") {
     step = 2;
-    accentColor = "#3b82f6"; // TUNING -> Blue
+    accentColor = "#3b82f6"; // Blue for TUNING
   } else if (status === "completed" || status === "ready") {
     step = 3;
-    accentColor = "#10b981"; // READY -> Green
+    accentColor = "#10b981"; // Green for READY
   }
 
   return (
     <div className="min-h-screen bg-black text-white p-6 flex flex-col items-center justify-center font-sans tracking-tight">
-      {/* SUCCESS MESSAGE SECTION */}
       <div className="w-full max-w-md text-center mb-10">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-900/80 border border-white/5 mb-6">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/50 border border-white/5 mb-6">
           <Sparkles size={14} className="text-[#00eeee]" />
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Order Successful</span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Order Confirmed</span>
         </div>
         <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4">Great choice!</h1>
-        <p className="text-zinc-500 text-[11px] leading-relaxed max-w-[300px] mx-auto uppercase font-bold tracking-widest">
-          We have received your order. Our engineers are now optimizing your vehicle's performance software.
+        <p className="text-zinc-500 text-[10px] leading-relaxed max-w-[320px] mx-auto uppercase font-bold tracking-[0.15em]">
+          Thank you for your order. Our engineers are now optimizing your vehicle software. Track progress in real-time.
         </p>
       </div>
 
-      <div className="w-full max-w-md bg-[#050505] border border-zinc-900 rounded-[40px] p-10 shadow-2xl relative overflow-hidden">
+      <div className="w-full max-w-md bg-[#050505] border border-zinc-900 rounded-[40px] p-10 shadow-2xl relative">
         <div className="flex justify-between items-center mb-12">
-          <h2 className="font-black italic text-xl uppercase" style={{ color: accentColor }}>
+          <h2 className="font-black italic text-xl uppercase tracking-widest" style={{ color: accentColor }}>
             Status
           </h2>
-          <ShieldCheck style={{ color: accentColor }} className="w-6 h-6" />
+          <ShieldCheck style={{ color: accentColor }} className="w-6 h-6 animate-pulse" />
         </div>
 
-        {/* PROGRESS BAR */}
         <div className="relative mb-14 px-2 flex justify-between">
           <div className="absolute top-5 left-10 right-10 h-[1px] bg-zinc-800" />
           <div
@@ -115,13 +110,13 @@ const TrackPage = () => {
           ].map((item) => (
             <div key={item.l} className="flex flex-col items-center gap-3 relative z-10">
               <div
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-700 ${step >= item.s ? "text-black shadow-lg" : "bg-zinc-900 text-zinc-700"}`}
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${step >= item.s ? "text-black" : "bg-zinc-900 text-zinc-700"}`}
                 style={{ backgroundColor: step >= item.s ? accentColor : "" }}
               >
-                <item.i size={18} className={step === item.s ? "animate-pulse" : ""} />
+                <item.i size={18} />
               </div>
               <span
-                className="text-[9px] font-bold uppercase tracking-widest"
+                className="text-[9px] font-black uppercase tracking-widest"
                 style={{ color: step >= item.s ? accentColor : "#3f3f46" }}
               >
                 {item.l}
@@ -130,14 +125,13 @@ const TrackPage = () => {
           ))}
         </div>
 
-        {/* VEHICLE INFO */}
         <div className="space-y-4 mb-10">
           <div className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl text-center">
-            <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest mb-1">Tracking ID</p>
+            <p className="text-[9px] text-zinc-600 uppercase font-black tracking-widest mb-1">Tracking ID</p>
             <p className="text-xl font-black uppercase italic tracking-tight">{order.order_number}</p>
           </div>
           <div className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl text-center">
-            <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest mb-1">Performance Vehicle</p>
+            <p className="text-[9px] text-zinc-600 uppercase font-black tracking-widest mb-1">Performance Vehicle</p>
             <p className="text-lg font-black uppercase italic tracking-tight">
               {order.brand} {order.model}
             </p>
@@ -146,7 +140,7 @@ const TrackPage = () => {
 
         <button
           onClick={() => navigate("/")}
-          className="w-full flex items-center justify-center gap-3 bg-zinc-900/80 border border-white/5 p-5 rounded-[24px] hover:bg-zinc-800 transition-all text-[10px] uppercase font-bold tracking-[0.3em] text-zinc-500 group"
+          className="w-full flex items-center justify-center gap-3 bg-zinc-900/80 border border-white/5 p-5 rounded-[24px] hover:bg-zinc-800 transition-all text-[10px] uppercase font-bold tracking-[0.3em] text-zinc-400 group"
         >
           <Home size={14} className="group-hover:text-[#00eeee] transition-colors" /> Back to Homepage
         </button>
