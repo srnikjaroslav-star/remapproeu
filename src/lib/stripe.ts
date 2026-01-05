@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Generuje unikátne ID objednávky pre REMAPPRO
+ * Generuje unikátne ID objednávky pre REMAPPRO (napr. RP-X7Y2Z9)
  */
 export const generateOrderId = () => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -32,49 +32,46 @@ interface CheckoutOptions {
 }
 
 /**
- * Hlavná funkcia na spustenie platby
- * OPRAVENÉ: Teraz posiela kompletné metadáta pre tvoj Tracking systém
+ * Hlavná funkcia na spustenie platby.
+ * KOMUNIKUJE S EDGE FUNKCIOU 'create-checkout'
  */
 export const redirectToCheckout = async (options: CheckoutOptions) => {
   try {
-    console.log("[Stripe] Inicializujem platbu pre:", options.orderId);
+    console.log("[Stripe] Inicializujem platbu pre objednávku:", options.orderId);
 
-    // Voláme Edge Function v Supabase
-    const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+    // DÔLEŽITÉ: Názov funkcie musí byť 'create-checkout', nie 'create-checkout-session'
+    const { data, error } = await supabase.functions.invoke("create-checkout", {
       body: {
         orderId: options.orderId,
-        customerEmail: options.customerEmail,
+        customerEmail: options.customerEmail.toLowerCase(),
         customerName: options.customerName,
         items: options.items,
-        // TIETO METADÁTA SÚ KĽÚČOVÉ PRE ODSTRÁNENIE "Nezadané"
+        // Balíme metadáta, ktoré Webhook zapíše do databázy
         metadata: {
           orderId: options.orderId,
           customerEmail: options.customerEmail.toLowerCase(),
-          carBrand: options.vehicle.brand || "Unknown",
-          carModel: options.vehicle.model || "Unknown",
+          carBrand: options.vehicle.brand || "Nezadané",
+          carModel: options.vehicle.model || "Nezadané",
           fileUrl: options.fileUrl || "",
-          // Pridávame aj technické detaily pre tvoj prehľad
-          vehicleDetails:
-            `${options.vehicle.year || ""} ${options.vehicle.fuelType || ""} ${options.vehicle.ecuType || ""}`.trim(),
         },
       },
     });
 
-    // Ak Edge Function vráti chybu (napr. CORS alebo Stripe error)
+    // Zachytenie chýb (napr. CORS error z obrázka image_c57c05.png)
     if (error) {
-      console.error("[Stripe] Chyba pri volaní Edge Function:", error);
+      console.error("[Stripe] Chyba Edge Funkcie:", error.message);
       throw new Error(`Edge Function Error: ${error.message}`);
     }
 
-    // Ak všetko prebehlo OK, presmerujeme na Stripe Checkout URL
+    // Ak Edge Funkcia vrátila URL, presmerujeme Richarda na Stripe bránu
     if (data?.url) {
-      console.log("[Stripe] Presmerovávam na platbu...");
+      console.log("[Stripe] Dáta prijaté, presmerovávam na Stripe...");
       window.location.href = data.url;
     } else {
-      throw new Error("Stripe nevrátil URL adresu pre platbu.");
+      throw new Error("Stripe nevrátil žiadnu URL adresu.");
     }
   } catch (error: any) {
-    console.error("[Stripe] Kritická chyba v redirectToCheckout:", error);
+    console.error("[Stripe] Kritické zlyhanie procesu:", error);
     throw error;
   }
 };
