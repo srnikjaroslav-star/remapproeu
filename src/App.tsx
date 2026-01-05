@@ -5,8 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import OrderPage from "./pages/OrderPage";
-// TENTO IMPORT JE KĽÚČOVÝ
-import TrackPage from "./pages/trackpage/TrackPage";
+// OPRAVENÝ IMPORT: Mieri priamo na súbor v pages
+import TrackPage from "./pages/TrackPage";
 import ManagementPortal from "./pages/ManagementPortal";
 import PricingPage from "./pages/PricingPage";
 import SuccessPage from "./pages/SuccessPage";
@@ -24,18 +24,24 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* Domovská stránka */}
           <Route path="/" element={<Index />} />
+
+          {/* Stránka pre novú objednávku */}
           <Route path="/order" element={<OrderPage />} />
 
-          {/* TENTO RIADOK OPRAVUJE TVOJU 404 CHYBU */}
+          {/* TRACKING: Toto je kľúčová cesta pre tvoj link z emailu */}
           <Route path="/track" element={<TrackPage />} />
 
+          {/* Ostatné systémové stránky */}
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/success" element={<SuccessPage />} />
           <Route path="/management-portal" element={<ManagementPortal />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/refunds" element={<RefundsPage />} />
+
+          {/* 404 - Stránka nenájdená */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
