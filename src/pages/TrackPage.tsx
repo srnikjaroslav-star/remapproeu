@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, CheckCircle2, Clock, Zap, Home } from "lucide-react";
+import { Loader2, CheckCircle2, Clock, Zap, Home, ShieldCheck } from "lucide-react";
 
 const TrackPage = () => {
   const [searchParams] = useSearchParams();
@@ -14,7 +14,7 @@ const TrackPage = () => {
 
   useEffect(() => {
     if (!id || !email) {
-      navigate("/"); // Bez údajov automaticky domov
+      navigate("/");
       return;
     }
 
@@ -32,7 +32,7 @@ const TrackPage = () => {
 
     fetchOrder();
 
-    // Realtime update z Admina
+    // Realtime synchronizácia s Adminom
     const channel = supabase
       .channel("order_updates")
       .on(
@@ -62,19 +62,17 @@ const TrackPage = () => {
   if (!order)
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white gap-6">
-        <p className="font-black uppercase italic tracking-widest text-zinc-500 text-center px-4">
-          Objednávka nenájdená
-        </p>
+        <p className="font-black uppercase italic tracking-widest text-zinc-500">Objednávka nenájdená</p>
         <button
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 bg-zinc-900 px-6 py-3 rounded-full hover:bg-zinc-800 transition-all uppercase font-bold text-[10px] tracking-widest border border-zinc-800"
+          className="flex items-center gap-2 bg-zinc-900 px-8 py-4 rounded-2xl hover:bg-zinc-800 transition-all uppercase font-bold text-[10px] tracking-widest border border-zinc-800"
         >
           <Home size={14} /> Späť domov
         </button>
       </div>
     );
 
-  // LOGIKA FARIEB PODĽA ADMINA
+  // Farebná logika podľa statusu v databáze
   const status = order.status?.toLowerCase();
   let step = 1;
   let accentColor = "#f59e0b"; // PENDING -> ORANŽOVÁ
@@ -94,7 +92,7 @@ const TrackPage = () => {
           <h2 className="font-black italic text-xl uppercase tracking-tighter" style={{ color: accentColor }}>
             Status
           </h2>
-          <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: accentColor }} />
+          <ShieldCheck style={{ color: accentColor }} className="w-6 h-6" />
         </div>
 
         {/* PROGRESS BAR */}
@@ -144,10 +142,9 @@ const TrackPage = () => {
           </div>
         </div>
 
-        {/* HOME TLAČIDLO */}
         <button
           onClick={() => navigate("/")}
-          className="mt-10 w-full flex items-center justify-center gap-2 bg-white/5 border border-white/5 p-4 rounded-2xl hover:bg-white/10 transition-all text-[10px] uppercase font-bold tracking-widest text-zinc-400"
+          className="mt-10 w-full flex items-center justify-center gap-2 bg-zinc-900/50 border border-white/5 p-5 rounded-[24px] hover:bg-zinc-800 transition-all text-[10px] uppercase font-bold tracking-widest text-zinc-400"
         >
           <Home size={14} /> Back to Home
         </button>
