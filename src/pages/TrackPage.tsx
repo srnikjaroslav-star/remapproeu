@@ -1,36 +1,46 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { Loader2, CheckCircle2, Clock, Zap, Home, ShieldCheck, Sparkles } from "lucide-react";
 
-export default function TrackPage() {
+const TrackPage = () => {
   const [searchParams] = useSearchParams();
-  const [order, setOrder] = useState<any>(null);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [order, setOrder] = useState<any>(null);
 
   const id = searchParams.get("id");
+  const email = searchParams.get("email");
+  const brand = searchParams.get("brand");
+  const model = searchParams.get("model");
 
   useEffect(() => {
-    if (!id) {
-      setLoading(false);
+    if (!id || !email) {
+      navigate("/");
       return;
     }
 
-    const fetchOrder = async () => {
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("order_number", id.toUpperCase())
-        .maybeSingle();
-
-      if (data) setOrder(data);
+    const syncOrder = async () => {
+      const { data } = await supabase.from("orders").select("*").eq("order_number", id.toUpperCase()).maybeSingle();
+      if (data) {
+        setOrder(data);
+      } else {
+        // Okamžitý vizuál bez čakania na Webhook
+        setOrder({
+          order_number: id.toUpperCase(),
+          status: "paid", // Defaultný stav po zaplatení
+          brand: brand || "Vehicle",
+          model: model || "",
+        });
+      }
       setLoading(false);
     };
 
-    fetchOrder();
+    syncOrder();
 
-    // Sledovanie zmien v reálnom čase
+    // Realtime synchronizácia priamo z Postgresu
     const channel = supabase
-      .channel("order_updates")
+      .channel("order_sync")
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders", filter: `order_number=eq.${id.toUpperCase()}` },
@@ -41,35 +51,111 @@ export default function TrackPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id]);
+  }, [id, email, brand, model, navigate]);
 
-  if (loading) return <div className="min-h-screen bg-black text-white p-20">Loading performance data...</div>;
-  if (!order) return <div className="min-h-screen bg-black text-white p-20">Order not found.</div>;
+  if (loading)
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="animate-spin text-[#00eeee]" size={32} />
+      </div>
+    );
+
+  // LOGIKA FARIEB: Amber (Paid) -> Blue (Tuning) -> Green (Ready)
+  const status = order.status?.toLowerCase();
+  let step = 1;
+  let accentColor = "#f59e0b"; // AMBER (PAID)
+
+  if (status === "processing" || status === "working") {
+    step = 2;
+    accentColor = "#3b82f6"; // BLUE (TUNING)
+  } else if (status === "completed" || status === "ready") {
+    step = 3;
+    accentColor = "#10b981"; // GREEN (READY)
+  }
 
   return (
-    <div className="min-h-screen bg-black text-white p-10 flex flex-col items-center justify-center">
-      <div className="w-full max-w-md bg-zinc-900 border border-zinc-800 rounded-[30px] p-10 text-center">
-        <h1 className="text-2xl font-black italic uppercase text-[#00eeee] mb-6">REMAPPRO STATUS</h1>
+    <div className="min-h-screen bg-black text-white p-6 flex flex-col items-center justify-center font-sans tracking-tight">
+      {/* THANK YOU SECTION */}
+      <div className="w-full max-w-md text-center mb-8">
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-900/50 border border-white/5 mb-6">
+          <Sparkles size={14} className="text-[#00eeee]" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 italic">
+            Payment Verified
+          </span>
+        </div>
+        <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-3">Great choice!</h1>
+        <p className="text-zinc-500 text-[10px] leading-relaxed max-w-[320px] mx-auto uppercase font-bold tracking-[0.15em]">
+          Thank you for your order. Our engineers are now optimizing your vehicle software. Track your progress in
+          real-time below.
+        </p>
+      </div>
 
-        <div className="mb-8">
-          <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Vehicle</p>
-          <p className="text-xl font-bold uppercase italic">
-            {order.brand} {order.model}
-          </p>
+      <div className="w-full max-w-md bg-[#050505] border border-zinc-900 rounded-[40px] p-10 shadow-2xl relative overflow-hidden">
+        <div className="flex justify-between items-center mb-12">
+          <h2 className="font-black italic text-xl uppercase tracking-widest" style={{ color: accentColor }}>
+            Order Status
+          </h2>
+          <ShieldCheck style={{ color: accentColor }} className="w-6 h-6 animate-pulse" />
         </div>
 
-        <div className="mb-8">
-          <p className="text-xs text-zinc-500 uppercase tracking-widest mb-1">Tracking Number</p>
-          <p className="text-lg font-mono text-white">{order.order_number}</p>
+        {/* PROGRESS BAR */}
+        <div className="relative mb-14 px-2 flex justify-between">
+          <div className="absolute top-5 left-10 right-10 h-[1px] bg-zinc-800 z-0" />
+          <div
+            className="absolute top-5 left-10 h-[1px] z-0 transition-all duration-1000 shadow-lg"
+            style={{
+              width: step === 1 ? "0%" : step === 2 ? "50%" : "100%",
+              backgroundColor: accentColor,
+              boxShadow: `0 0 20px ${accentColor}`,
+            }}
+          />
+
+          {[
+            { l: "Paid", i: Clock, s: 1 },
+            { l: "Tuning", i: Zap, s: 2 },
+            { l: "Ready", i: CheckCircle2, s: 3 },
+          ].map((item) => (
+            <div key={item.l} className="flex flex-col items-center gap-3 relative z-10">
+              <div
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-700 ${step >= item.s ? "text-black shadow-lg shadow-white/5" : "bg-zinc-900 text-zinc-700"}`}
+                style={{ backgroundColor: step >= item.s ? accentColor : "" }}
+              >
+                <item.i size={18} className={step === item.s ? "animate-pulse" : ""} />
+              </div>
+              <span
+                className="text-[9px] font-black uppercase tracking-widest"
+                style={{ color: step >= item.s ? accentColor : "#3f3f46" }}
+              >
+                {item.l}
+              </span>
+            </div>
+          ))}
         </div>
 
-        <div className="pt-6 border-t border-zinc-800">
-          <p className="text-xs text-zinc-500 uppercase tracking-widest mb-2">Current Stage</p>
-          <div className="bg-zinc-800 rounded-full py-3">
-            <span className="font-black uppercase italic text-[#00eeee]">{order.status}</span>
+        {/* ORDER & VEHICLE DETAILS */}
+        <div className="space-y-4 mb-10">
+          <div className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl text-center hover:bg-zinc-900/50 transition-colors">
+            <p className="text-[9px] text-zinc-600 uppercase font-black tracking-widest mb-1">Tracking ID</p>
+            <p className="text-xl font-black uppercase italic tracking-tight">{order.order_number}</p>
+          </div>
+          <div className="bg-zinc-900/30 border border-white/5 p-6 rounded-3xl text-center hover:bg-zinc-900/50 transition-colors">
+            <p className="text-[9px] text-zinc-600 uppercase font-black tracking-widest mb-1">Performance Vehicle</p>
+            <p className="text-lg font-black uppercase italic tracking-tight">
+              {order.brand} {order.model}
+            </p>
           </div>
         </div>
+
+        {/* BACK TO HOME BUTTON */}
+        <button
+          onClick={() => navigate("/")}
+          className="w-full flex items-center justify-center gap-3 bg-zinc-900/80 border border-white/5 p-5 rounded-[24px] hover:bg-zinc-800 transition-all text-[10px] uppercase font-bold tracking-[0.3em] text-zinc-400 group"
+        >
+          <Home size={14} className="group-hover:text-[#00eeee] transition-colors" /> Back to Homepage
+        </button>
       </div>
     </div>
   );
-}
+};
+
+export default TrackPage;
