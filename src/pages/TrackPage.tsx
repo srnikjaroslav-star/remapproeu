@@ -14,6 +14,11 @@ const TrackPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasAutoSearched, setHasAutoSearched] = useState(false);
+  
+  // Check if URL params exist for silent search mode
+  const urlId = searchParams.get('id') || searchParams.get('order') || '';
+  const urlEmail = searchParams.get('email') || '';
+  const isSilentMode = !!(urlId && urlEmail);
 
   const fetchOrder = async (searchId?: string, searchEmail?: string) => {
     const idToSearch = searchId || orderNumber.trim();
@@ -57,22 +62,20 @@ const TrackPage = () => {
     }
   };
 
-  // Auto-fill from URL params and auto-search
+  // Auto-fill from URL params and auto-search (silent mode)
   useEffect(() => {
     if (hasAutoSearched) return;
-
-    const urlId = searchParams.get('id') || searchParams.get('order') || '';
-    const urlEmail = searchParams.get('email') || '';
 
     if (urlId) setOrderNumber(urlId);
     if (urlEmail) setEmail(urlEmail);
 
-    // Auto-search if both params are present
-    if (urlId && urlEmail) {
+    // Silent search if both params are present
+    if (isSilentMode) {
+      setLoading(true);
       setHasAutoSearched(true);
       fetchOrder(urlId, urlEmail);
     }
-  }, [searchParams, hasAutoSearched]);
+  }, [searchParams, hasAutoSearched, isSilentMode]);
 
   // Real-time subscription for order updates
   useEffect(() => {
@@ -179,43 +182,57 @@ const TrackPage = () => {
 
       <main className="container mx-auto px-4 py-12 max-w-2xl">
         <h1 className="text-3xl font-bold mb-2 text-center">Track Your Order</h1>
-        <p className="text-muted-foreground text-center mb-8">
-          Enter your Order ID and Email to check status
-        </p>
-
-        {/* Search Box */}
-        <div className="glass-card p-6 mb-8">
-          <div className="space-y-4">
-            <div className="relative">
-              <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input
-                type="text"
-                value={orderNumber}
-                onChange={(e) => setOrderNumber(e.target.value)}
-                placeholder="Order ID (e.g., RP-A7K92X)"
-                className="input-field w-full pl-12"
-              />
-            </div>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email address used for order"
-                className="input-field w-full pl-12"
-                onKeyDown={(e) => e.key === 'Enter' && fetchOrder()}
-              />
-            </div>
-            <button 
-              onClick={() => fetchOrder()}
-              disabled={loading}
-              className="btn-primary w-full"
-            >
-              {loading ? 'Searching...' : 'Track Order'}
-            </button>
+        
+        {/* Silent Mode Loading */}
+        {isSilentMode && loading && !order && !error && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-4"></div>
+            <p className="text-muted-foreground">Loading your order...</p>
           </div>
-        </div>
+        )}
+
+        {/* Show search form only if NOT in silent mode */}
+        {!isSilentMode && (
+          <>
+            <p className="text-muted-foreground text-center mb-8">
+              Enter your Order ID and Email to check status
+            </p>
+
+            {/* Search Box */}
+            <div className="glass-card p-6 mb-8">
+              <div className="space-y-4">
+                <div className="relative">
+                  <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={orderNumber}
+                    onChange={(e) => setOrderNumber(e.target.value)}
+                    placeholder="Order ID (e.g., RP-A7K92X)"
+                    className="input-field w-full pl-12"
+                  />
+                </div>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Email address used for order"
+                    className="input-field w-full pl-12"
+                    onKeyDown={(e) => e.key === 'Enter' && fetchOrder()}
+                  />
+                </div>
+                <button 
+                  onClick={() => fetchOrder()}
+                  disabled={loading}
+                  className="btn-primary w-full"
+                >
+                  {loading ? 'Searching...' : 'Track Order'}
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Error State */}
         {error && (
