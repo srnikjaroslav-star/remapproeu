@@ -11,8 +11,8 @@ const TrackPage = () => {
 
   const id = searchParams.get("id");
   const email = searchParams.get("email");
-  const brand = searchParams.get("brand");
-  const model = searchParams.get("model");
+  const brand = searchParams.get("brand") || "Vehicle";
+  const model = searchParams.get("model") || "";
 
   useEffect(() => {
     if (!id || !email) {
@@ -21,16 +21,18 @@ const TrackPage = () => {
     }
 
     const syncOrder = async () => {
+      // Skúsime nájsť objednávku v DB
       const { data } = await supabase.from("orders").select("*").eq("order_number", id.toUpperCase()).maybeSingle();
+
       if (data) {
         setOrder(data);
       } else {
-        // Instant preview from URL params to avoid "Order not found"
+        // Fallback: Ak DB ešte nestihla zapísať, ukážeme dáta z URL
         setOrder({
           order_number: id.toUpperCase(),
           status: "paid",
-          brand: brand || "Vehicle",
-          model: model || "",
+          brand: brand,
+          model: model,
         });
       }
       setLoading(false);
@@ -38,6 +40,7 @@ const TrackPage = () => {
 
     syncOrder();
 
+    // Realtime odber zmien - keď admin zmení status v DB, stránka sa sama pohne
     const channel = supabase
       .channel("order_sync")
       .on(
@@ -61,14 +64,14 @@ const TrackPage = () => {
 
   const status = order.status?.toLowerCase();
   let step = 1;
-  let accentColor = "#f59e0b"; // Orange for PAID
+  let accentColor = "#f59e0b"; // AMBER pre PAID
 
-  if (status === "processing" || status === "working") {
+  if (status === "working" || status === "processing") {
     step = 2;
-    accentColor = "#3b82f6"; // Blue for TUNING
-  } else if (status === "completed" || status === "ready") {
+    accentColor = "#3b82f6"; // BLUE pre TUNING
+  } else if (status === "ready" || status === "completed") {
     step = 3;
-    accentColor = "#10b981"; // Green for READY
+    accentColor = "#10b981"; // GREEN pre READY
   }
 
   return (
@@ -80,11 +83,11 @@ const TrackPage = () => {
         </div>
         <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4">Great choice!</h1>
         <p className="text-zinc-500 text-[10px] leading-relaxed max-w-[320px] mx-auto uppercase font-bold tracking-[0.15em]">
-          Thank you for your order. Our engineers are now optimizing your vehicle software. Track progress in real-time.
+          Your payment was successful. Our engineers are now optimizing your vehicle software.
         </p>
       </div>
 
-      <div className="w-full max-w-md bg-[#050505] border border-zinc-900 rounded-[40px] p-10 shadow-2xl relative">
+      <div className="w-full max-w-md bg-[#050505] border border-zinc-900 rounded-[40px] p-10 shadow-2xl relative overflow-hidden">
         <div className="flex justify-between items-center mb-12">
           <h2 className="font-black italic text-xl uppercase tracking-widest" style={{ color: accentColor }}>
             Status
@@ -92,10 +95,11 @@ const TrackPage = () => {
           <ShieldCheck style={{ color: accentColor }} className="w-6 h-6 animate-pulse" />
         </div>
 
+        {/* PROGRESS BAR */}
         <div className="relative mb-14 px-2 flex justify-between">
-          <div className="absolute top-5 left-10 right-10 h-[1px] bg-zinc-800" />
+          <div className="absolute top-5 left-10 right-10 h-[1px] bg-zinc-800 z-0" />
           <div
-            className="absolute top-5 left-10 h-[1px] transition-all duration-1000"
+            className="absolute top-5 left-10 h-[1px] z-0 transition-all duration-1000"
             style={{
               width: step === 1 ? "0%" : step === 2 ? "50%" : "100%",
               backgroundColor: accentColor,
@@ -110,7 +114,7 @@ const TrackPage = () => {
           ].map((item) => (
             <div key={item.l} className="flex flex-col items-center gap-3 relative z-10">
               <div
-                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${step >= item.s ? "text-black" : "bg-zinc-900 text-zinc-700"}`}
+                className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-700 ${step >= item.s ? "text-black shadow-lg shadow-white/5" : "bg-zinc-900 text-zinc-700"}`}
                 style={{ backgroundColor: step >= item.s ? accentColor : "" }}
               >
                 <item.i size={18} />
