@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, CheckCircle2, Clock, Zap } from "lucide-react";
+import { Loader2, CheckCircle2, Clock, Zap, ShieldCheck } from "lucide-react";
 
 const TrackPage = () => {
   const [searchParams] = useSearchParams();
@@ -13,7 +13,6 @@ const TrackPage = () => {
   const email = searchParams.get("email");
 
   useEffect(() => {
-    // Ak nemá link parametre, nemá tu čo robiť
     if (!id || !email) {
       navigate("/");
       return;
@@ -33,12 +32,17 @@ const TrackPage = () => {
 
     fetchOrder();
 
-    // Realtime update: Ak v admine zmeníš status, stránka sa sama zmení
+    // Realtime odber zmien z Admina
     const channel = supabase
       .channel("order_updates")
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "orders", filter: `order_number=eq.${id.toUpperCase()}` },
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "orders",
+          filter: `order_number=eq.${id.toUpperCase()}`,
+        },
         (payload) => setOrder(payload.new),
       )
       .subscribe();
@@ -56,63 +60,106 @@ const TrackPage = () => {
     );
 
   if (!order)
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white">Order not found.</div>;
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center text-white font-black uppercase italic">
+        Objednávka nenájdená.
+      </div>
+    );
 
-  // Logika pre kroky podľa tvojho adminu
+  // --- LOGIKA FARIEB PODĽA ADMINA ---
   const status = order.status?.toLowerCase();
-  const step =
-    status === "completed" || status === "finished" ? 3 : status === "processing" || status === "working" ? 2 : 1;
+
+  let step = 1;
+  let accentColor = "#f59e0b"; // PENDING -> ORANŽOVÁ
+  let statusText = "Čakáme na spracovanie súboru...";
+
+  if (status === "processing" || status === "working") {
+    step = 2;
+    accentColor = "#3b82f6"; // PROCESSING -> MODRÁ
+    statusText = "Naši inžinieri práve ladia tvoj softvér...";
+  } else if (status === "completed" || status === "finished") {
+    step = 3;
+    accentColor = "#10b981"; // COMPLETED -> ZELENÁ
+    statusText = "Hotovo! Upravený súbor máš v emaile.";
+  }
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 flex flex-col items-center justify-center">
-      <div className="w-full max-w-md bg-zinc-950 border border-zinc-800 rounded-[32px] p-8 shadow-2xl">
-        <h2 className="text-[#00eeee] font-black italic text-xl uppercase mb-8 text-center tracking-widest">
-          Order Progress
-        </h2>
+    <div className="min-h-screen bg-black text-white p-6 flex flex-col items-center justify-center font-sans">
+      <div className="w-full max-w-md bg-[#050505] border border-zinc-900 rounded-[40px] p-10 shadow-2xl relative overflow-hidden">
+        {/* Dekoratívne svetlo v pozadí reagujúce na status */}
+        <div
+          className="absolute -top-20 -left-20 w-40 h-40 blur-[100px] opacity-20"
+          style={{ backgroundColor: accentColor }}
+        />
 
-        {/* VIZUÁLNY INDIKÁTOR */}
-        <div className="relative mb-10 flex justify-between">
-          <div className="absolute top-5 left-8 right-8 h-[1px] bg-zinc-800" />
+        <div className="flex justify-between items-center mb-12">
+          <h2 className="font-black italic text-xl uppercase tracking-tighter" style={{ color: accentColor }}>
+            Status Objednávky
+          </h2>
+          <ShieldCheck style={{ color: accentColor }} className="w-6 h-6" />
+        </div>
+
+        {/* PROGRESS BAR */}
+        <div className="relative mb-14 px-2 flex justify-between">
+          {/* Šedá linka v pozadí */}
+          <div className="absolute top-5 left-10 right-10 h-[1px] bg-zinc-800 z-0" />
+
+          {/* Farebná linka progresu */}
           <div
-            className="absolute top-5 left-8 h-[1px] bg-[#00eeee] transition-all duration-1000 shadow-[0_0_10px_#00eeee]"
-            style={{ width: step === 1 ? "0%" : step === 2 ? "50%" : "100%" }}
+            className="absolute top-5 left-10 h-[1px] z-0 transition-all duration-700 shadow-sm"
+            style={{
+              width: step === 1 ? "0%" : step === 2 ? "50%" : "100%",
+              backgroundColor: accentColor,
+              boxShadow: `0 0 10px ${accentColor}`,
+            }}
           />
 
           {[
-            { l: "Paid", i: Clock, s: 1 },
-            { l: "Tuning", i: Zap, s: 2 },
-            { l: "Ready", i: CheckCircle2, s: 3 },
+            { label: "Zaplatené", icon: Clock, s: 1 },
+            { label: "Tuning", icon: Zap, s: 2 },
+            { label: "Hotovo", icon: CheckCircle2, s: 3 },
           ].map((item) => (
-            <div key={item.l} className="relative z-10 flex flex-col items-center gap-3">
+            <div key={item.label} className="relative z-10 flex flex-col items-center gap-3">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${step >= item.s ? "bg-[#00eeee] text-black shadow-[0_0_15px_#00eeee]" : "bg-zinc-900 text-zinc-700"}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${
+                  step >= item.s ? "text-black" : "bg-zinc-900 text-zinc-700"
+                }`}
+                style={{
+                  backgroundColor: step >= item.s ? accentColor : "",
+                  boxShadow: step === item.s ? `0 0 20px ${accentColor}44` : "none",
+                }}
               >
-                <item.i size={18} className={step === item.s && item.s === 2 ? "animate-pulse" : ""} />
+                <item.icon size={18} className={step === item.s && item.s === 2 ? "animate-pulse" : ""} />
               </div>
               <span
-                className={`text-[8px] font-bold uppercase tracking-widest ${step >= item.s ? "text-[#00eeee]" : "text-zinc-700"}`}
+                className="text-[8px] font-bold uppercase tracking-[0.2em] transition-colors duration-500"
+                style={{ color: step >= item.s ? accentColor : "#3f3f46" }}
               >
-                {item.l}
+                {item.label}
               </span>
             </div>
           ))}
         </div>
 
-        <div className="space-y-3">
-          <div className="bg-white/5 p-4 rounded-2xl text-center border border-white/5">
-            <p className="text-[10px] text-zinc-500 uppercase font-bold">Vehicle</p>
-            <p className="text-lg font-black uppercase italic">
+        {/* INFO BOX */}
+        <div className="space-y-4">
+          <div className="bg-zinc-900/30 border border-zinc-800/50 p-6 rounded-3xl text-center">
+            <p className="text-[9px] text-zinc-500 uppercase font-black tracking-widest mb-2">Vozidlo v procese</p>
+            <p className="text-xl font-black uppercase italic tracking-tight">
               {order.brand} {order.model}
             </p>
           </div>
 
-          <div className="p-4 text-center">
-            <p className="text-[#00eeee] text-[10px] font-bold uppercase">
-              {step === 1 && "We have received your file. Optimization starting soon."}
-              {step === 2 && "Our engineers are working on your ECU maps..."}
-              {step === 3 && "Optimization complete! Check your email for the file."}
-            </p>
-          </div>
+          <p
+            className="text-center text-[10px] font-bold uppercase tracking-wide leading-relaxed px-4 opacity-80"
+            style={{ color: accentColor }}
+          >
+            {statusText}
+          </p>
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-zinc-900 text-center">
+          <p className="text-zinc-600 text-[8px] uppercase font-bold tracking-widest">Order ID: {order.order_number}</p>
         </div>
       </div>
     </div>
