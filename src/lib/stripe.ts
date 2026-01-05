@@ -26,7 +26,7 @@ export const redirectToCheckout = async (options: any) => {
     if (error) throw error;
     if (data?.url) window.location.href = data.url;
   } catch (error: any) {
-    console.error("Stripe Error:", error);
+    console.error("Stripe Checkout Error:", error);
     throw error;
   }
 };
