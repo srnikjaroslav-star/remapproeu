@@ -55,16 +55,15 @@ export const redirectToCheckout = async (options: any) => {
     const { data, error } = await supabase.functions.invoke("create-checkout", {
       body: {
         items,
-        orderId: options.orderId,
-        customerEmail: options.customerEmail,
+        email: options.customerEmail,
         metadata: {
           orderId: options.orderId,
           customer_name: options.customerName?.trim() || 'Nezadané',
           customerNote: options.customerNote || '',
-          carBrand: brand,
-          carModel: model,
-          carEcu: ecuType,
-          carServices: serviceNames,
+          brand: brand,
+          model: model,
+          ecu_type: ecuType,
+          services: serviceNames,
           fuel_type: fuelType,
           year: year,
           file_url: options.fileUrl || '',
