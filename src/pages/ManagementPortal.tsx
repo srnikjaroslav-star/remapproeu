@@ -341,8 +341,17 @@ const ManagementPortal = () => {
 
 const getServiceNames = (serviceIds: string[] | string | null) => {
     if (!serviceIds) return '';
-    const ids = Array.isArray(serviceIds) ? serviceIds : JSON.parse(serviceIds);
-    return ids.map((id: string) => SERVICES.find((s) => s.id === id)?.name).filter(Boolean).join(', ');
+    if (Array.isArray(serviceIds)) {
+      return serviceIds.map((id: string) => SERVICES.find((s) => s.id === id)?.name || id).filter(Boolean).join(', ');
+    }
+    // Try to parse as JSON, otherwise treat as plain text
+    try {
+      const ids = JSON.parse(serviceIds);
+      return ids.map((id: string) => SERVICES.find((s) => s.id === id)?.name || id).filter(Boolean).join(', ');
+    } catch {
+      // Already a plain text service name(s), return as-is
+      return serviceIds;
+    }
   };
 
   const formatLocalDateTime = (utcDateString: string) => {
