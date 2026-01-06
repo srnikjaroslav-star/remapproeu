@@ -339,10 +339,21 @@ const ManagementPortal = () => {
     }
   };
 
-  const getServiceNames = (serviceIds: string[] | string | null) => {
+const getServiceNames = (serviceIds: string[] | string | null) => {
     if (!serviceIds) return '';
     const ids = Array.isArray(serviceIds) ? serviceIds : JSON.parse(serviceIds);
     return ids.map((id: string) => SERVICES.find((s) => s.id === id)?.name).filter(Boolean).join(', ');
+  };
+
+  const formatLocalDateTime = (utcDateString: string) => {
+    const date = new Date(utcDateString);
+    return date.toLocaleString('sk-SK', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
@@ -495,20 +506,22 @@ const ManagementPortal = () => {
             <table className="w-full text-base" style={{ tableLayout: 'fixed' }}>
               <colgroup>
                 <col style={{ width: '90px' }} />   {/* Order ID - narrow fixed */}
-                <col style={{ width: '180px' }} />  {/* Customer - wider with truncate */}
-                <col style={{ width: '160px' }} />  {/* Vehicle */}
-                <col style={{ width: '90px' }} />   {/* ECU */}
-                <col style={{ width: '150px' }} />  {/* Services */}
+                <col style={{ width: '120px' }} />  {/* Date */}
+                <col style={{ width: '160px' }} />  {/* Customer - wider with truncate */}
+                <col style={{ width: '140px' }} />  {/* Vehicle */}
+                <col style={{ width: '80px' }} />   {/* ECU */}
+                <col style={{ width: '140px' }} />  {/* Services */}
                 <col style={{ width: '60px' }} />   {/* Price - narrow */}
                 <col style={{ width: '70px' }} />   {/* Invoice */}
                 <col style={{ width: '90px' }} />   {/* Status - narrow fixed */}
-                <col style={{ width: '90px' }} />   {/* Checksum */}
-                <col style={{ width: '130px' }} />  {/* Internal Note */}
-                <col style={{ width: '130px' }} />  {/* Actions - wider for buttons */}
+                <col style={{ width: '80px' }} />   {/* Checksum */}
+                <col style={{ width: '120px' }} />  {/* Internal Note */}
+                <col style={{ width: '120px' }} />  {/* Actions - wider for buttons */}
               </colgroup>
               <thead>
                 <tr className="bg-primary/20 border border-primary/40">
                   <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">ID</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Date</th>
                   <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Customer</th>
                   <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Vehicle</th>
                   <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">ECU</th>
@@ -523,14 +536,14 @@ const ManagementPortal = () => {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                      <td colSpan={11} className="text-center py-12 text-muted-foreground">
+                <tr>
+                      <td colSpan={12} className="text-center py-12 text-muted-foreground">
                         Loading orders...
                       </td>
                     </tr>
                   ) : filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={11} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={12} className="text-center py-12 text-muted-foreground">
                         No orders found
                       </td>
                     </tr>
@@ -541,6 +554,11 @@ const ManagementPortal = () => {
                         <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded block truncate">
                           {order.order_number || order.id.slice(0, 6).toUpperCase()}
                         </span>
+                      </td>
+                      <td className="p-2">
+                        <p className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatLocalDateTime(order.created_at)}
+                        </p>
                       </td>
                       <td className="p-2">
                         <div className="overflow-hidden">
