@@ -326,6 +326,8 @@ const ManagementPortal = () => {
 
   const getStatusClass = (status: string) => {
     switch (status) {
+      case 'paid':
+        return 'status-paid';
       case 'pending':
         return 'status-pending';
       case 'processing':
@@ -446,6 +448,7 @@ const ManagementPortal = () => {
             className="admin-filter-select min-w-[150px]"
           >
             <option value="all">All Status</option>
+            <option value="paid">Paid</option>
             <option value="pending">Pending</option>
             <option value="processing">Processing</option>
             <option value="completed">Completed</option>
@@ -598,6 +601,7 @@ const ManagementPortal = () => {
                           onChange={(e) => handleStatusChange(order.id, e.target.value)}
                           className={`admin-status-select text-xs w-full ${getStatusClass(order.status)}`}
                         >
+                          <option value="paid">Paid</option>
                           <option value="pending">Pending</option>
                           <option value="processing">Processing</option>
                           <option value="completed">Completed</option>
