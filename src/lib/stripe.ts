@@ -11,14 +11,24 @@ export const generateOrderId = () => {
 
 export const redirectToCheckout = async (options: any) => {
   try {
+    const serviceNames = options.items?.map((item: any) => item.name).join(', ') || '';
+    
     const { data, error } = await supabase.functions.invoke("create-checkout", {
       body: {
-        orderId: options.orderId,
-        customerEmail: options.customerEmail,
-        items: options.items,
+        items: options.items.map((item: any) => ({ name: item.name, amount: item.price })),
+        email: options.customerEmail,
         metadata: {
-          carBrand: options.vehicle.brand,
-          carModel: options.vehicle.model,
+          orderId: options.orderId,
+          customer_name: options.customerName,
+          customerNote: options.customerNote,
+          car_brand: options.vehicle?.brand || '',
+          car_model: options.vehicle?.model || '',
+          fuel_type: options.vehicle?.fuelType || '',
+          year: options.vehicle?.year?.toString() || '',
+          ecu_type: options.vehicle?.ecuType || '',
+          vin: options.vehicle?.vin || '',
+          file_url: options.fileUrl || '',
+          services: serviceNames,
         },
       },
     });
