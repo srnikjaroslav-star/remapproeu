@@ -11,25 +11,34 @@ export const generateOrderId = () => {
 
 export const redirectToCheckout = async (options: any) => {
   try {
-    const serviceNames = options.items?.map((item: any) => item.name).join(', ') || '';
+    const serviceNames = options.items?.map((item: any) => item.name).join(', ') || 'Nezadané';
     
-    // Extract vehicle data with proper fallbacks
+    // Extract vehicle data with 'Nezadané' fallbacks to ensure request never fails
     const vehicle = options.vehicle || {};
-    const brand = vehicle.brand || '';
-    const model = vehicle.model || '';
-    const ecuType = vehicle.ecuType || '';
-    const fuelType = vehicle.fuelType || '';
-    const year = vehicle.year ? vehicle.year.toString() : '';
+    const brand = vehicle.brand?.trim() || 'Nezadané';
+    const model = vehicle.model?.trim() || 'Nezadané';
+    const ecuType = vehicle.ecuType?.trim() || 'Nezadané';
+    const fuelType = vehicle.fuelType?.trim() || 'Nezadané';
+    const year = vehicle.year ? vehicle.year.toString() : 'Nezadané';
     
-    console.log('[redirectToCheckout] Sending metadata:', { brand, model, ecu_type: ecuType, fuel_type: fuelType, year });
+    console.log('[redirectToCheckout] Sending metadata:', { 
+      orderId: options.orderId,
+      email: options.customerEmail,
+      brand, 
+      model, 
+      ecu_type: ecuType, 
+      fuel_type: fuelType, 
+      year 
+    });
     
     const { data, error } = await supabase.functions.invoke("create-checkout", {
       body: {
         items: options.items.map((item: any) => ({ name: item.name, amount: item.price })),
         email: options.customerEmail,
+        orderId: options.orderId,
         metadata: {
           orderId: options.orderId,
-          customer_name: options.customerName || '',
+          customer_name: options.customerName?.trim() || 'Nezadané',
           customerNote: options.customerNote || '',
           brand: brand,
           model: model,
