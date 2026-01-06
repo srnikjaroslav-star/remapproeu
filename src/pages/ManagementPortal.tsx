@@ -522,6 +522,7 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                 <col style={{ width: '140px' }} />  {/* Services */}
                 <col style={{ width: '60px' }} />   {/* Price - narrow */}
                 <col style={{ width: '70px' }} />   {/* Invoice */}
+                <col style={{ width: '60px' }} />   {/* Download */}
                 <col style={{ width: '90px' }} />   {/* Status - narrow fixed */}
                 <col style={{ width: '80px' }} />   {/* Checksum */}
                 <col style={{ width: '120px' }} />  {/* Internal Note */}
@@ -537,6 +538,7 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                   <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Services</th>
                   <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Price</th>
                   <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Invoice</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">File</th>
                   <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Status</th>
                   <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">CRC</th>
                   <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Note</th>
@@ -546,13 +548,13 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
               <tbody>
                 {loading ? (
                 <tr>
-                      <td colSpan={12} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={13} className="text-center py-12 text-muted-foreground">
                         Loading orders...
                       </td>
                     </tr>
                   ) : filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={12} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={13} className="text-center py-12 text-muted-foreground">
                         No orders found
                       </td>
                     </tr>
@@ -620,6 +622,23 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                           </a>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="p-2">
+                        {order.file_url ? (
+                          <a
+                            href={order.file_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center p-1.5 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary transition-colors"
+                            title="Download customer file"
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
+                        ) : (
+                          <span className="inline-flex items-center justify-center p-1.5 rounded-lg bg-secondary/30 text-muted-foreground/50 cursor-not-allowed">
+                            <Download className="w-4 h-4" />
+                          </span>
                         )}
                       </td>
                       <td className="p-2">
