@@ -81,6 +81,43 @@ const ManagementPortal = () => {
 
   useEffect(() => {
     fetchOrders();
+
+    // Set up realtime subscription for orders table
+    const channel = supabase
+      .channel('orders-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Realtime update received:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            setOrders(prev => [payload.new as Order, ...prev]);
+            toast.info('New order received!');
+          } else if (payload.eventType === 'UPDATE') {
+            setOrders(prev => prev.map(order => 
+              order.id === payload.new.id ? (payload.new as Order) : order
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            setOrders(prev => prev.filter(order => order.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to orders realtime updates');
+        }
+      });
+
+    return () => {
+      console.log('Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
