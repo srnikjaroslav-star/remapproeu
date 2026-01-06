@@ -11,7 +11,30 @@ export const generateOrderId = () => {
 
 export const redirectToCheckout = async (options: any) => {
   try {
-    const serviceNames = options.items?.map((item: any) => item.name).join(', ') || 'Nezadané';
+    // Validate items array before processing
+    if (!options.items || !Array.isArray(options.items) || options.items.length === 0) {
+      throw new Error('No services selected');
+    }
+
+    // Build items array with validated prices
+    const items = options.items.map((item: any) => {
+      const price = typeof item.price === 'number' ? item.price : 0;
+      if (price <= 0) {
+        console.warn('[redirectToCheckout] Invalid price for item:', item);
+      }
+      return {
+        name: item.name || 'Service',
+        amount: price,
+      };
+    });
+
+    // Validate that at least one item has a valid price
+    const totalAmount = items.reduce((sum: number, item: any) => sum + item.amount, 0);
+    if (totalAmount <= 0) {
+      throw new Error('Total amount must be greater than 0');
+    }
+
+    const serviceNames = items.map((item: any) => item.name).join(', ') || 'Nezadané';
     
     // Extract vehicle data with 'Nezadané' fallbacks to ensure request never fails
     const vehicle = options.vehicle || {};
@@ -21,19 +44,17 @@ export const redirectToCheckout = async (options: any) => {
     const fuelType = vehicle.fuelType?.trim() || 'Nezadané';
     const year = vehicle.year ? vehicle.year.toString() : 'Nezadané';
     
-    console.log('[redirectToCheckout] Sending metadata:', { 
+    console.log('[redirectToCheckout] Sending request:', { 
       orderId: options.orderId,
       email: options.customerEmail,
-      brand, 
-      model, 
-      ecu_type: ecuType, 
-      fuel_type: fuelType, 
-      year 
+      totalAmount,
+      items,
+      metadata: { brand, model, ecu_type: ecuType, fuel_type: fuelType, year }
     });
     
     const { data, error } = await supabase.functions.invoke("create-checkout", {
       body: {
-        items: options.items.map((item: any) => ({ name: item.name, amount: item.price })),
+        items,
         email: options.customerEmail,
         orderId: options.orderId,
         metadata: {
