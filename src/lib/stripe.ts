@@ -46,28 +46,28 @@ export const redirectToCheckout = async (options: any) => {
     
     console.log('[redirectToCheckout] Sending request:', { 
       orderId: options.orderId,
-      email: options.customerEmail,
+      customerEmail: options.customerEmail,
       totalAmount,
       items,
-      metadata: { brand, model, ecu_type: ecuType, fuel_type: fuelType, year }
+      metadata: { carBrand: brand, carModel: model, carEcu: ecuType, carServices: serviceNames }
     });
     
     const { data, error } = await supabase.functions.invoke("create-checkout", {
       body: {
         items,
-        email: options.customerEmail,
         orderId: options.orderId,
+        customerEmail: options.customerEmail,
         metadata: {
           orderId: options.orderId,
           customer_name: options.customerName?.trim() || 'Nezadané',
           customerNote: options.customerNote || '',
-          brand: brand,
-          model: model,
-          ecu_type: ecuType,
+          carBrand: brand,
+          carModel: model,
+          carEcu: ecuType,
+          carServices: serviceNames,
           fuel_type: fuelType,
           year: year,
           file_url: options.fileUrl || '',
-          services: serviceNames,
         },
       },
     });
