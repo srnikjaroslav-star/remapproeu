@@ -294,6 +294,20 @@
     outline: none;
   }
 
+  /* Paid: Purple (#a855f7) */
+  .status-paid {
+    background-color: hsl(0 0% 2%);
+    color: hsl(270 91% 65%);
+    border: 2px solid hsl(270 91% 65%);
+    box-shadow: 0 0 8px hsla(270, 91%, 65%, 0.3);
+  }
+
+  .status-paid:hover,
+  .status-paid:focus {
+    box-shadow: 0 0 15px hsla(270, 91%, 65%, 0.5);
+    outline: none;
+  }
+
   /* Dropdown options - Deep Black with White text */
   .admin-status-select option {
     background-color: hsl(0 0% 2%);
