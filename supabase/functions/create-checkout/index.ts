@@ -37,7 +37,15 @@ Deno.serve(async (req) => {
 
     const { items, email, successUrl, cancelUrl, metadata } = parsedBody;
 
-    console.log('Parsed request body:', { items, email, metadata });
+    console.log('=== CREATE-CHECKOUT DEBUG ===');
+    console.log('Parsed request body:', JSON.stringify({ items, email, metadata }, null, 2));
+    console.log('Metadata type:', typeof metadata);
+    console.log('Metadata is null/undefined:', metadata == null);
+    
+    if (!metadata) {
+      console.error('CRITICAL: metadata is null or undefined!');
+      throw new Error('Metadata is required');
+    }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       throw new Error('At least one line item is required');
@@ -71,7 +79,16 @@ Deno.serve(async (req) => {
     console.log('Creating checkout session with promo codes enabled (v4):');
     console.log('Items:', items);
     console.log('Total amount (EUR):', totalAmountEur);
-    console.log('Metadata:', metadata);
+    console.log('=== METADATA EXTRACTION ===');
+    console.log('metadata.brand:', metadata?.brand);
+    console.log('metadata.model:', metadata?.model);
+    console.log('metadata.fuel_type:', metadata?.fuel_type);
+    console.log('metadata.year (raw):', metadata?.year);
+    console.log('metadata.year (type):', typeof metadata?.year);
+    console.log('metadata.year (as string):', metadata?.year ? String(metadata.year) : '');
+    console.log('metadata.file_url:', metadata?.file_url);
+    console.log('metadata.customer_note (additionalInfo):', metadata?.customerNote);
+    console.log('Full metadata:', JSON.stringify(metadata, null, 2));
 
     const line_items = items.map((item: any) => ({
       price_data: {
@@ -84,6 +101,28 @@ Deno.serve(async (req) => {
       quantity: 1,
     }));
 
+    // CRITICAL: Define metadata object with vehicleData values
+    // Ensure all 5 fields are present: brand, model, fuel_type, year, file_url
+    const sessionMetadata = {
+      order_id: metadata?.orderId || '',
+      services: metadata?.services || description,
+      total_amount_eur: totalAmountEur.toFixed(2),
+      order_type: metadata?.orderType || 'tuning',
+      source: metadata?.source || 'web',
+      customer_note: metadata?.customerNote || '', // Additional info from form field
+      customer_name: metadata?.customer_name || '',
+      // CRITICAL: These 5 fields must match what webhook expects
+      brand: metadata?.brand || '', // vehicleData.brand
+      model: metadata?.model || '', // vehicleData.model
+      fuel_type: metadata?.fuel_type || '', // vehicleData.fuelType
+      year: metadata?.year ? String(metadata.year) : '', // String(vehicleData.year) - Stripe requires string, not number!
+      file_url: metadata?.file_url || '', // uploadedFileName
+      ecu_type: metadata?.ecu_type || '',
+    };
+    
+    console.log('=== SESSION METADATA TO CREATE ===');
+    console.log('Session metadata:', JSON.stringify(sessionMetadata, null, 2));
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items,
@@ -93,21 +132,7 @@ Deno.serve(async (req) => {
       client_reference_id: metadata?.orderId || undefined,
       customer_email: email,
       allow_promotion_codes: true,
-      metadata: {
-        order_id: metadata?.orderId || '',
-        services: metadata?.services || description,
-        total_amount_eur: totalAmountEur.toFixed(2),
-        order_type: metadata?.orderType || 'tuning',
-        source: metadata?.source || 'web',
-        customer_note: metadata?.customerNote || '',
-        customer_name: metadata?.customer_name || '',
-        brand: metadata?.brand || '',
-        model: metadata?.model || '',
-        fuel_type: metadata?.fuel_type || '',
-        year: metadata?.year || '',
-        ecu_type: metadata?.ecu_type || '',
-        file_url: metadata?.file_url || '',
-      },
+      metadata: sessionMetadata,
     });
 
     console.log("Checkout session created:", session.id);

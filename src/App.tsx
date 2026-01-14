@@ -8,6 +8,7 @@ import OrderPage from "./pages/OrderPage";
 // OPRAVENÝ IMPORT: Mieri priamo na súbor v pages
 import TrackPage from "./pages/TrackPage";
 import ManagementPortal from "./pages/ManagementPortal";
+import Login from "./pages/Login";
 import PricingPage from "./pages/PricingPage";
 import SuccessPage from "./pages/SuccessPage";
 import TermsPage from "./pages/TermsPage";
@@ -36,7 +37,8 @@ const App = () => (
           {/* Ostatné systémové stránky */}
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/success" element={<SuccessPage />} />
-          <Route path="/management-portal" element={<ManagementPortal />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/sprava-29-vk" element={<ManagementPortal />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/refunds" element={<RefundsPage />} />

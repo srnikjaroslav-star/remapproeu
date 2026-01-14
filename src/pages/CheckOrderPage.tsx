@@ -238,7 +238,9 @@ const CheckOrderPage = () => {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Fuel / Year</p>
-                  <p className="font-medium">{order.fuel_type} • {order.year}</p>
+                  <p className="font-medium">
+                    {order.fuel_type || '—'}{order.fuel_type && order.year ? ' • ' : ''}{order.year || ''}
+                  </p>
                 </div>
               </div>
               <div className="pt-4 border-t border-border">

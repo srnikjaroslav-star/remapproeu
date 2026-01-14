@@ -1,13 +1,12 @@
 import { useState, useRef } from 'react';
-import { Check, Upload, File, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Check, Upload, File, CheckCircle, AlertCircle } from 'lucide-react';
 import { SERVICES, Service } from '@/data/services';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ServicesFileStepProps {
   selectedServices: string[];
   onServicesUpdate: (services: string[]) => void;
-  onFileUploaded: (url: string) => void;
-  fileUrl: string;
+  onFileSelected: (file: File) => void;
+  selectedFile: File | null;
   customerNote: string;
   onCustomerNoteUpdate: (note: string) => void;
   onNext: () => void;
@@ -17,17 +16,13 @@ interface ServicesFileStepProps {
 const ServicesFileStep = ({ 
   selectedServices, 
   onServicesUpdate, 
-  onFileUploaded,
-  fileUrl,
+  onFileSelected,
+  selectedFile,
   customerNote,
   onCustomerNoteUpdate,
   onNext, 
   onBack 
 }: ServicesFileStepProps) => {
-  const [file, setFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadComplete, setUploadComplete] = useState(!!fileUrl);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,44 +43,13 @@ const ServicesFileStep = ({
   const removalServices = SERVICES.filter((s) => s.category === 'removal');
   const modificationServices = SERVICES.filter((s) => s.category === 'modification');
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     
-    setFile(selectedFile);
     setError(null);
-    setUploading(true);
-    setUploadProgress(0);
-    
-    try {
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => Math.min(prev + 10, 90));
-      }, 200);
-
-      const fileName = `${Date.now()}-${selectedFile.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from('tunes')
-        .upload(fileName, selectedFile);
-
-      clearInterval(progressInterval);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('tunes')
-        .getPublicUrl(fileName);
-
-      setUploadProgress(100);
-      setUploadComplete(true);
-      onFileUploaded(publicUrl);
-    } catch (err) {
-      console.error('Upload error:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Upload failed';
-      setError(`Upload failed. ${errorMessage.includes('network') || errorMessage.includes('fetch') ? 'Please check your internet connection and try again.' : 'Please try again.'}`);
-      setUploadProgress(0);
-    } finally {
-      setUploading(false);
-    }
+    // Just store the file reference - upload will happen on submit
+    onFileSelected(file);
   };
 
   const renderServiceCard = (service: Service) => (
@@ -118,7 +82,7 @@ const ServicesFileStep = ({
     </button>
   );
 
-  const canContinue = selectedServices.length > 0 && uploadComplete;
+  const canContinue = selectedServices.length > 0 && selectedFile !== null;
 
   return (
     <div className="animate-fadeIn">
@@ -174,7 +138,7 @@ const ServicesFileStep = ({
           className={`
             p-8 cursor-pointer transition-all duration-300 rounded-xl
             flex flex-col items-center justify-center text-center
-            ${uploadComplete 
+            ${selectedFile 
               ? 'bg-green-500/10 border-2 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.4)]' 
               : 'interactive-idle border-dashed hover:border-primary/60'
             }
@@ -188,33 +152,20 @@ const ServicesFileStep = ({
             accept=".bin,.ori,.mod,.ecu"
           />
           
-          {uploading ? (
-            <div className="w-full max-w-xs">
-              <Loader2 className="w-10 h-10 text-primary mx-auto mb-4 animate-spin" />
-              <p className="font-medium mb-2">Uploading...</p>
-              <div className="progress-bar">
-                <div 
-                  className="progress-bar-fill" 
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-              <p className="text-sm text-muted-foreground mt-2">{uploadProgress}%</p>
-            </div>
-          ) : uploadComplete ? (
+          {selectedFile ? (
             <>
               <CheckCircle className="w-10 h-10 text-green-500 mb-3" />
-              <p className="font-medium text-green-500 mb-2">Upload Complete!</p>
-              {file && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <File className="w-4 h-4" />
-                  <span className="text-sm">{file.name}</span>
-                </div>
-              )}
+              <p className="font-medium text-green-500 mb-2">File Selected</p>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <File className="w-4 h-4" />
+                <span className="text-sm">{selectedFile.name}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">File will be uploaded when you submit the order</p>
             </>
           ) : (
             <>
               <Upload className="w-10 h-10 text-primary mb-3" />
-              <p className="font-medium mb-2">Click to upload your ECU file</p>
+              <p className="font-medium mb-2">Click to select your ECU file</p>
               <p className="text-sm text-muted-foreground">
                 Supported formats: .bin, .ori, .mod, .ecu
               </p>

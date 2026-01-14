@@ -36,38 +36,103 @@ export const redirectToCheckout = async (options: any) => {
 
     const serviceNames = items.map((item: any) => item.name).join(', ') || 'Nezadané';
     
-    // Extract vehicle data with 'Nezadané' fallbacks to ensure request never fails
+    // CRITICAL: Extract vehicle data - check if vehicleData is not empty
     const vehicle = options.vehicle || {};
-    const brand = vehicle.brand?.trim() || 'Nezadané';
-    const model = vehicle.model?.trim() || 'Nezadané';
-    const ecuType = vehicle.ecuType?.trim() || 'Nezadané';
-    const fuelType = vehicle.fuelType?.trim() || 'Nezadané';
-    const year = vehicle.year ? vehicle.year.toString() : 'Nezadané';
+    
+    console.log('[redirectToCheckout] Vehicle data received:', vehicle);
+    
+    if (!vehicle || Object.keys(vehicle).length === 0) {
+      console.error('[redirectToCheckout] ERROR: Vehicle data is empty!', options);
+      throw new Error('Vehicle data is required');
+    }
+    
+    const brand = vehicle.brand?.trim() || '';
+    const model = vehicle.model?.trim() || '';
+    const ecuType = vehicle.ecuType?.trim() || '';
+    
+    // Fuel type: Must be "Diesel" or "Petrol"
+    const fuelTypeRaw = vehicle.fuelType?.trim() || '';
+    const fuelType = (fuelTypeRaw === 'Diesel' || fuelTypeRaw === 'Petrol') ? fuelTypeRaw : '';
+    
+    // Year: Ensure it's a valid number (1900-2100), otherwise send empty string
+    // CRITICAL: Must extract real year value from vehicleData.year
+    let year = 0;
+    if (vehicle.year) {
+      const yearNum = typeof vehicle.year === 'number' ? vehicle.year : parseInt(vehicle.year.toString());
+      if (!isNaN(yearNum) && yearNum >= 1900 && yearNum <= 2100) {
+        year = yearNum;
+      }
+    }
+    
+    console.log('[redirectToCheckout] Year extraction:', {
+      'vehicle.year (raw)': vehicle.year,
+      'vehicle.year (type)': typeof vehicle.year,
+      'parsed year': year,
+      'year as string': String(year),
+    });
+    
+    console.log('[redirectToCheckout] Extracted vehicle data:', {
+      brand,
+      model,
+      fuelType,
+      year,
+      yearString: String(year),
+      ecuType,
+      fileUrl: options.fileUrl,
+    });
     
     console.log('[redirectToCheckout] Sending request:', { 
       orderId: options.orderId,
       customerEmail: options.customerEmail,
       totalAmount,
       items,
-      metadata: { carBrand: brand, carModel: model, carEcu: ecuType, carServices: serviceNames }
+      metadata: { 
+        carBrand: brand, 
+        carModel: model, 
+        carEcu: ecuType, 
+        carServices: serviceNames,
+        fuel_type: fuelType,
+        year: year.toString(),
+        file_url: options.fileUrl || '',
+      }
+    });
+    
+    // Prepare metadata for Stripe checkout session
+    // CRITICAL: Must match DB column names: car_brand, car_model, fuel_type, year, file_url
+    // Use vehicleData directly to ensure no data loss
+    const metadata = {
+      orderId: options.orderId,
+      customer_name: options.customerName?.trim() || 'Nezadané',
+      customerNote: options.customerNote || '',
+      brand: brand, // From vehicleData.brand - maps to car_brand in DB
+      model: model, // From vehicleData.model - maps to car_model in DB
+      ecu_type: ecuType,
+      services: serviceNames,
+      fuel_type: fuelType, // From vehicleData.fuelType - maps to fuel_type in DB
+      year: year > 0 ? String(year) : '', // From vehicleData.year - must be string for Stripe metadata - maps to year in DB
+      file_url: options.fileUrl || '', // uploadedFileName - maps to file_url in DB
+    };
+    
+    console.log('[redirectToCheckout] Metadata to send:', JSON.stringify(metadata, null, 2));
+    console.log('[redirectToCheckout] Vehicle data check:', {
+      'vehicleData.brand': vehicle.brand,
+      'vehicleData.model': vehicle.model,
+      'vehicleData.fuelType': vehicle.fuelType,
+      'vehicleData.year (raw)': vehicle.year,
+      'vehicleData.year (type)': typeof vehicle.year,
+      'extracted brand': brand,
+      'extracted model': model,
+      'extracted fuel_type': fuelType,
+      'extracted year (number)': year,
+      'extracted year (string)': year > 0 ? String(year) : '',
+      'file_url': options.fileUrl,
     });
     
     const { data, error } = await supabase.functions.invoke("create-checkout", {
       body: {
         items,
         email: options.customerEmail,
-        metadata: {
-          orderId: options.orderId,
-          customer_name: options.customerName?.trim() || 'Nezadané',
-          customerNote: options.customerNote || '',
-          brand: brand,
-          model: model,
-          ecu_type: ecuType,
-          services: serviceNames,
-          fuel_type: fuelType,
-          year: year,
-          file_url: options.fileUrl || '',
-        },
+        metadata,
       },
     });
 

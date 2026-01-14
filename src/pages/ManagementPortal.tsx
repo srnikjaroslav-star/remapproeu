@@ -1,18 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   Download, Upload, Eye, CheckCircle, Clock, Package, 
-  RefreshCw, Search, User, Power, Save, Edit3
+  RefreshCw, Search, User, Power, Save, Edit3, LogOut, FileText, X
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 import SystemStatus, { fetchSystemStatusFromDB, setSystemStatusInDB, isSystemOnline, SystemStatusMode } from '@/components/SystemStatus';
 import SmartTooltip from '@/components/SmartTooltip';
 import InternalNoteModal from '@/components/InternalNoteModal';
-import { supabase, Order } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
+import { Order } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { SERVICES } from '@/data/services';
 
 const ManagementPortal = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,15 +27,68 @@ const ManagementPortal = () => {
   const [statusMode, setStatusMode] = useState<SystemStatusMode>('auto');
   const [statusLoading, setStatusLoading] = useState(false);
   const [noteModalOrder, setNoteModalOrder] = useState<Order | null>(null);
+  const [detailOrder, setDetailOrder] = useState<Order | null>(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // Check authentication on mount - only allow specific email
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        navigate('/login');
+        return;
+      }
+
+      // Check if user email matches allowed email
+      const allowedEmail = import.meta.env.VITE_ADMIN_EMAIL || 'info@remappro.eu';
+      const userEmail = session.user?.email?.toLowerCase();
+      
+      if (userEmail !== allowedEmail.toLowerCase()) {
+        toast.error('Nemáte oprávnenie na prístup k tomuto portálu');
+        await supabase.auth.signOut();
+        navigate('/login');
+        return;
+      }
+
+      setIsCheckingAuth(false);
+    };
+
+    checkAuth();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session) {
+        navigate('/login');
+        return;
+      }
+
+      // Re-check email on auth state change
+      const allowedEmail = import.meta.env.VITE_ADMIN_EMAIL || 'info@remappro.eu';
+      const userEmail = session.user?.email?.toLowerCase();
+      
+      if (userEmail !== allowedEmail.toLowerCase()) {
+        toast.error('Nemáte oprávnenie na prístup k tomuto portálu');
+        await supabase.auth.signOut();
+        navigate('/login');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   // Load initial status from DB
   useEffect(() => {
+    if (isCheckingAuth) return;
+    
     const loadStatus = async () => {
       const mode = await fetchSystemStatusFromDB();
       setStatusMode(mode);
     };
     loadStatus();
-  }, []);
+  }, [isCheckingAuth]);
 
   const cycleStatusMode = async () => {
     // Cycle: auto -> online -> offline -> auto
@@ -80,6 +135,8 @@ const ManagementPortal = () => {
   };
 
   useEffect(() => {
+    if (isCheckingAuth) return;
+
     fetchOrders();
 
     // Set up realtime subscription for orders table
@@ -118,10 +175,89 @@ const ManagementPortal = () => {
       console.log('Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [isCheckingAuth]);
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        toast.error('Chyba pri odhlasovaní');
+        return;
+      }
+      toast.success('Úspešne odhlásený');
+      navigate('/login');
+    } catch (error: any) {
+      toast.error('Chyba pri odhlasovaní');
+    }
+  };
+
+  const sendStatusEmail = async (order: Order, status: string) => {
+    try {
+      const orderId = order.order_number || order.id.slice(0, 8).toUpperCase();
+      
+      console.log('[sendStatusEmail] Sending email for order:', {
+        orderId,
+        orderNumber: orderId,
+        customerEmail: order.customer_email,
+        status,
+      });
+      
+      // Call Supabase function to send status email via Resend
+      const response = await supabase.functions.invoke('send-status-email', {
+        body: {
+          orderId: order.id,
+          orderNumber: orderId,
+          customerEmail: order.customer_email,
+          customerName: order.customer_name || '',
+          carBrand: order.car_brand || '',
+          carModel: order.car_model || '',
+          year: order.year || 0,
+          status: status,
+        },
+      });
+
+      console.log('[sendStatusEmail] Response:', response);
+
+      if (response.error) {
+        console.error('[sendStatusEmail] Supabase function error:', {
+          error: response.error,
+          message: response.error.message,
+          details: response.error.details,
+          hint: response.error.hint,
+        });
+        throw new Error(response.error.message || 'Failed to send email');
+      }
+
+      if (response.data) {
+        const data = response.data as any;
+        if (data.success === false) {
+          console.error('[sendStatusEmail] Email sending failed:', {
+            error: data.error,
+            resend: data.resend,
+          });
+          throw new Error(data.error || 'Email sending failed');
+        }
+      }
+
+      console.log('[sendStatusEmail] Email sent successfully');
+      return response;
+    } catch (error: any) {
+      console.error('[sendStatusEmail] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response,
+        name: error.name,
+      });
+      throw error;
+    }
+  };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     console.log('Updating order status:', { orderId, newStatus });
+    
+    // Find the order before update
+    const order = orders.find(o => o.id === orderId);
+    const previousStatus = order?.status;
     
     // Optimistic UI update
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
@@ -140,11 +276,49 @@ const ManagementPortal = () => {
         throw error;
       }
 
-      toast.success(`Status updated to ${newStatus.charAt(0).toUpperCase()}${newStatus.slice(1)}`);
+      // Send email when status changes to Completed
+      if (newStatus === 'completed' && previousStatus !== 'completed' && order) {
+        try {
+          await sendStatusEmail(order, newStatus);
+          toast.success('Status aktualizovaný a email odoslaný klientovi');
+        } catch (emailError: any) {
+          console.error('[handleStatusChange] Email sending failed:', {
+            error: emailError,
+            message: emailError?.message,
+            stack: emailError?.stack,
+            orderId: order.id,
+            customerEmail: order.customer_email,
+          });
+          
+          // Show detailed error message
+          const errorMsg = emailError?.message || 'Neznáma chyba';
+          if (errorMsg.includes('RESEND_API_KEY') || errorMsg.includes('API key')) {
+            toast.error('Chyba: RESEND_API_KEY nie je nastavený alebo je neplatný');
+          } else if (errorMsg.includes('domain') || errorMsg.includes('verified')) {
+            toast.error('Chyba: Emailová doména nie je overená v Resend');
+          } else {
+            toast.error(`Chyba pri odosielaní emailu: ${errorMsg}`);
+          }
+          toast.success('Status aktualizovaný (email sa nepodarilo odoslať)');
+        }
+      } else {
+        const statusLabels: Record<string, string> = {
+          'pending': 'Pending',
+          'processing': 'Processing',
+          'completed': 'Completed',
+          'paid': 'Paid'
+        };
+        toast.success(`Status changed to: ${statusLabels[newStatus] || newStatus}`);
+      }
+
       await fetchOrders();
     } catch (error: any) {
       console.error('Update error:', error);
-      toast.error(`Failed to update status: ${error.message || 'Unknown error'}`);
+      toast.error(`Chyba pri aktualizácii statusu: ${error.message || 'Neznáma chyba'}`);
+      // Revert optimistic update
+      if (order) {
+        setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: previousStatus || 'pending' } : o)));
+      }
       await fetchOrders();
     }
   };
@@ -310,6 +484,41 @@ const ManagementPortal = () => {
     fileInputRef.current?.click();
   };
 
+  const handleDownload = async (fileName: string, orderNumber: string) => {
+    try {
+      // Create Public URL from file name
+      const { data: { publicUrl } } = supabase.storage
+        .from('tunes')
+        .getPublicUrl(fileName);
+
+      if (!publicUrl) {
+        toast.error('Nepodarilo sa vytvoriť URL pre sťahovanie');
+        return;
+      }
+
+      // Force download for Supabase Storage URLs
+      try {
+        const response = await fetch(publicUrl);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `order-${orderNumber || 'file'}-${fileName}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } catch (err) {
+        console.error('Download error:', err);
+        // Fallback: open in new tab
+        window.open(publicUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('Error creating download URL:', error);
+      toast.error('Chyba pri sťahovaní súboru');
+    }
+  };
+
   const filteredOrders = orders.filter((order) => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
@@ -329,13 +538,13 @@ const ManagementPortal = () => {
       case 'paid':
         return 'status-paid';
       case 'pending':
-        return 'status-pending';
+        return 'bg-black text-orange-500 border border-orange-500/50';
       case 'processing':
         return 'status-processing';
       case 'completed':
         return 'status-completed';
       default:
-        return 'status-pending';
+        return 'bg-black text-orange-500 border border-orange-500/50';
     }
   };
 
@@ -364,6 +573,18 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
       minute: '2-digit'
     });
   };
+
+  // Show loading while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Kontrola prístupu...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -403,6 +624,13 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
             <button onClick={fetchOrders} className="btn-secondary py-2 px-4 flex items-center gap-2">
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               Refresh
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="btn-secondary py-2 px-4 flex items-center gap-2 hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Odhlásiť sa
             </button>
           </div>
         </div>
@@ -510,104 +738,67 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
         </div>
 
         {/* Orders Table */}
-        <div className="rounded-xl overflow-hidden bg-background/40 backdrop-blur-xl border border-primary/20 shadow-[0_0_30px_rgba(59,130,246,0.15)]">
+        <div className="rounded-xl bg-background/40 backdrop-blur-xl border border-primary/20 shadow-[0_0_30px_rgba(59,130,246,0.15)]">
           <div className="overflow-x-auto">
-            <table className="w-full text-base" style={{ tableLayout: 'fixed' }}>
-              <colgroup>
-                <col style={{ width: '90px' }} />   {/* Order ID - narrow fixed */}
-                <col style={{ width: '120px' }} />  {/* Date */}
-                <col style={{ width: '160px' }} />  {/* Customer - wider with truncate */}
-                <col style={{ width: '140px' }} />  {/* Vehicle */}
-                <col style={{ width: '80px' }} />   {/* ECU */}
-                <col style={{ width: '140px' }} />  {/* Services */}
-                <col style={{ width: '60px' }} />   {/* Price - narrow */}
-                <col style={{ width: '70px' }} />   {/* Invoice */}
-                <col style={{ width: '90px' }} />   {/* Status - narrow fixed */}
-                <col style={{ width: '80px' }} />   {/* Checksum */}
-                <col style={{ width: '120px' }} />  {/* Internal Note */}
-                <col style={{ width: '120px' }} />  {/* Actions - wider for buttons */}
-              </colgroup>
-              <thead>
-                <tr className="bg-primary/20 border border-primary/40">
-                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">ID</th>
-                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Date</th>
-                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Customer</th>
-                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Vehicle</th>
-                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">ECU</th>
-                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Services</th>
-                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Price</th>
-                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Invoice</th>
-                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Status</th>
-                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">CRC</th>
-                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white">Note</th>
-                  <th className="text-right p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white sticky right-0 bg-primary/30 backdrop-blur-sm">Actions</th>
+            <table className="w-full text-base">
+              <thead className="sticky top-0 z-50">
+                <tr className="bg-[#0a192f] border-b border-primary/30 shadow-md">
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white w-1 whitespace-nowrap">ID</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white whitespace-nowrap">Date</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white w-full">Customer</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white whitespace-nowrap">Price</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white whitespace-nowrap">Status</th>
+                  <th className="text-left p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white whitespace-nowrap">Invoice</th>
+                  <th className="text-right p-2 text-xs font-semibold uppercase tracking-wide align-middle text-white whitespace-nowrap sticky right-0 backdrop-blur-sm z-10">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                 <tr>
-                      <td colSpan={12} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={7} className="text-center py-12 text-muted-foreground">
                         Loading orders...
                       </td>
                     </tr>
                   ) : filteredOrders.length === 0 ? (
                     <tr>
-                      <td colSpan={12} className="text-center py-12 text-muted-foreground">
+                      <td colSpan={7} className="text-center py-12 text-muted-foreground">
                         No orders found
                       </td>
                     </tr>
                 ) : (
                   filteredOrders.map((order) => (
                     <tr key={order.id} className="align-top border-b border-gray-700/50 hover:bg-white/5 transition-colors duration-150">
-                      <td className="p-2">
-                        <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded block truncate">
+                      <td className="p-2 w-1 whitespace-nowrap">
+                        <span className="font-mono text-xs font-semibold text-primary bg-primary/10 px-1.5 py-0.5 rounded inline-block">
                           {order.order_number || order.id.slice(0, 6).toUpperCase()}
                         </span>
                       </td>
-                      <td className="p-2">
-                        <p className="text-xs text-muted-foreground whitespace-nowrap">
+                      <td className="p-2 whitespace-nowrap">
+                        <p className="text-xs text-muted-foreground">
                           {formatLocalDateTime(order.created_at)}
                         </p>
                       </td>
-                      <td className="p-2">
+                      <td className="p-2 w-full">
                         <div className="overflow-hidden">
                           <p className="font-medium text-xs truncate" title={order.customer_name}>{order.customer_name}</p>
                           <p className="text-xs text-muted-foreground truncate" title={order.customer_email}>{order.customer_email}</p>
                         </div>
                       </td>
-                      <td className="p-2">
-                        <div className="overflow-hidden">
-                          <p className="font-medium text-xs truncate" title={`${order.car_brand} ${order.car_model}`}>
-                            {order.car_brand} {order.car_model}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{order.fuel_type} • {order.year}</p>
-                        </div>
-                      </td>
-                      <td className="p-2">
-                        {order.ecu_type && order.ecu_type.length > 10 ? (
-                          <SmartTooltip content={order.ecu_type}>
-                            <p className="text-xs truncate cursor-help">{order.ecu_type}</p>
-                          </SmartTooltip>
-                        ) : (
-                          <p className="text-xs truncate">{order.ecu_type || '—'}</p>
-                        )}
-                      </td>
-                      <td className="p-2">
-                        {(() => {
-                          const services = getServiceNames(order.service_type);
-                          return services.length > 18 ? (
-                            <SmartTooltip content={services} maxWidth="350px">
-                              <p className="text-xs truncate cursor-help">{services}</p>
-                            </SmartTooltip>
-                          ) : (
-                            <p className="text-xs truncate">{services || '—'}</p>
-                          );
-                        })()}
-                      </td>
-                      <td className="p-2">
+                      <td className="p-2 whitespace-nowrap">
                         <p className="font-semibold text-primary text-xs">{order.total_price}€</p>
                       </td>
-                      <td className="p-2">
+                      <td className="p-2 whitespace-nowrap">
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                          className={`admin-status-select text-xs w-full ${getStatusClass(order.status)}`}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="processing">Processing</option>
+                          <option value="completed">Completed</option>
+                        </select>
+                      </td>
+                      <td className="p-2 whitespace-nowrap">
                         {order.invoice_number ? (
                           <a
                             href={order.invoice_url || '#'}
@@ -622,98 +813,36 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </td>
-                      <td className="p-2">
-                        <select
-                          value={order.status}
-                          onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                          className={`admin-status-select text-xs w-full ${getStatusClass(order.status)}`}
-                        >
-                          <option value="paid">Paid</option>
-                          <option value="pending">Pending</option>
-                          <option value="processing">Processing</option>
-                          <option value="completed">Completed</option>
-                        </select>
-                      </td>
-                      <td className="p-2">
-                        <input
-                          type="text"
-                          value={getEditableValue(order, 'checksum_crc')}
-                          onChange={(e) => handleFieldChange(order.id, 'checksum_crc', e.target.value)}
-                          onBlur={() => handleFieldBlur(order.id, 'checksum_crc')}
-                          placeholder="CRC..."
-                          className="w-full h-7 bg-secondary/50 border border-gray-600 rounded px-1.5 py-1 text-xs text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/50"
-                        />
-                      </td>
-                      <td className="p-2">
-                        {(() => {
-                          const note = getEditableValue(order, 'internal_note');
-                          return (
-                            <div 
-                              onClick={() => setNoteModalOrder(order)}
-                              className="h-7 flex items-center cursor-pointer group border border-gray-600 rounded px-1.5 bg-secondary/50 hover:bg-secondary/70 transition-colors"
-                            >
-                              {note ? (
-                                <SmartTooltip content={note} maxWidth="400px">
-                                  <div className="flex items-center gap-1 w-full">
-                                    <p className="text-xs truncate text-white flex-1">{note}</p>
-                                    <Edit3 className="w-3 h-3 text-gray-400 group-hover:text-primary transition-colors flex-shrink-0" />
-                                  </div>
-                                </SmartTooltip>
-                              ) : (
-                                <div className="flex items-center gap-1 w-full text-gray-400 group-hover:text-white transition-colors">
-                                  <span className="text-xs flex-1">Note...</span>
-                                  <Edit3 className="w-3 h-3 flex-shrink-0" />
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </td>
-                      <td className="p-2 sticky right-0 bg-background/95 backdrop-blur-sm">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {editingFields[order.id] && (
-                            <button
-                              onClick={() => handleSaveFields(order.id)}
-                              disabled={savingId === order.id}
-                              className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors"
-                              title="Save Admin Fields"
-                            >
-                              <Save className={`w-4 h-4 ${savingId === order.id ? 'animate-pulse' : ''}`} />
-                            </button>
-                          )}
+                      <td className="p-2 sticky right-0 bg-background/95 backdrop-blur-sm z-10">
+                        <div className="flex items-center justify-end gap-1.5 flex-shrink-0">
                           {order.file_url ? (
-                            <a
-                              href={order.file_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
-                              title="View Customer File"
+                            <button
+                              onClick={() => handleDownload(order.file_url!, order.order_number || order.id.slice(0, 8))}
+                              className="p-2 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 text-orange-500 transition-colors flex-shrink-0"
+                              title="Stiahnuť súbor zákazníka"
                             >
-                              <FileDown className="w-4 h-4" />
-                            </a>
+                              <Download className="w-4 h-4" />
+                            </button>
                           ) : (
-                            <span className="p-2 rounded-lg bg-secondary/30 text-muted-foreground/50 cursor-not-allowed">
-                              <FileDown className="w-4 h-4" />
+                            <span className="p-2 rounded-lg bg-secondary/30 text-muted-foreground/50 cursor-not-allowed flex-shrink-0" title="Súbor nie je k dispozícii">
+                              <Download className="w-4 h-4" />
                             </span>
                           )}
                           <button
                             onClick={() => triggerUpload(order.id)}
                             disabled={uploadingId === order.id}
-                            className="p-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary transition-colors"
-                            title="Upload Result"
+                            className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-500 transition-colors flex-shrink-0"
+                            title="Nahrať hotový súbor"
                           >
                             <Upload className={`w-4 h-4 ${uploadingId === order.id ? 'animate-pulse' : ''}`} />
                           </button>
-                          {order.result_file_url && (
-                            <a
-                              href={order.result_file_url}
-                              download
-                              className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-500 transition-colors"
-                              title="Download Result"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </a>
-                          )}
+                          <button
+                            onClick={() => setDetailOrder(order)}
+                            className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors flex-shrink-0"
+                            title="Zobraziť detail objednávky"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -723,6 +852,224 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
             </table>
           </div>
         </div>
+
+        {/* Order Detail Modal */}
+        {detailOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="glass-card max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                    <FileText className="w-6 h-6 text-primary" />
+                    Detail objednávky
+                  </h2>
+                  <button
+                    onClick={() => setDetailOrder(null)}
+                    className="p-2 rounded-lg hover:bg-secondary/50 transition-colors"
+                  >
+                    <X className="w-5 h-5 text-muted-foreground" />
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  {/* Základné informácie */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-foreground border-b border-primary/20 pb-2">
+                      Základné informácie
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">ID objednávky</p>
+                        <p className="font-mono font-semibold text-primary">{detailOrder.order_number || detailOrder.id.slice(0, 8).toUpperCase()}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Dátum vytvorenia</p>
+                        <p className="text-foreground">{formatLocalDateTime(detailOrder.created_at)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Status</p>
+                        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${
+                          detailOrder.status === 'pending' 
+                            ? 'bg-black text-orange-500 border border-orange-500/50'
+                            : detailOrder.status === 'processing'
+                            ? 'bg-primary/20 text-primary border border-primary/30'
+                            : detailOrder.status === 'completed'
+                            ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                            : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                        }`}>
+                          {detailOrder.status === 'pending' ? 'Pending' : detailOrder.status === 'processing' ? 'Processing' : detailOrder.status === 'completed' ? 'Completed' : detailOrder.status}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Celková cena</p>
+                        <p className="text-xl font-bold text-primary">{detailOrder.total_price}€</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Zákazník */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-foreground border-b border-primary/20 pb-2">
+                      Zákazník
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Meno</p>
+                        <p className="text-foreground font-medium">{detailOrder.customer_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">E-mail</p>
+                        <p className="text-foreground">{detailOrder.customer_email}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Vozidlo */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-foreground border-b border-primary/20 pb-2">
+                      Vozidlo
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Značka / Model</p>
+                        <p className="text-foreground font-medium">{detailOrder.car_brand || 'Nezadané'} {detailOrder.car_model || ''}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Palivo</p>
+                        <p className="text-foreground">{detailOrder.fuel_type || '—'}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Rok výroby</p>
+                        <p className="text-foreground">{detailOrder.year ? detailOrder.year.toString() : '—'}</p>
+                      </div>
+                      {detailOrder.ecu_type && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Typ ECU</p>
+                          <p className="text-foreground">{detailOrder.ecu_type}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Služby */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-foreground border-b border-primary/20 pb-2">
+                      Služby
+                    </h3>
+                    <div>
+                      <p className="text-foreground">{getServiceNames(detailOrder.service_type) || '—'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Súbory */}
+                <div className="mt-6 pt-6 border-t border-primary/20">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Súbory</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Súbor zákazníka</p>
+                      {detailOrder.file_url ? (
+                        <button
+                          onClick={() => handleDownload(detailOrder.file_url!, detailOrder.order_number || detailOrder.id.slice(0, 8))}
+                          className="btn-secondary inline-flex items-center gap-2"
+                        >
+                          <Download className="w-4 h-4" />
+                          Stiahnuť súbor zákazníka
+                        </button>
+                      ) : (
+                        <p className="text-muted-foreground text-sm">Súbor nie je k dispozícii</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Hotový súbor</p>
+                      {detailOrder.result_file_url ? (
+                        <a
+                          href={detailOrder.result_file_url}
+                          download
+                          className="btn-primary inline-flex items-center gap-2"
+                        >
+                          <Eye className="w-4 h-4" />
+                          Stiahnuť hotový súbor
+                        </a>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-muted-foreground text-sm">Hotový súbor ešte nie je nahraný</p>
+                          <button
+                            onClick={() => {
+                              setDetailOrder(null);
+                              triggerUpload(detailOrder.id);
+                            }}
+                            className="btn-primary inline-flex items-center gap-2"
+                          >
+                            <Upload className="w-4 h-4" />
+                            Nahrať hotový súbor
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Poznámka zákazníka */}
+                <div className="mt-6 pt-6 border-t border-primary/20">
+                  <h3 className="text-lg font-semibold text-foreground border-b border-primary/20 pb-2 mb-4">
+                    Poznámka zákazníka
+                  </h3>
+                  <div className="bg-secondary/30 p-4 rounded-lg">
+                    <p className="text-foreground whitespace-pre-wrap">{detailOrder.customer_note || '—'}</p>
+                  </div>
+                </div>
+
+                {/* Interná poznámka */}
+                {detailOrder.internal_note && (
+                  <div className="mt-6 pt-6 border-t border-primary/20">
+                    <h3 className="text-lg font-semibold text-foreground border-b border-primary/20 pb-2 mb-4">
+                      Interná poznámka
+                    </h3>
+                    <div className="bg-primary/10 p-4 rounded-lg">
+                      <p className="text-foreground whitespace-pre-wrap">{detailOrder.internal_note}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* CRC */}
+                <div className="mt-6 pt-6 border-t border-primary/20">
+                  <h3 className="text-lg font-semibold text-foreground border-b border-primary/20 pb-2 mb-4">
+                    CRC
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      value={getEditableValue(detailOrder, 'checksum_crc')}
+                      onChange={(e) => {
+                        handleFieldChange(detailOrder.id, 'checksum_crc', e.target.value);
+                        // Automaticky aktivovať tlačidlo pri zmene
+                        if (!editingFields[detailOrder.id]) {
+                          setEditingFields(prev => ({
+                            ...prev,
+                            [detailOrder.id]: { ...prev[detailOrder.id], checksum_crc: e.target.value }
+                          }));
+                        }
+                      }}
+                      placeholder="CRC..."
+                      maxLength={6}
+                      className="w-[120px] h-9 bg-secondary/50 border border-gray-600 rounded px-3 py-2 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-primary/50 font-mono"
+                    />
+                    <button
+                      onClick={() => handleSaveFields(detailOrder.id)}
+                      disabled={savingId === detailOrder.id}
+                      className="px-4 py-2 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/30 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Uložiť CRC"
+                    >
+                      <Save className={`w-4 h-4 ${savingId === detailOrder.id ? 'animate-pulse' : ''}`} />
+                      Uložiť
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Internal Note Modal */}
         <InternalNoteModal
@@ -740,6 +1087,29 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
           isSaving={savingId === noteModalOrder?.id}
         />
       </main>
+
+      {/* Footer */}
+      <footer className="bg-background border-t border-border/50 mt-auto">
+        <div className="w-full max-w-[77%] mx-auto px-12 py-8">
+          <div className="glass-card p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <h3 className="font-semibold text-foreground text-lg mb-4">Fakturačné údaje</h3>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p className="font-semibold text-foreground text-base">REMAPPRO</p>
+                  <p>Janka Kráľa 29</p>
+                  <p>990 01 Veľký Krtíš</p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-8 pt-6 border-t border-border/50">
+              <p className="text-center text-sm text-muted-foreground">
+                Copyright © 2026 REMAPPRO Digital Solutions. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

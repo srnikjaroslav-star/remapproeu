@@ -8,6 +8,7 @@ import ServicesFileStep from '@/components/wizard/ServicesFileStep';
 import ContactSubmitStep from '@/components/wizard/ContactSubmitStep';
 import { SERVICES } from '@/data/services';
 import { redirectToCheckout, generateOrderId } from '@/lib/stripe';
+import { supabase } from '@/lib/supabase';
 import { ArrowLeft, Zap, Shield, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SystemStatus from '@/components/SystemStatus';
@@ -19,7 +20,7 @@ interface FormData {
   customer: { name: string; email: string };
   vehicle: { brand: string; model: string; fuelType: string; year: number; ecuType: string; engineDisplacement?: string; enginePower?: string };
   services: string[];
-  fileUrl: string;
+  selectedFile: File | null;
   customerNote: string;
 }
 
@@ -31,7 +32,7 @@ const OrderPage = () => {
     customer: { name: '', email: '' },
     vehicle: { brand: '', model: '', fuelType: '', year: 0, ecuType: '', engineDisplacement: '', enginePower: '' },
     services: [],
-    fileUrl: '',
+    selectedFile: null,
     customerNote: '',
   });
 
@@ -60,6 +61,50 @@ const OrderPage = () => {
         return;
       }
 
+      if (!formData.selectedFile) {
+        toast.error('Please select a file to upload');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // STEP 1: Upload file FIRST before creating order
+      console.log('[OrderPage] Odosielam dáta:', {
+        fuel: formData.vehicle.fuelType,
+        year: formData.vehicle.year,
+        file: formData.selectedFile?.name,
+        vehicle: formData.vehicle,
+      });
+      
+      toast.loading('Uploading file...', { id: 'upload' });
+      const fileName = `${Date.now()}-${formData.selectedFile.name}`;
+      
+      console.log('[OrderPage] Uploading file:', fileName);
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('tunes')
+        .upload(fileName, formData.selectedFile);
+
+      if (uploadError) {
+        console.error('[OrderPage] File upload error:', uploadError);
+        toast.dismiss('upload');
+        toast.error(`File upload failed: ${uploadError.message}`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Get the file name from upload response (data.path) - WAIT for result
+      if (!uploadData || !uploadData.path) {
+        console.error('[OrderPage] Upload data missing:', { uploadData, error: uploadError });
+        toast.dismiss('upload');
+        toast.error('File upload failed: No data returned');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const uploadedFileName = uploadData.path;
+      console.log('[OrderPage] File uploaded successfully:', uploadedFileName);
+      toast.dismiss('upload');
+      toast.success('File uploaded successfully');
+
       // Generate unique order ID
       const orderId = generateOrderId();
 
@@ -69,21 +114,65 @@ const OrderPage = () => {
         customer: formData.customer,
         vehicle: formData.vehicle,
         services: formData.services,
-        fileUrl: formData.fileUrl,
+        fileUrl: uploadedFileName,
         customerNote: formData.customerNote,
         totalPrice,
         legalConsent: legalConsentAgreed,
       }));
 
-      // Redirect to Stripe checkout with dynamic line items and car data
+      // STEP 2: Redirect to Stripe checkout with file name (not full URL)
+      // CRITICAL: Check vehicleData before sending
+      console.log('[OrderPage] Dáta pred platbou:', {
+        vehicleData: formData.vehicle,
+        brand: formData.vehicle.brand,
+        model: formData.vehicle.model,
+        fuelType: formData.vehicle.fuelType,
+        year: formData.vehicle.year,
+        fileUrl: uploadedFileName,
+      });
+      
+      // Verify vehicleData is not empty
+      if (!formData.vehicle || !formData.vehicle.brand || !formData.vehicle.model) {
+        console.error('[OrderPage] ERROR: Vehicle data is incomplete!', formData.vehicle);
+        toast.error('Vehicle data is incomplete. Please fill all fields.');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Verify uploadedFileName is not lost
+      if (!uploadedFileName) {
+        console.error('[OrderPage] ERROR: uploadedFileName is missing!');
+        toast.error('File name is missing. Cannot proceed.');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // CRITICAL: Verify year value is real, not empty
+      console.log('[OrderPage] Redirecting to checkout with:', {
+        vehicle: formData.vehicle,
+        'vehicle.year (raw)': formData.vehicle.year,
+        'vehicle.year (type)': typeof formData.vehicle.year,
+        fileUrl: uploadedFileName,
+        fuelType: formData.vehicle.fuelType,
+        year: formData.vehicle.year,
+      });
+      
+      // Verify year is a real value from form
+      if (!formData.vehicle.year || formData.vehicle.year === 0) {
+        console.error('[OrderPage] ERROR: Year is missing or zero!', formData.vehicle);
+        toast.error('Year is required. Please enter a valid year.');
+        setIsSubmitting(false);
+        return;
+      }
+      
       await redirectToCheckout({
         items,
         orderId,
         customerEmail: formData.customer.email,
         customerName: formData.customer.name,
         customerNote: formData.customerNote,
-        vehicle: formData.vehicle,
-        fileUrl: formData.fileUrl,
+        vehicle: formData.vehicle, // Contains real year value from form
+        fileUrl: uploadedFileName, // Send only file name - MUST be preserved
         services: formData.services,
       });
     } catch (error: any) {
@@ -110,8 +199,8 @@ const OrderPage = () => {
           <ServicesFileStep
             selectedServices={formData.services}
             onServicesUpdate={(services) => setFormData({ ...formData, services })}
-            onFileUploaded={(url) => setFormData({ ...formData, fileUrl: url })}
-            fileUrl={formData.fileUrl}
+            onFileSelected={(file) => setFormData({ ...formData, selectedFile: file })}
+            selectedFile={formData.selectedFile}
             customerNote={formData.customerNote}
             onCustomerNoteUpdate={(note) => setFormData({ ...formData, customerNote: note })}
             onNext={() => setCurrentStep(2)}

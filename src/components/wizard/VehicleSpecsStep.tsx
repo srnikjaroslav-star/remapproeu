@@ -29,6 +29,12 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
   // Clear error for a specific field when it becomes valid
   const handleFieldChange = (field: keyof VehicleData, value: string | number) => {
     const newData = { ...data, [field]: value };
+    
+    // Log fuel type and year changes
+    if (field === 'fuelType' || field === 'year') {
+      console.log('[VehicleSpecsStep] Field changed:', { field, value, newData });
+    }
+    
     onUpdate(newData);
     
     // Real-time validation: clear error immediately when field has content
@@ -73,6 +79,14 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
     setErrors(newErrors);
     
     if (Object.keys(newErrors).length === 0) {
+      console.log('[VehicleSpecsStep] Odosielam dáta:', {
+        fuel: data.fuelType,
+        year: data.year,
+        brand: data.brand,
+        model: data.model,
+        ecuType: data.ecuType,
+        fullData: data,
+      });
       onNext();
     }
   };
@@ -170,9 +184,35 @@ const VehicleSpecsStep = ({ data, onUpdate, onNext }: VehicleSpecsStepProps) => 
             Year of Manufacture
           </label>
           <input
-            type="text"
+            type="number"
             value={data.year || ''}
-            onChange={(e) => handleFieldChange('year', parseInt(e.target.value) || 0)}
+            onChange={(e) => {
+              // Allow only numbers - block letters and symbols
+              const value = e.target.value;
+              // If empty, allow it (for clearing)
+              if (value === '') {
+                handleFieldChange('year', 0);
+                return;
+              }
+              // Parse as integer - only numbers allowed
+              const numValue = parseInt(value);
+              if (!isNaN(numValue)) {
+                handleFieldChange('year', numValue);
+              }
+              // If NaN, ignore (blocks letters/symbols)
+            }}
+            onKeyDown={(e) => {
+              // Block non-numeric keys except: Backspace, Delete, Tab, Escape, Enter, Arrow keys
+              const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+              const isNumber = /[0-9]/.test(e.key);
+              const isAllowed = allowedKeys.includes(e.key) || isNumber;
+              
+              if (!isAllowed) {
+                e.preventDefault();
+              }
+            }}
+            min="1900"
+            max="2026"
             placeholder="e.g., 2019"
             className={getInputClassName(data.year, !!errors.year)}
           />

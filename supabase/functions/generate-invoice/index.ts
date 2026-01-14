@@ -34,11 +34,12 @@ interface InvoiceRequest {
   customerEmail: string;
   items: InvoiceItem[];
   totalAmount: number;
-  carBrand?: string;
-  carModel?: string;
+  brand?: string;
+  model?: string;
   fuelType?: string;
   year?: number;
   ecuType?: string;
+  vin?: string;
 }
 
 const BCC_EMAIL = "richard.srnik2@gmail.com";
@@ -285,7 +286,7 @@ serve(async (req) => {
     const data: InvoiceRequest = await req.json();
     console.log("Invoice request data:", JSON.stringify(data));
     
-    const { orderId, orderNumber, customerName, customerEmail, items, totalAmount, carBrand, carModel, fuelType, year, ecuType } = data;
+    const { orderId, orderNumber, customerName, customerEmail, items, totalAmount, brand, model, fuelType, year, ecuType, vin } = data;
     
     if (!orderId || !customerEmail || !items || items.length === 0) {
       throw new Error("Missing required invoice data");
@@ -297,7 +298,7 @@ serve(async (req) => {
     console.log("Generated invoice number:", invoiceNumber);
     
     // Generate PDF
-    const carInfo = carBrand && carModel ? `${carBrand} ${carModel}` : undefined;
+    const carInfo = brand && model ? `${brand} ${model}` : undefined;
     const pdfBase64 = generateInvoicePDF({
       invoiceNumber,
       customerName: customerName || "Customer",
