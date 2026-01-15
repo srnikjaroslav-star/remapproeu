@@ -506,30 +506,24 @@ const ManagementPortal = () => {
         a.download = `order-${orderNumber || 'file'}-${fileName}`;
         document.body.appendChild(a);
         a.click();
+        
+        // Okamžitý zápis do DB: Ihned po a.click() aktualizuj status na 'processing'
+        console.log('Spúšťam automatickú aktualizáciu pre ID:', orderId);
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({ status: 'processing' })
+          .eq('id', orderId);
+        
+        if (updateError) {
+          console.error('Chyba pri zmene statusu v databáze:', updateError);
+        } else {
+          console.log('Status úspešne zmenený na processing v DB.');
+          // Okamžitá aktualizácia lokálneho stavu pre UI
+          setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'processing' } : o));
+        }
+        
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-
-        // After successful download, immediately update order status to 'processing'
-        if (orderId) {
-          try {
-            const { error: updateError } = await supabase
-              .from('orders')
-              .update({ status: 'processing' })
-              .eq('id', orderId);
-
-            if (updateError) {
-              console.error('Error updating order status:', updateError);
-              toast.error('Chyba pri aktualizácii statusu objednávky');
-            } else {
-              // Refresh data in UI to show the change immediately
-              await fetchOrders();
-              toast.success('Status objednávky bol aktualizovaný na Processing');
-            }
-          } catch (statusError) {
-            console.error('Error updating order status after download:', statusError);
-            // Don't show error to user, download was successful
-          }
-        }
       } catch (err) {
         console.error('Download error:', err);
         // Fallback: open in new tab
