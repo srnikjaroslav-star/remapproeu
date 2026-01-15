@@ -891,21 +891,21 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
             <span className="neon-text">Revenue Dashboard</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="text-center p-4 bg-secondary/30 rounded-lg border-2 border-green-500/30">
+            <div className="text-center p-4 bg-blue-500/10 rounded-lg border-2 border-blue-500/50">
               <p className="text-muted-foreground text-sm mb-1 flex items-center justify-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-green-500"></span> Total Revenue
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span> Total Revenue
               </p>
-              <p className="text-3xl font-bold text-green-500">
+              <p className="text-3xl font-bold text-blue-500">
                 €{orders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0).toLocaleString()}
               </p>
             </div>
-            <div className="text-center p-4 bg-secondary/30 rounded-lg border border-white shadow-[0_0_8px_rgba(255,255,255,0.15)]">
+            <div className="text-center p-4 bg-secondary/30 rounded-lg border-2 border-white/50 shadow-[0_0_8px_rgba(255,255,255,0.15)]">
               <p className="text-white text-sm mb-1 flex items-center justify-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-white"></span> Orders Count
               </p>
               <p className="text-3xl font-bold text-white">{orders.length}</p>
             </div>
-            <div className="text-center p-4 bg-secondary/30 rounded-lg border-2 border-orange-500/30">
+            <div className="text-center p-4 bg-orange-500/10 rounded-lg border-2 border-orange-500/50">
               <p className="text-muted-foreground text-sm mb-1 flex items-center justify-center gap-2">
                 <Clock className="w-4 h-4 text-orange-500" /> Pending
               </p>
@@ -913,11 +913,11 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                 {orders.filter((o) => o.status === 'pending').length}
               </p>
             </div>
-            <div className="text-center p-4 bg-secondary/30 rounded-lg border-2 border-primary/30">
+            <div className="text-center p-4 bg-emerald-500/10 rounded-lg border-2 border-emerald-500/50">
               <p className="text-muted-foreground text-sm mb-1 flex items-center justify-center gap-2">
-                <CheckCircle className="w-4 h-4 text-primary" /> Completed
+                <CheckCircle className="w-4 h-4 text-emerald-500" /> Completed
               </p>
-              <p className="text-3xl font-bold text-primary">
+              <p className="text-3xl font-bold text-emerald-500">
                 {orders.filter((o) => o.status === 'completed').length}
               </p>
             </div>
@@ -975,11 +975,11 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
               {orders.filter((o) => o.status === 'processing').length}
             </p>
           </div>
-          <div className="glass-card p-4 border-l-4 border-l-green-500">
+          <div className="glass-card p-4 border-l-4 border-l-emerald-500">
             <p className="text-muted-foreground text-sm flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-green-500" /> Completed
+              <CheckCircle className="w-4 h-4 text-emerald-500" /> Completed
             </p>
-            <p className="text-2xl font-bold text-green-500">
+            <p className="text-2xl font-bold text-emerald-500">
               {orders.filter((o) => o.status === 'completed').length}
             </p>
           </div>
