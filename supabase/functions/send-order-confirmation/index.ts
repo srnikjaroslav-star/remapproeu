@@ -189,6 +189,14 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     // Use Resend API to send email
+    console.log("Sending email via Resend API:", {
+      from: SENDER,
+      to: customerEmail,
+      subject: `Order Confirmation - ${displayOrderId}`,
+      apiKeyPresent: !!RESEND_API_KEY,
+      apiKeyLength: RESEND_API_KEY.length,
+    });
+
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -204,6 +212,8 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const rawBody = await res.text();
+    console.log("Resend Response:", rawBody);
+    
     let emailResponse: any = null;
     try {
       emailResponse = rawBody ? JSON.parse(rawBody) : null;

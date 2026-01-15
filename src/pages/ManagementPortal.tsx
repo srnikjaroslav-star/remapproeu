@@ -194,6 +194,9 @@ const ManagementPortal = () => {
   const sendStatusEmail = async (order: Order, status: string) => {
     try {
       const orderId = order.order_number || order.id.slice(0, 8).toUpperCase();
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kivqvwdfujsnuwfxjtcz.supabase.co';
+      // Use anon key for client-side calls - Edge Function will use its own RESEND_API_KEY
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
       
       console.log('[sendStatusEmail] Sending email for order:', {
         orderId,
@@ -202,9 +205,14 @@ const ManagementPortal = () => {
         status,
       });
       
-      // Call Supabase function to send status email via Resend
-      const response = await supabase.functions.invoke('send-status-email', {
-        body: {
+      // Call Edge Function via direct fetch (same method as admin notifications)
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-status-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`,
+        },
+        body: JSON.stringify({
           orderId: order.id,
           orderNumber: orderId,
           customerEmail: order.customer_email,
@@ -213,39 +221,35 @@ const ManagementPortal = () => {
           carModel: order.car_model || '',
           year: order.year || 0,
           status: status,
-        },
+        }),
       });
 
-      console.log('[sendStatusEmail] Response:', response);
+      const responseData = await response.json();
+      console.log('[sendStatusEmail] Response:', response.status, responseData);
 
-      if (response.error) {
-        console.error('[sendStatusEmail] Supabase function error:', {
-          error: response.error,
-          message: response.error.message,
-          details: response.error.details,
-          hint: response.error.hint,
+      if (!response.ok) {
+        console.error('[sendStatusEmail] HTTP error:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: responseData,
         });
-        throw new Error(response.error.message || 'Failed to send email');
+        throw new Error(responseData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
-      if (response.data) {
-        const data = response.data as any;
-        if (data.success === false) {
-          console.error('[sendStatusEmail] Email sending failed:', {
-            error: data.error,
-            resend: data.resend,
-          });
-          throw new Error(data.error || 'Email sending failed');
-        }
+      if (responseData.success === false) {
+        console.error('[sendStatusEmail] Email sending failed:', {
+          error: responseData.error,
+          details: responseData.details,
+        });
+        throw new Error(responseData.error || 'Email sending failed');
       }
 
       console.log('[sendStatusEmail] Email sent successfully');
-      return response;
+      return responseData;
     } catch (error: any) {
       console.error('[sendStatusEmail] Error details:', {
         message: error.message,
         stack: error.stack,
-        response: error.response,
         name: error.name,
       });
       throw error;
@@ -276,30 +280,41 @@ const ManagementPortal = () => {
         throw error;
       }
 
-      // Send email when status changes to Completed
-      if (newStatus === 'completed' && previousStatus !== 'completed' && order) {
-        try {
-          await sendStatusEmail(order, newStatus);
-          toast.success('Status aktualizovaný a email odoslaný klientovi');
-        } catch (emailError: any) {
-          console.error('[handleStatusChange] Email sending failed:', {
-            error: emailError,
-            message: emailError?.message,
-            stack: emailError?.stack,
-            orderId: order.id,
-            customerEmail: order.customer_email,
-          });
-          
-          // Show detailed error message
-          const errorMsg = emailError?.message || 'Neznáma chyba';
-          if (errorMsg.includes('RESEND_API_KEY') || errorMsg.includes('API key')) {
-            toast.error('Chyba: RESEND_API_KEY nie je nastavený alebo je neplatný');
-          } else if (errorMsg.includes('domain') || errorMsg.includes('verified')) {
-            toast.error('Chyba: Emailová doména nie je overená v Resend');
-          } else {
-            toast.error(`Chyba pri odosielaní emailu: ${errorMsg}`);
+      // Send email when status changes (if status actually changed and order exists)
+      if (newStatus !== previousStatus && order && order.customer_email) {
+        // Send email for status changes to processing or completed
+        if (newStatus === 'processing' || newStatus === 'completed') {
+          try {
+            await sendStatusEmail(order, newStatus);
+            toast.success('Status aktualizovaný a email odoslaný klientovi');
+          } catch (emailError: any) {
+            console.error('[handleStatusChange] Email sending failed:', {
+              error: emailError,
+              message: emailError?.message,
+              stack: emailError?.stack,
+              orderId: order.id,
+              customerEmail: order.customer_email,
+            });
+            
+            // Show detailed error message
+            const errorMsg = emailError?.message || 'Neznáma chyba';
+            if (errorMsg.includes('RESEND_API_KEY') || errorMsg.includes('API key')) {
+              toast.error('Chyba: RESEND_API_KEY nie je nastavený alebo je neplatný');
+            } else if (errorMsg.includes('domain') || errorMsg.includes('verified')) {
+              toast.error('Chyba: Emailová doména nie je overená v Resend');
+            } else {
+              toast.error(`Chyba pri odosielaní emailu: ${errorMsg}`);
+            }
+            toast.success('Status aktualizovaný (email sa nepodarilo odoslať)');
           }
-          toast.success('Status aktualizovaný (email sa nepodarilo odoslať)');
+        } else {
+          const statusLabels: Record<string, string> = {
+            'pending': 'Pending',
+            'processing': 'Processing',
+            'completed': 'Completed',
+            'paid': 'Paid'
+          };
+          toast.success(`Status changed to: ${statusLabels[newStatus] || newStatus}`);
         }
       } else {
         const statusLabels: Record<string, string> = {
@@ -408,9 +423,11 @@ const ManagementPortal = () => {
     const file = e.target.files?.[0];
     if (!file || !selectedOrderId) return;
 
-    setUploadingId(selectedOrderId);
+    const orderId = selectedOrderId; // Store in local variable for clarity
+    setUploadingId(orderId);
     
     try {
+      // Step 1: Upload file to storage
       const fileName = `result-${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
         .from('modified-files')
@@ -422,56 +439,255 @@ const ManagementPortal = () => {
         .from('modified-files')
         .getPublicUrl(fileName);
 
+      // Step 2: Update status to 'completed' FIRST (Status First)
+      console.log('[handleResultUpload] Step 1: Updating status to completed for orderId:', orderId);
       const { error: updateError } = await supabase
         .from('orders')
         .update({
           result_file_url: publicUrl,
           status: 'completed',
         })
-        .eq('id', selectedOrderId);
+        .eq('id', orderId);
 
-      if (updateError) throw updateError;
-
-      // Find the order to get customer details for email
-      const order = orders.find(o => o.id === selectedOrderId);
+      if (updateError) {
+        console.error('[handleResultUpload] Status update failed:', updateError);
+        throw updateError;
+      }
       
-      // Send email notification
-      if (order?.customer_email) {
-        try {
-          const response = await supabase.functions.invoke('send-order-ready', {
-            body: {
-              orderId: order.id,
-              orderNumber: order.order_number || '',
-              customerEmail: order.customer_email,
-              customerName: order.customer_name || '',
-              carBrand: order.car_brand || '',
-              carModel: order.car_model || '',
-              resultFileUrl: publicUrl,
-            },
-          });
-          
-          const emailFailed = Boolean(response.error) || response.data?.success === false;
+      console.log('[handleResultUpload] Status updated - orderId:', orderId);
+      
+      // Update local state immediately
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'completed', result_file_url: publicUrl } : o));
 
-          if (emailFailed) {
-            console.error('Email notification failed:', {
-              error: response.error,
-              data: response.data,
-            });
-            toast.success('Result file uploaded! (Email notification failed)');
-          } else {
-            toast.success('Result file uploaded and customer notified via email!');
-          }
-        } catch (emailError) {
-          console.error('Email notification error:', emailError);
-          toast.success('Result file uploaded! (Email notification failed)');
+      // Step 3: Get order data for email
+      const order = orders.find(o => o.id === orderId);
+      if (!order) {
+        console.error('[handleResultUpload] Order not found in local state, fetching...');
+        // Fetch order from DB if not in local state
+        const { data: fetchedOrder } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .single();
+        
+        if (!fetchedOrder) {
+          throw new Error('Order not found after status update');
         }
+        
+        // Use fetched order
+        const finalOrder = fetchedOrder as Order;
+        
+        // Step 4: Send email notification (Email Second)
+        if (finalOrder.customer_email) {
+          try {
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kivqvwdfujsnuwfxjtcz.supabase.co';
+            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+            
+            console.log('[handleResultUpload] Step 2: Sending order-ready email for orderId:', orderId);
+            console.log('[handleResultUpload] Email data:', {
+              orderId: finalOrder.id,
+              orderNumber: finalOrder.order_number,
+              customerEmail: finalOrder.customer_email,
+              resultFileUrl: publicUrl,
+            });
+            
+            const response = await fetch(`${supabaseUrl}/functions/v1/send-order-ready`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${anonKey}`,
+              },
+              body: JSON.stringify({
+                orderId: finalOrder.id,
+                orderNumber: finalOrder.order_number || '',
+                customerEmail: finalOrder.customer_email,
+                customerName: finalOrder.customer_name || '',
+                carBrand: finalOrder.car_brand || '',
+                carModel: finalOrder.car_model || '',
+                resultFileUrl: publicUrl,
+              }),
+            });
+
+            const responseData = await response.json();
+            console.log('[handleResultUpload] Email sent - response:', response.status, responseData);
+
+            if (!response.ok || responseData.success === false) {
+              console.error('[handleResultUpload] Email notification failed:', {
+                status: response.status,
+                error: responseData.error,
+                details: responseData.details,
+              });
+              toast.success('Result file uploaded! (Email notification failed)');
+            } else {
+              console.log('[handleResultUpload] Email sent successfully');
+              toast.success('Result file uploaded and customer notified via email!');
+            }
+          } catch (emailError) {
+            console.error('[handleResultUpload] Email notification error:', emailError);
+            toast.success('Result file uploaded! (Email notification failed)');
+          }
+        } else {
+          console.warn('[handleResultUpload] No customer email found for order:', orderId);
+          toast.success('Result file uploaded and status updated to completed');
+        }
+
+        // Step 5: Generate invoice asynchronously (Invoice at the end, async, non-blocking)
+        // This runs in separate try-catch and doesn't block previous steps
+        (async () => {
+          try {
+            console.log('[handleResultUpload] Step 3: Invoice started - generating invoice for orderId:', orderId);
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kivqvwdfujsnuwfxjtcz.supabase.co';
+            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+            
+            const invoiceResponse = await fetch(`${supabaseUrl}/functions/v1/generate-invoice`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${anonKey}`,
+              },
+              body: JSON.stringify({
+                orderId: finalOrder.id,
+                orderNumber: finalOrder.order_number || '',
+                customerName: finalOrder.customer_name || 'Customer',
+                customerEmail: finalOrder.customer_email,
+                items: [{
+                  name: 'ECU Tuning Service',
+                  price: parseFloat(finalOrder.total_price?.toString() || '0'),
+                }],
+                totalAmount: parseFloat(finalOrder.total_price?.toString() || '0'),
+                brand: finalOrder.car_brand || undefined,
+                model: finalOrder.car_model || undefined,
+                fuelType: finalOrder.fuel_type || undefined,
+                year: finalOrder.year ? parseInt(finalOrder.year.toString()) : undefined,
+                ecuType: finalOrder.ecu_type || undefined,
+                vin: finalOrder.vin || undefined,
+              }),
+            });
+
+            const invoiceData = await invoiceResponse.json();
+            console.log('[handleResultUpload] Invoice generation response:', invoiceResponse.status, invoiceData);
+
+            if (!invoiceResponse.ok || invoiceData.success === false) {
+              console.error('[handleResultUpload] Invoice generation failed (non-fatal):', {
+                status: invoiceResponse.status,
+                error: invoiceData.error,
+              });
+            } else {
+              console.log('[handleResultUpload] Invoice generated and sent successfully');
+            }
+          } catch (invoiceError) {
+            console.error('[handleResultUpload] Invoice generation error (non-fatal):', invoiceError);
+            // Non-fatal - invoice can be generated later, status and email are already done
+          }
+        })();
       } else {
-        toast.success('Result file uploaded and status updated to completed');
+        // Order found in local state
+        if (order.customer_email) {
+          try {
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kivqvwdfujsnuwfxjtcz.supabase.co';
+            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+            
+            console.log('[handleResultUpload] Step 2: Sending order-ready email for orderId:', orderId);
+            console.log('[handleResultUpload] Email data:', {
+              orderId: order.id,
+              orderNumber: order.order_number,
+              customerEmail: order.customer_email,
+              resultFileUrl: publicUrl,
+            });
+            
+            const response = await fetch(`${supabaseUrl}/functions/v1/send-order-ready`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${anonKey}`,
+              },
+              body: JSON.stringify({
+                orderId: order.id,
+                orderNumber: order.order_number || '',
+                customerEmail: order.customer_email,
+                customerName: order.customer_name || '',
+                carBrand: order.car_brand || '',
+                carModel: order.car_model || '',
+                resultFileUrl: publicUrl,
+              }),
+            });
+
+            const responseData = await response.json();
+            console.log('[handleResultUpload] Email sent - response:', response.status, responseData);
+
+            if (!response.ok || responseData.success === false) {
+              console.error('[handleResultUpload] Email notification failed:', {
+                status: response.status,
+                error: responseData.error,
+                details: responseData.details,
+              });
+              toast.success('Result file uploaded! (Email notification failed)');
+            } else {
+              console.log('[handleResultUpload] Email sent successfully');
+              toast.success('Result file uploaded and customer notified via email!');
+            }
+          } catch (emailError) {
+            console.error('[handleResultUpload] Email notification error:', emailError);
+            toast.success('Result file uploaded! (Email notification failed)');
+          }
+        } else {
+          console.warn('[handleResultUpload] No customer email found for order:', orderId);
+          toast.success('Result file uploaded and status updated to completed');
+        }
+
+        // Step 5: Generate invoice asynchronously (Invoice at the end, async, non-blocking)
+        (async () => {
+          try {
+            console.log('[handleResultUpload] Step 3: Invoice started - generating invoice for orderId:', orderId);
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kivqvwdfujsnuwfxjtcz.supabase.co';
+            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+            
+            const invoiceResponse = await fetch(`${supabaseUrl}/functions/v1/generate-invoice`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${anonKey}`,
+              },
+              body: JSON.stringify({
+                orderId: order.id,
+                orderNumber: order.order_number || '',
+                customerName: order.customer_name || 'Customer',
+                customerEmail: order.customer_email,
+                items: [{
+                  name: 'ECU Tuning Service',
+                  price: parseFloat(order.total_price?.toString() || '0'),
+                }],
+                totalAmount: parseFloat(order.total_price?.toString() || '0'),
+                brand: order.car_brand || undefined,
+                model: order.car_model || undefined,
+                fuelType: order.fuel_type || undefined,
+                year: order.year ? parseInt(order.year.toString()) : undefined,
+                ecuType: order.ecu_type || undefined,
+                vin: order.vin || undefined,
+              }),
+            });
+
+            const invoiceData = await invoiceResponse.json();
+            console.log('[handleResultUpload] Invoice generation response:', invoiceResponse.status, invoiceData);
+
+            if (!invoiceResponse.ok || invoiceData.success === false) {
+              console.error('[handleResultUpload] Invoice generation failed (non-fatal):', {
+                status: invoiceResponse.status,
+                error: invoiceData.error,
+              });
+            } else {
+              console.log('[handleResultUpload] Invoice generated and sent successfully');
+            }
+          } catch (invoiceError) {
+            console.error('[handleResultUpload] Invoice generation error (non-fatal):', invoiceError);
+            // Non-fatal - invoice can be generated later, status and email are already done
+          }
+        })();
       }
       
       fetchOrders();
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('[handleResultUpload] Upload error:', error);
       toast.error('Failed to upload result file');
     } finally {
       setUploadingId(null);

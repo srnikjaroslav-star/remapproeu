@@ -310,114 +310,65 @@ serve(async (req) => {
       console.log("ATOMIC: Order created successfully - ID:", confirmedOrderId, "Order#:", confirmedOrderNumber);
 
       // Send order confirmation email to customer IMMEDIATELY after order creation
+      // This email contains only basic info: Order ID, Tracking Link, and confirmation
+      // Invoice generation is moved to send-order-ready (when order is completed)
+      console.log("INFO: Posielam len uvítací e-mail po platbe, faktúra sa teraz negeneruje.");
       try {
-        console.log("Sending order confirmation email to customer");
-        const confirmationRes = await fetch(`${supabaseUrl}/functions/v1/send-order-confirmation`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-          },
-          body: JSON.stringify({
-            orderId: confirmedOrderId,
-            orderNumber: confirmedOrderNumber,
-            customerEmail,
-            customerName,
-            totalAmount: session.amount_total ? parseFloat((session.amount_total / 100).toFixed(2)) : 0,
-            brand: carBrand,
-            model: carModel,
-            fuelType,
-            year,
-            vin,
-            createdAt: newOrder.created_at || new Date().toISOString(),
-          }),
-        });
+        // Prepare data with fallback values
+        const emailOrderNumber = confirmedOrderNumber || confirmedOrderId || "N/A";
+        const emailCustomerName = customerName || "Zákazník";
+        const emailCustomerEmail = customerEmail || "";
+        const emailTotalAmount = session.amount_total ? parseFloat((session.amount_total / 100).toFixed(2)) : 0;
         
-        const confirmationResult = await confirmationRes.json();
-        console.log("Order confirmation email result:", confirmationResult);
-      } catch (confirmationError) {
-        console.error("Order confirmation email failed (non-fatal):", confirmationError);
-        // Continue - don't fail the webhook, order is already saved
-      }
-
-      // Build line items for invoice from session
-      const lineItems: { name: string; price: number }[] = [];
-      if (session.line_items?.data) {
-        for (const item of session.line_items.data) {
-          lineItems.push({
-            name: item.description || item.price?.product?.name || "Service",
-            price: (item.amount_total || 0) / 100,
-          });
-        }
-      } else if (session.amount_total) {
-        // Fallback: use services from metadata if available
-        if (serviceTypes.length > 0) {
-          const pricePerService = (session.amount_total / 100) / serviceTypes.length;
-          for (const service of serviceTypes) {
-            lineItems.push({
-              name: service,
-              price: pricePerService,
-            });
-          }
-        } else {
-          lineItems.push({
-            name: "ECU Tuning Service",
-            price: session.amount_total / 100,
-          });
-        }
-      }
-
-      // ATOMIC: Only generate invoice AFTER we have confirmed order from DB
-      console.log("ATOMIC: Generating invoice for confirmed order:", confirmedOrderNumber, "ID:", confirmedOrderId);
-      try {
-        // Prepare invoice data with fallback values
-        const invoiceData = {
+        console.log("DEBUG: Spúšťam odosielanie potvrdzovacieho e-mailu pre objednávku:", session.id);
+        console.log("DEBUG: Email data:", {
           orderId: confirmedOrderId,
-          orderNumber: confirmedOrderNumber || confirmedOrderId,
-          customerName: customerName || "Customer",
-          customerEmail: customerEmail || "",
-          items: lineItems.length > 0 ? lineItems : [{
-            name: "ECU Tuning Service",
-            price: session.amount_total ? parseFloat((session.amount_total / 100).toFixed(2)) : 0
-          }],
-          totalAmount: session.amount_total ? parseFloat((session.amount_total / 100).toFixed(2)) : 0,
-          brand: carBrand || undefined,
-          model: carModel || undefined,
-          fuelType: fuelType || undefined,
-          year: year || undefined,
-          ecuType: ecuType || undefined,
-          vin: vin || undefined,
-        };
-        
-        console.log("Sending invoice data:", {
-          ...invoiceData,
-          customerEmail: invoiceData.customerEmail ? `${invoiceData.customerEmail.substring(0, 5)}...` : 'MISSING',
+          orderNumber: emailOrderNumber,
+          customerEmail: emailCustomerEmail ? `${emailCustomerEmail.substring(0, 5)}...` : 'MISSING',
+          customerName: emailCustomerName,
+          totalAmount: emailTotalAmount,
         });
         
-        const invoiceRes = await fetch(`${supabaseUrl}/functions/v1/generate-invoice`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-          },
-          body: JSON.stringify(invoiceData),
-        });
-        
-        if (!invoiceRes.ok) {
-          const errorText = await invoiceRes.text();
-          console.error("Invoice generation HTTP error:", invoiceRes.status, errorText);
+        if (!emailCustomerEmail) {
+          console.error("DEBUG: Customer email is missing, cannot send confirmation email");
         } else {
-          const invoiceResult = await invoiceRes.json();
-          console.log("ATOMIC: Invoice generation result:", invoiceResult);
+          const confirmationRes = await fetch(`${supabaseUrl}/functions/v1/send-order-confirmation`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+            },
+            body: JSON.stringify({
+              orderId: confirmedOrderId,
+              orderNumber: emailOrderNumber,
+              customerEmail: emailCustomerEmail,
+              customerName: emailCustomerName,
+              totalAmount: emailTotalAmount,
+              brand: carBrand || undefined,
+              model: carModel || undefined,
+              fuelType: fuelType || undefined,
+              year: year || undefined,
+              vin: vin || undefined,
+              createdAt: newOrder.created_at || new Date().toISOString(),
+            }),
+          });
+          
+          if (!confirmationRes.ok) {
+            const errorText = await confirmationRes.text();
+            console.error("DEBUG: Order confirmation email HTTP error:", confirmationRes.status, errorText);
+          } else {
+            const confirmationResult = await confirmationRes.json();
+            console.log("DEBUG: Order confirmation email result:", confirmationResult);
+          }
         }
-      } catch (invoiceError) {
-        console.error("Invoice generation failed (non-fatal):", invoiceError);
+      } catch (confirmationError) {
+        console.error("DEBUG: Order confirmation email failed (non-fatal):", confirmationError);
         // Continue - don't fail the webhook, order is already saved
       }
 
-      // Note: Customer email with PDF invoice is sent by generate-invoice function
-      // Order confirmation email was already sent immediately after order creation
-      // Only send admin notification from here
+      // Note: Invoice generation is now moved to send-order-ready function
+      // This happens when order status changes to 'completed' or final file is uploaded
+      // Order confirmation email was already sent above with tracking link
 
       // Send admin notification email
       if (RESEND_API_KEY) {
