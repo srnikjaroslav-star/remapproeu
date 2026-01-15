@@ -533,17 +533,25 @@ const ManagementPortal = () => {
 
         // Step 5: Generate invoice asynchronously (Invoice at the end, async, non-blocking)
         // This runs in separate try-catch and doesn't block previous steps
+        // Upload -> Status Completed -> Invoice
         (async () => {
           try {
             console.log('[handleResultUpload] Step 3: Invoice started - generating invoice for orderId:', orderId);
             const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kivqvwdfujsnuwfxjtcz.supabase.co';
-            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+            // Use SERVICE_ROLE_KEY for admin access (same mechanism as emails)
+            const SERVICE_ROLE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || '';
+            
+            if (!SERVICE_ROLE_KEY) {
+              console.warn('[handleResultUpload] SERVICE_ROLE_KEY not found, using anon key as fallback');
+            }
+            
+            const authKey = SERVICE_ROLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || '';
             
             const invoiceResponse = await fetch(`${supabaseUrl}/functions/v1/generate-invoice`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${anonKey}`,
+                'Authorization': `Bearer ${authKey}`,
               },
               body: JSON.stringify({
                 orderId: finalOrder.id,
@@ -636,17 +644,25 @@ const ManagementPortal = () => {
         }
 
         // Step 5: Generate invoice asynchronously (Invoice at the end, async, non-blocking)
+        // Upload -> Status Completed -> Invoice
         (async () => {
           try {
             console.log('[handleResultUpload] Step 3: Invoice started - generating invoice for orderId:', orderId);
             const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kivqvwdfujsnuwfxjtcz.supabase.co';
-            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+            // Use SERVICE_ROLE_KEY for admin access (same mechanism as emails)
+            const SERVICE_ROLE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || '';
+            
+            if (!SERVICE_ROLE_KEY) {
+              console.warn('[handleResultUpload] SERVICE_ROLE_KEY not found, using anon key as fallback');
+            }
+            
+            const authKey = SERVICE_ROLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || '';
             
             const invoiceResponse = await fetch(`${supabaseUrl}/functions/v1/generate-invoice`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${anonKey}`,
+                'Authorization': `Bearer ${authKey}`,
               },
               body: JSON.stringify({
                 orderId: order.id,

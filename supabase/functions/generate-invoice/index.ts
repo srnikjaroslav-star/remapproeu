@@ -283,9 +283,14 @@ function generateInvoicePDF(data: {
   doc.setFontSize(9);
   doc.text(`For technical support, contact ${SUPPLIER.email}`, pageWidth / 2, footerY + 3, { align: "center" });
   
-  // Copyright
+  // Company details with IČO and DIČ
   doc.setFontSize(8);
-  doc.text(`© ${new Date().getFullYear()} ${SUPPLIER.brandName}. ${SUPPLIER.city}, ${SUPPLIER.country}.`, pageWidth / 2, footerY + 12, { align: "center" });
+  doc.text(`${SUPPLIER.brandName}, ${SUPPLIER.address}, ${SUPPLIER.city}, ${SUPPLIER.country}.`, pageWidth / 2, footerY + 8, { align: "center" });
+  doc.text(`IČO: ${SUPPLIER.ico}, DIČ: ${SUPPLIER.dic}`, pageWidth / 2, footerY + 15, { align: "center" });
+  
+  // Copyright
+  doc.setFontSize(7);
+  doc.text(`© ${new Date().getFullYear()} ${SUPPLIER.brandName}. All rights reserved.`, pageWidth / 2, footerY + 22, { align: "center" });
   
   // Return as base64
   return doc.output('datauristring').split(',')[1];
@@ -593,10 +598,16 @@ serve(async (req) => {
                   <!-- Footer -->
                   <tr>
                     <td style="padding: 40px 40px 30px; border-top: 1px solid #1a1a1a; text-align: center; background-color: #000000;">
-                      <p style="margin: 0 0 15px; color: #888; font-size: 12px; line-height: 1.6;">
+                      <p style="margin: 0 0 8px; color: #888; font-size: 12px; line-height: 1.6; background-color: #000000;">
+                        REMAPPRO
+                      </p>
+                      <p style="margin: 0 0 8px; color: #888; font-size: 12px; line-height: 1.6; background-color: #000000;">
+                        Janka Kráľa 29, 990 01 Veľký Krtíš, Slovakia
+                      </p>
+                      <p style="margin: 0 0 15px; color: #888; font-size: 12px; line-height: 1.6; background-color: #000000;">
                         IČO: 41281471 | DIČ: 1041196607
                       </p>
-                      <p style="margin: 0; color: #555; font-size: 11px;">
+                      <p style="margin: 0; color: #555; font-size: 11px; background-color: #000000;">
                         © ${new Date().getFullYear()} REMAPPRO. All rights reserved.
                       </p>
                     </td>
