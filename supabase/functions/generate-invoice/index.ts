@@ -65,232 +65,216 @@ function generateInvoicePDF(data: {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   
-  // Colors - Strict Dark Mode
-  const primaryCyan = [0, 212, 255]; // #00d4ff - Žiarivá cyanová modrá
-  const absoluteBlack = [0, 0, 0]; // #000000 - Absolútna čierna
-  const darkGray = [10, 10, 10]; // #0a0a0a - Veľmi tmavá sivá
-  const cardBg = [15, 15, 15]; // Tmavšia pre karty
-  const textWhite = [255, 255, 255]; // #ffffff - Čisto biely
-  const textGray = [136, 136, 136]; // #888 - Šedý text
-  const textLight = [224, 224, 224]; // #e0e0e0 - Off-white
+  // Colors - Professional White Background Design
+  const textBlack = [0, 0, 0]; // #000000 - Black text
+  const textGray = [100, 100, 100]; // #646464 - Gray text
+  const textLightGray = [150, 150, 150]; // #969696 - Light gray
+  const lineGray = [220, 220, 220]; // #dcdcdc - Light gray lines
+  const bgWhite = [255, 255, 255]; // #ffffff - White background
+  const bgLightGray = [245, 245, 245]; // #f5f5f5 - Light gray background for table rows
   
-  // Absolute black background for entire page
-  doc.setFillColor(...absoluteBlack);
+  // White background for entire page
+  doc.setFillColor(...bgWhite);
   doc.rect(0, 0, pageWidth, pageHeight, 'F');
   
-  // Cyan accent line at top
-  doc.setFillColor(...primaryCyan);
-  doc.rect(0, 0, pageWidth, 4, 'F');
+  // Header section
+  let yPos = 25;
   
-  // Logo text - REMAPPRO style (no header background, just text on black)
-  doc.setTextColor(...textWhite);
-  doc.setFontSize(36);
-  doc.setFont("helvetica", "bold");
-  doc.text("REMAP", 20, 35);
-  doc.setTextColor(...primaryCyan);
-  doc.text("PRO", 78, 35);
-  
-  // Company name
-  doc.setTextColor(...textGray);
-  doc.setFontSize(9);
+  // Logo placeholder (left) - Rectangle for logo image
+  doc.setDrawColor(...lineGray);
+  doc.setLineWidth(0.5);
+  doc.rect(20, yPos - 10, 40, 20, 'S'); // Placeholder box for logo
+  doc.setTextColor(...textLightGray);
+  doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
-  doc.text("Professional ECU Tuning", 20, 45);
+  doc.text("LOGO", 40, yPos + 2, { align: "center" });
   
-  // Invoice title on right
-  doc.setTextColor(...textWhite);
-  doc.setFontSize(28);
+  // Invoice title (right)
+  doc.setTextColor(...textBlack);
+  doc.setFontSize(32);
   doc.setFont("helvetica", "bold");
-  doc.text("INVOICE", pageWidth - 20, 30, { align: "right" });
+  doc.text("FAKTÚRA", pageWidth - 20, yPos, { align: "right" });
   
-  // Invoice number (cyan)
-  doc.setTextColor(...primaryCyan);
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.text(data.invoiceNumber, pageWidth - 20, 42, { align: "right" });
+  // Invoice number (right, below title)
+  doc.setTextColor(...textGray);
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Číslo faktúry: ${data.invoiceNumber}`, pageWidth - 20, yPos + 10, { align: "right" });
+  
+  // Order number (right, below invoice number)
+  doc.setFontSize(10);
+  doc.text(`Objednávka: ${data.orderNumber}`, pageWidth - 20, yPos + 17, { align: "right" });
   
   // Date
-  const currentDate = new Date().toLocaleDateString('en-GB', {
+  const currentDate = new Date().toLocaleDateString('sk-SK', {
     day: '2-digit',
-    month: 'long',
+    month: '2-digit',
     year: 'numeric'
   });
-  doc.setTextColor(...textGray);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Date: ${currentDate}`, pageWidth - 20, 52, { align: "right" });
+  doc.text(`Dátum: ${currentDate}`, pageWidth - 20, yPos + 24, { align: "right" });
   
   // Two column layout for addresses
-  let yPos = 70;
+  yPos = 70;
   
-  // Supplier box (left) - Modern block design
-  doc.setFillColor(...cardBg);
-  doc.roundedRect(15, yPos - 8, 85, 65, 0, 0, 'F'); // Sharp corners for modern look
-  
-  // Cyan border
-  doc.setDrawColor(...primaryCyan);
-  doc.setLineWidth(1);
-  doc.roundedRect(15, yPos - 8, 85, 65, 0, 0, 'S');
-  
-  doc.setTextColor(...primaryCyan);
-  doc.setFontSize(8);
+  // Supplier section (left) - "Dodávateľ"
+  doc.setTextColor(...textBlack);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text("FROM", 20, yPos);
+  doc.text("Dodávateľ", 20, yPos);
   
-  doc.setTextColor(...textWhite);
-  doc.setFontSize(12);
+  // Light gray line under header
+  doc.setDrawColor(...lineGray);
+  doc.setLineWidth(0.5);
+  doc.line(20, yPos + 2, 95, yPos + 2);
+  
+  doc.setTextColor(...textBlack);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text(SUPPLIER.brandName, 20, yPos + 10);
-  
-  doc.setTextColor(...textLight);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text(SUPPLIER.legalEntity, 20, yPos + 18);
-  doc.text(SUPPLIER.address, 20, yPos + 25);
-  doc.text(SUPPLIER.city, 20, yPos + 32);
-  doc.text(SUPPLIER.country, 20, yPos + 39);
+  doc.text(SUPPLIER.brandName, 20, yPos + 12);
   
   doc.setTextColor(...textGray);
-  doc.setFontSize(8);
-  doc.text(`IČO: ${SUPPLIER.ico}`, 20, yPos + 48);
-  doc.text(`DIČ: ${SUPPLIER.dic}`, 20, yPos + 55);
-  
-  // Customer box (right) - Modern block design
-  doc.setFillColor(...cardBg);
-  doc.roundedRect(105, yPos - 8, 85, 65, 0, 0, 'F');
-  
-  // Cyan border
-  doc.setDrawColor(...primaryCyan);
-  doc.setLineWidth(1);
-  doc.roundedRect(105, yPos - 8, 85, 65, 0, 0, 'S');
-  
-  doc.setTextColor(...primaryCyan);
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
-  doc.text("BILL TO", 110, yPos);
-  
-  doc.setTextColor(...textWhite);
-  doc.setFontSize(12);
-  doc.setFont("helvetica", "bold");
-  doc.text(data.customerName || "Customer", 110, yPos + 10);
-  
-  doc.setTextColor(...textLight);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(data.customerEmail, 110, yPos + 18);
+  doc.text(SUPPLIER.legalEntity, 20, yPos + 20);
+  doc.text(SUPPLIER.address, 20, yPos + 28);
+  doc.text(SUPPLIER.city, 20, yPos + 36);
+  doc.text(SUPPLIER.country, 20, yPos + 44);
+  doc.text(`IČO: ${SUPPLIER.ico}`, 20, yPos + 52);
+  doc.text(`DIČ: ${SUPPLIER.dic}`, 20, yPos + 60);
+  
+  // Customer section (right) - "Odberateľ"
+  doc.setTextColor(...textBlack);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("Odberateľ", 110, yPos);
+  
+  // Light gray line under header
+  doc.setDrawColor(...lineGray);
+  doc.setLineWidth(0.5);
+  doc.line(110, yPos + 2, pageWidth - 20, yPos + 2);
+  
+  doc.setTextColor(...textBlack);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.text(data.customerName || "Zákazník", 110, yPos + 12);
+  
+  doc.setTextColor(...textGray);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.text(data.customerEmail, 110, yPos + 20);
   
   if (data.carInfo) {
-    doc.setTextColor(...primaryCyan);
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.text(`🚗 ${data.carInfo}`, 110, yPos + 28);
+    doc.text(`Vozidlo: ${data.carInfo}`, 110, yPos + 28);
   }
   
   if (data.vin) {
-    doc.setTextColor(...primaryCyan);
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "bold");
-    doc.text(`VIN: ${data.vin}`, 110, yPos + 38);
+    doc.text(`VIN: ${data.vin}`, 110, yPos + 36);
   }
-  
-  doc.setTextColor(...primaryCyan);
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "bold");
-  doc.text(`Order: ${data.orderNumber}`, 110, yPos + 48);
   
   // Items table
   yPos = 150;
   
-  // Table header - Cyan background
-  doc.setFillColor(...primaryCyan);
-  doc.roundedRect(15, yPos - 8, pageWidth - 30, 16, 0, 0, 'F');
+  // Table header
+  doc.setFillColor(...bgLightGray);
+  doc.rect(20, yPos - 8, pageWidth - 40, 12, 'F');
   
-  doc.setTextColor(0, 0, 0); // Black text on cyan
+  // Header border
+  doc.setDrawColor(...lineGray);
+  doc.setLineWidth(0.5);
+  doc.rect(20, yPos - 8, pageWidth - 40, 12, 'S');
+  
+  doc.setTextColor(...textBlack);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text("SERVICE DESCRIPTION", 20, yPos + 2);
-  doc.text("AMOUNT", pageWidth - 20, yPos + 2, { align: "right" });
+  doc.text("Položka", 25, yPos);
+  doc.text("Cena", pageWidth - 25, yPos, { align: "right" });
   
-  yPos += 18;
+  yPos += 12;
   
-  // Table items - Black background rows
+  // Table items
   for (let i = 0; i < data.items.length; i++) {
     const item = data.items[i];
     
-    // Alternating row background (very dark)
+    // Alternating row background
     if (i % 2 === 0) {
-      doc.setFillColor(5, 5, 5);
+      doc.setFillColor(...bgWhite);
     } else {
-      doc.setFillColor(10, 10, 10);
+      doc.setFillColor(...bgLightGray);
     }
-    doc.rect(15, yPos - 6, pageWidth - 30, 14, 'F');
+    doc.rect(20, yPos - 6, pageWidth - 40, 12, 'F');
     
-    doc.setTextColor(...textWhite);
+    // Row border
+    doc.setDrawColor(...lineGray);
+    doc.setLineWidth(0.5);
+    doc.line(20, yPos - 6, pageWidth - 20, yPos - 6);
+    
+    doc.setTextColor(...textBlack);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(item.name, 20, yPos + 2);
+    doc.text(item.name, 25, yPos + 2);
     
-    doc.setTextColor(...textWhite);
     doc.setFont("helvetica", "bold");
-    doc.text(`€${item.price.toFixed(2)}`, pageWidth - 20, yPos + 2, { align: "right" });
+    doc.text(`€${item.price.toFixed(2)}`, pageWidth - 25, yPos + 2, { align: "right" });
     
-    yPos += 14;
+    yPos += 12;
   }
   
-  // Total section
-  yPos += 10;
+  // Bottom border of table
+  doc.setDrawColor(...lineGray);
+  doc.setLineWidth(0.5);
+  doc.line(20, yPos - 6, pageWidth - 20, yPos - 6);
   
-  // Total box - Cyan background (svieti)
-  doc.setFillColor(...primaryCyan);
-  doc.roundedRect(pageWidth / 2 + 10, yPos - 6, pageWidth / 2 - 25, 22, 0, 0, 'F');
+  // Summary section (right aligned)
+  yPos += 15;
   
-  doc.setTextColor(0, 0, 0); // Black text on cyan
-  doc.setFontSize(13);
+  const summaryWidth = 80;
+  const summaryX = pageWidth - summaryWidth - 20;
+  
+  // "Celkom k úhrade" label
+  doc.setTextColor(...textGray);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text("Celkom k úhrade:", summaryX, yPos, { align: "right" });
+  
+  // Total amount
+  doc.setTextColor(...textBlack);
+  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text("TOTAL:", pageWidth / 2 + 20, yPos + 8);
-  doc.setFontSize(18);
   doc.text(`€${data.totalAmount.toFixed(2)}`, pageWidth - 20, yPos + 8, { align: "right" });
   
-  // Payment status badge - Cyan
-  yPos += 35;
-  doc.setFillColor(...primaryCyan);
-  doc.roundedRect(15, yPos - 6, 70, 18, 0, 0, 'F');
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(11);
+  // "ZAPLATENÉ" status
+  yPos += 20;
+  doc.setTextColor(...textBlack);
+  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text("PAID", 50, yPos + 4, { align: "center" });
+  doc.text("ZAPLATENÉ", pageWidth - 20, yPos, { align: "right" });
   
   // Payment date
   doc.setTextColor(...textGray);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(`Payment received: ${currentDate}`, 90, yPos + 4);
+  doc.text(`Platba prijatá: ${currentDate}`, pageWidth - 20, yPos + 8, { align: "right" });
   
   // Footer section
-  const footerY = pageHeight - 35;
+  const footerY = pageHeight - 40;
   
-  // Cyan footer line
-  doc.setDrawColor(...primaryCyan);
-  doc.setLineWidth(1);
-  doc.line(15, footerY - 15, pageWidth - 15, footerY - 15);
+  // Light gray footer line
+  doc.setDrawColor(...lineGray);
+  doc.setLineWidth(0.5);
+  doc.line(20, footerY, pageWidth - 20, footerY);
   
-  // Thank you message
-  doc.setTextColor(...textWhite);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text("Thank you for choosing REMAPPRO.", pageWidth / 2, footerY - 5, { align: "center" });
-  
+  // Company details in footer
   doc.setTextColor(...textGray);
-  doc.setFontSize(9);
-  doc.text(`For technical support, contact ${SUPPLIER.email}`, pageWidth / 2, footerY + 3, { align: "center" });
-  
-  // Company details with IČO and DIČ
   doc.setFontSize(8);
-  doc.text(`${SUPPLIER.brandName}, ${SUPPLIER.address}, ${SUPPLIER.city}, ${SUPPLIER.country}.`, pageWidth / 2, footerY + 8, { align: "center" });
-  doc.text(`IČO: ${SUPPLIER.ico}, DIČ: ${SUPPLIER.dic}`, pageWidth / 2, footerY + 15, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.text(`${SUPPLIER.brandName}`, pageWidth / 2, footerY + 8, { align: "center" });
+  doc.text(`${SUPPLIER.address}, ${SUPPLIER.city}, ${SUPPLIER.country}`, pageWidth / 2, footerY + 15, { align: "center" });
+  doc.text(`IČO: ${SUPPLIER.ico}, DIČ: ${SUPPLIER.dic}`, pageWidth / 2, footerY + 22, { align: "center" });
   
   // Copyright
+  doc.setTextColor(...textLightGray);
   doc.setFontSize(7);
-  doc.text(`© ${new Date().getFullYear()} ${SUPPLIER.brandName}. All rights reserved.`, pageWidth / 2, footerY + 22, { align: "center" });
+  doc.text(`© ${new Date().getFullYear()} ${SUPPLIER.brandName}. All rights reserved.`, pageWidth / 2, footerY + 30, { align: "center" });
   
   // Return as base64
   return doc.output('datauristring').split(',')[1];
