@@ -507,20 +507,20 @@ const ManagementPortal = () => {
         document.body.appendChild(a);
         a.click();
         
-        // Okamžitý zápis do DB: Ihned po a.click() aktualizuj status na 'processing'
-        console.log('Spúšťam automatickú aktualizáciu pre ID:', orderId);
+        // Nekompromisný Update: Ihned po a.click() prepíš status na 'processing'
+        console.log('Sťahujem a prepínam ID:', orderId);
+        
+        // 1. Zápis do databázy
         const { error: updateError } = await supabase
           .from('orders')
           .update({ status: 'processing' })
           .eq('id', orderId);
+        if (updateError) console.error('DB UPDATE ERROR:', updateError);
         
-        if (updateError) {
-          console.error('Chyba pri zmene statusu v databáze:', updateError);
-        } else {
-          console.log('Status úspešne zmenený na processing v DB.');
-          // Okamžitá aktualizácia lokálneho stavu pre UI
-          setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'processing' } : o));
-        }
+        // 2. Okamžitá zmena v UI tabuľke
+        setOrders(currentOrders => 
+          currentOrders.map(o => o.id === orderId ? { ...o, status: 'processing' } : o)
+        );
         
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
