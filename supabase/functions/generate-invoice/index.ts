@@ -302,10 +302,39 @@ serve(async (req) => {
     const data: InvoiceRequest = await req.json();
     console.log("Invoice request data:", JSON.stringify(data));
     
-    const { orderId, orderNumber, customerName, customerEmail, items, totalAmount, brand, model, fuelType, year, ecuType, vin } = data;
+    // Extract data with fallback values
+    const orderId = data.orderId || "";
+    const orderNumber = data.orderNumber || orderId || "N/A";
+    const customerName = data.customerName || "Customer";
+    const customerEmail = data.customerEmail || "";
+    const items = data.items || [];
+    const totalAmount = data.totalAmount || 0;
+    const brand = data.brand || undefined;
+    const model = data.model || undefined;
+    const fuelType = data.fuelType || undefined;
+    const year = data.year || undefined;
+    const ecuType = data.ecuType || undefined;
+    const vin = data.vin || undefined;
     
-    if (!orderId || !customerEmail || !items || items.length === 0) {
-      throw new Error("Missing required invoice data");
+    // Validate only truly required fields
+    if (!orderId) {
+      console.error("Missing orderId in invoice request");
+      throw new Error("Missing required field: orderId");
+    }
+    
+    if (!customerEmail) {
+      console.error("Missing customerEmail in invoice request");
+      throw new Error("Missing required field: customerEmail");
+    }
+    
+    if (!items || items.length === 0) {
+      console.error("Missing or empty items array in invoice request");
+      // Use default item if none provided
+      const defaultItems = [{
+        name: "ECU Tuning Service",
+        price: totalAmount || 0
+      }];
+      items.push(...defaultItems);
     }
     
     // Generate invoice number
@@ -313,20 +342,33 @@ serve(async (req) => {
     const invoiceDate = new Date().toISOString();
     console.log("Generated invoice number:", invoiceNumber);
     
-    // Format totalAmount to 2 decimal places
-    const formattedTotalAmount = parseFloat(totalAmount.toFixed(2));
+    // Format totalAmount to 2 decimal places (ensure it's a number)
+    const formattedTotalAmount = typeof totalAmount === 'number' && !isNaN(totalAmount) 
+      ? parseFloat(totalAmount.toFixed(2)) 
+      : 0;
+    
+    console.log("Invoice data prepared:", {
+      orderId,
+      orderNumber,
+      customerName,
+      customerEmail: customerEmail ? `${customerEmail.substring(0, 5)}...` : 'MISSING',
+      itemsCount: items.length,
+      totalAmount: formattedTotalAmount,
+      brand: brand || 'N/A',
+      model: model || 'N/A',
+    });
     
     // Generate PDF with vehicle info
     const carInfo = brand && model ? `${brand} ${model}` : undefined;
     const pdfBase64 = generateInvoicePDF({
       invoiceNumber,
-      customerName: customerName || "Customer",
+      customerName,
       customerEmail,
       items,
       totalAmount: formattedTotalAmount,
-      orderNumber: orderNumber || orderId,
+      orderNumber,
       carInfo,
-      vin: vin || undefined,
+      vin,
     });
     
     console.log("PDF generated, size:", pdfBase64.length);

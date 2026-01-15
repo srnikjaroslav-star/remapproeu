@@ -370,30 +370,46 @@ serve(async (req) => {
       // ATOMIC: Only generate invoice AFTER we have confirmed order from DB
       console.log("ATOMIC: Generating invoice for confirmed order:", confirmedOrderNumber, "ID:", confirmedOrderId);
       try {
+        // Prepare invoice data with fallback values
+        const invoiceData = {
+          orderId: confirmedOrderId,
+          orderNumber: confirmedOrderNumber || confirmedOrderId,
+          customerName: customerName || "Customer",
+          customerEmail: customerEmail || "",
+          items: lineItems.length > 0 ? lineItems : [{
+            name: "ECU Tuning Service",
+            price: session.amount_total ? parseFloat((session.amount_total / 100).toFixed(2)) : 0
+          }],
+          totalAmount: session.amount_total ? parseFloat((session.amount_total / 100).toFixed(2)) : 0,
+          brand: carBrand || undefined,
+          model: carModel || undefined,
+          fuelType: fuelType || undefined,
+          year: year || undefined,
+          ecuType: ecuType || undefined,
+          vin: vin || undefined,
+        };
+        
+        console.log("Sending invoice data:", {
+          ...invoiceData,
+          customerEmail: invoiceData.customerEmail ? `${invoiceData.customerEmail.substring(0, 5)}...` : 'MISSING',
+        });
+        
         const invoiceRes = await fetch(`${supabaseUrl}/functions/v1/generate-invoice`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
           },
-          body: JSON.stringify({
-            orderId: confirmedOrderId,
-            orderNumber: confirmedOrderNumber,
-            customerName,
-            customerEmail,
-            items: lineItems,
-            totalAmount: session.amount_total ? parseFloat((session.amount_total / 100).toFixed(2)) : 0,
-            brand: carBrand,
-            model: carModel,
-            fuelType,
-            year,
-            ecuType,
-            vin,
-          }),
+          body: JSON.stringify(invoiceData),
         });
         
-        const invoiceResult = await invoiceRes.json();
-        console.log("ATOMIC: Invoice generation result:", invoiceResult);
+        if (!invoiceRes.ok) {
+          const errorText = await invoiceRes.text();
+          console.error("Invoice generation HTTP error:", invoiceRes.status, errorText);
+        } else {
+          const invoiceResult = await invoiceRes.json();
+          console.log("ATOMIC: Invoice generation result:", invoiceResult);
+        }
       } catch (invoiceError) {
         console.error("Invoice generation failed (non-fatal):", invoiceError);
         // Continue - don't fail the webhook, order is already saved
