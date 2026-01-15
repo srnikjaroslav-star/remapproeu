@@ -484,7 +484,7 @@ const ManagementPortal = () => {
     fileInputRef.current?.click();
   };
 
-  const handleDownload = async (fileName: string, orderNumber: string) => {
+  const handleDownload = async (fileName: string, orderNumber: string, orderId: string) => {
     try {
       // Create Public URL from file name
       const { data: { publicUrl } } = supabase.storage
@@ -508,6 +508,28 @@ const ManagementPortal = () => {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+
+        // After successful download, immediately update order status to 'processing'
+        if (orderId) {
+          try {
+            const { error: updateError } = await supabase
+              .from('orders')
+              .update({ status: 'processing' })
+              .eq('id', orderId);
+
+            if (updateError) {
+              console.error('Error updating order status:', updateError);
+              toast.error('Chyba pri aktualizácii statusu objednávky');
+            } else {
+              // Refresh data in UI to show the change immediately
+              await fetchOrders();
+              toast.success('Status objednávky bol aktualizovaný na Processing');
+            }
+          } catch (statusError) {
+            console.error('Error updating order status after download:', statusError);
+            // Don't show error to user, download was successful
+          }
+        }
       } catch (err) {
         console.error('Download error:', err);
         // Fallback: open in new tab
@@ -817,7 +839,7 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                         <div className="flex items-center justify-end gap-1.5 flex-shrink-0">
                           {order.file_url ? (
                             <button
-                              onClick={() => handleDownload(order.file_url!, order.order_number || order.id.slice(0, 8))}
+                              onClick={() => handleDownload(order.file_url!, order.order_number || order.id.slice(0, 8), order.id)}
                               className="p-2 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 text-orange-500 transition-colors flex-shrink-0"
                               title="Stiahnuť súbor zákazníka"
                             >
@@ -970,7 +992,7 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                       <p className="text-sm text-muted-foreground mb-2">Súbor zákazníka</p>
                       {detailOrder.file_url ? (
                         <button
-                          onClick={() => handleDownload(detailOrder.file_url!, detailOrder.order_number || detailOrder.id.slice(0, 8))}
+                          onClick={() => handleDownload(detailOrder.file_url!, detailOrder.order_number || detailOrder.id.slice(0, 8), detailOrder.id)}
                           className="btn-secondary inline-flex items-center gap-2"
                         >
                           <Download className="w-4 h-4" />
