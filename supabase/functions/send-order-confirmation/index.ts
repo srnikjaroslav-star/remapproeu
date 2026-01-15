@@ -25,13 +25,25 @@ interface OrderConfirmationRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log("send-order-confirmation function called");
+  console.log("LOG: send-order-confirmation prijala požiadavku");
 
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { 
       status: 200, 
       headers: corsHeaders 
     });
+  }
+
+  // Only allow POST requests
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ success: false, error: "Method not allowed" }),
+      {
+        status: 405,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      }
+    );
   }
 
   try {

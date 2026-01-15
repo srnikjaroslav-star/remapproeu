@@ -309,68 +309,9 @@ serve(async (req) => {
       
       console.log("ATOMIC: Order created successfully - ID:", confirmedOrderId, "Order#:", confirmedOrderNumber);
 
-      // Send order confirmation email to customer IMMEDIATELY after order creation
-      // This email contains only basic info: Order ID, Tracking Link, and confirmation
-      // Invoice generation is moved to send-order-ready (when order is completed)
-      console.log("INFO: Posielam len uvítací e-mail po platbe, faktúra sa teraz negeneruje.");
-      try {
-        // Prepare data with fallback values
-        const emailOrderNumber = confirmedOrderNumber || confirmedOrderId || "N/A";
-        const emailCustomerName = customerName || "Zákazník";
-        const emailCustomerEmail = customerEmail || "";
-        const emailTotalAmount = session.amount_total ? parseFloat((session.amount_total / 100).toFixed(2)) : 0;
-        
-        console.log("DEBUG: Spúšťam odosielanie potvrdzovacieho e-mailu pre objednávku:", session.id);
-        console.log("DEBUG: Email data:", {
-          orderId: confirmedOrderId,
-          orderNumber: emailOrderNumber,
-          customerEmail: emailCustomerEmail ? `${emailCustomerEmail.substring(0, 5)}...` : 'MISSING',
-          customerName: emailCustomerName,
-          totalAmount: emailTotalAmount,
-        });
-        
-        if (!emailCustomerEmail) {
-          console.error("DEBUG: Customer email is missing, cannot send confirmation email");
-        } else {
-          const confirmationRes = await fetch(`${supabaseUrl}/functions/v1/send-order-confirmation`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-            },
-            body: JSON.stringify({
-              orderId: confirmedOrderId,
-              orderNumber: emailOrderNumber,
-              customerEmail: emailCustomerEmail,
-              customerName: emailCustomerName,
-              totalAmount: emailTotalAmount,
-              brand: carBrand || undefined,
-              model: carModel || undefined,
-              fuelType: fuelType || undefined,
-              year: year || undefined,
-              vin: vin || undefined,
-              createdAt: newOrder.created_at || new Date().toISOString(),
-            }),
-          });
-          
-          if (!confirmationRes.ok) {
-            const errorText = await confirmationRes.text();
-            console.error("DEBUG: Order confirmation email HTTP error:", confirmationRes.status, errorText);
-          } else {
-            const confirmationResult = await confirmationRes.json();
-            console.log("DEBUG: Order confirmation email result:", confirmationResult);
-          }
-        }
-      } catch (confirmationError) {
-        console.error("DEBUG: Order confirmation email failed (non-fatal):", confirmationError);
-        // Continue - don't fail the webhook, order is already saved
-      }
+      // Sequence: Update DB -> Admin Email -> Customer Email
 
-      // Note: Invoice generation is now moved to send-order-ready function
-      // This happens when order status changes to 'completed' or final file is uploaded
-      // Order confirmation email was already sent above with tracking link
-
-      // Send admin notification email
+      // Step 1: Send admin notification email
       if (RESEND_API_KEY) {
         const adminEmailHtml = `
           <!DOCTYPE html>
@@ -495,6 +436,61 @@ serve(async (req) => {
 
         const adminEmailResult = await adminEmailRes.text();
         console.log("Admin notification email sent:", adminEmailRes.ok, adminEmailResult);
+      }
+
+      // Step 2: Send order confirmation email to customer
+      // This email contains only basic info: Order ID, Tracking Link, and confirmation
+      // Invoice generation is NOT done here - it's moved to send-order-ready (when order is completed)
+      try {
+        // Prepare data with fallback values
+        const emailOrderNumber = confirmedOrderNumber || confirmedOrderId || "N/A";
+        const emailCustomerName = customerName || "Zákazník";
+        const emailCustomerEmail = customerEmail || "";
+        const emailTotalAmount = session.amount_total ? parseFloat((session.amount_total / 100).toFixed(2)) : 0;
+        
+        if (!emailCustomerEmail) {
+          console.error("ERROR: Customer email is missing, cannot send confirmation email");
+        } else {
+          // Use explicit SERVICE_ROLE_KEY and FUNCTION_URL (mirroring admin notification pattern)
+          const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+          const FUNCTION_URL = `${supabaseUrl}/functions/v1/send-order-confirmation`;
+          
+          console.log("CRITICAL: Executing customer confirmation via Service Role Key for Order:", confirmedOrderId);
+          
+          // Direct fetch to send-order-confirmation function (NOT using supabase.functions.invoke)
+          // Mirror the exact implementation used for Admin notification
+          const confirmationRes = await fetch(FUNCTION_URL, {
+            method: "POST",
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SERVICE_ROLE_KEY}`
+            },
+            body: JSON.stringify({
+              orderId: confirmedOrderId,
+              orderNumber: emailOrderNumber,
+              customerEmail: emailCustomerEmail,
+              customerName: emailCustomerName,
+              totalAmount: emailTotalAmount,
+              brand: carBrand || undefined,
+              model: carModel || undefined,
+              fuelType: fuelType || undefined,
+              year: year || undefined,
+              vin: vin || undefined,
+              createdAt: newOrder.created_at || new Date().toISOString(),
+            }),
+          });
+          
+          if (!confirmationRes.ok) {
+            const errorText = await confirmationRes.text();
+            console.error("ERROR: Order confirmation email HTTP error:", confirmationRes.status, errorText);
+          } else {
+            const confirmationResult = await confirmationRes.json();
+            console.log("SUCCESS: Order confirmation email sent successfully:", confirmationResult);
+          }
+        }
+      } catch (confirmationError) {
+        console.error("ERROR: Order confirmation email failed (non-fatal):", confirmationError);
+        // Continue - don't fail the webhook, order is already saved
       }
 
       return new Response(JSON.stringify({ received: true }), {
