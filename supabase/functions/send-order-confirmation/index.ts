@@ -74,113 +74,116 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailHtml = `
       <!DOCTYPE html>
-      <html>
+      <html style="background-color: #000000;">
       <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
-      <body style="margin: 0; padding: 0; background-color: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; padding: 40px 20px;">
-          <tr>
-            <td align="center">
-              <table width="600" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; border-radius: 16px; border: 1px solid #333;">
+      <body style="margin: 0; padding: 0; background-color: #000000; font-family: Arial, Helvetica, sans-serif;">
+        <div style="background-color: #000000; padding: 40px 20px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #000000; max-width: 600px; margin: 0 auto;">
+            <tr>
+              <td style="background-color: #000000;">
                 <!-- Header with Logo -->
-                <tr>
-                  <td style="padding: 40px 40px 30px; text-align: center; border-bottom: 1px solid #333;">
-                    <h1 style="margin: 0; font-size: 32px; font-weight: bold; color: #ffffff; letter-spacing: 2px;">
-                      REMAPPRO
-                    </h1>
-                    <p style="margin: 10px 0 0; color: #888; font-size: 14px;">
-                      Professional ECU Tuning
-                    </p>
-                  </td>
-                </tr>
+                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #000000;">
+                  <tr>
+                    <td style="padding: 50px 40px 40px; text-align: center; background-color: #000000; border-bottom: 2px solid #00d4ff;">
+                      <div style="background-color: #000000;">
+                        <h1 style="margin: 0; padding: 0; font-size: 36px; font-weight: 800; color: #ffffff; letter-spacing: 3px; background-color: #000000;">
+                          <span style="color: #ffffff; background-color: #000000;">REMAP</span><span style="color: #00d4ff; background-color: #000000;">PRO</span>
+                        </h1>
+                        <p style="margin: 12px 0 0; padding: 0; color: #888888; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; background-color: #000000;">
+                          Professional ECU Tuning
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
                 
                 <!-- Main Content -->
-                <tr>
-                  <td style="padding: 40px;">
-                    <h2 style="margin: 0 0 20px; color: #ffffff; font-size: 24px; font-weight: 600;">
-                      Thank you for your purchase!
-                    </h2>
-                    
-                    <p style="margin: 0 0 30px; color: #ffffff; font-size: 16px; line-height: 1.6;">
-                      Our technicians are now starting to process your files.
-                    </p>
-                    
-                    <!-- Order Details -->
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #111111; border-radius: 8px; border: 1px solid #333; margin-bottom: 30px;">
-                      <tr>
-                        <td style="padding: 20px;">
-                          <table width="100%" cellpadding="0" cellspacing="0">
-                            <tr>
-                              <td style="padding: 8px 0;">
-                                <p style="margin: 0; color: #888; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Order ID</p>
-                                <p style="margin: 4px 0 0; color: #ffffff; font-size: 18px; font-weight: 600; font-family: 'Courier New', monospace;">${displayOrderId}</p>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td style="padding: 8px 0;">
-                                <p style="margin: 0; color: #888; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Date</p>
-                                <p style="margin: 4px 0 0; color: #ffffff; font-size: 16px;">${formattedDate}</p>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td style="padding: 8px 0;">
-                                <p style="margin: 0; color: #888; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Customer Name</p>
-                                <p style="margin: 4px 0 0; color: #ffffff; font-size: 16px;">${customerName || 'N/A'}</p>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td style="padding: 8px 0;">
-                                <p style="margin: 0; color: #888; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Price</p>
-                                <p style="margin: 4px 0 0; color: #ffffff; font-size: 18px; font-weight: 600;">€${totalAmount.toFixed(2)}</p>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <!-- Tracking Button -->
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td align="center" style="padding: 20px 0;">
-                          <a href="${trackingUrl}" 
-                             style="display: inline-block; padding: 18px 48px; background-color: #00f2ff; color: #000000; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 12px rgba(0, 242, 255, 0.3);">
-                            VIEW LIVE TRACKING
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <p style="margin: 30px 0 0; color: #888; font-size: 14px; line-height: 1.6; text-align: center;">
-                      You can track your order status in real-time by clicking the button above or visiting our tracking page.
-                    </p>
-                  </td>
-                </tr>
+                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #000000;">
+                  <tr>
+                    <td style="padding: 50px 40px; background-color: #000000;">
+                      <div style="background-color: #000000;">
+                        <h2 style="margin: 0 0 25px; padding: 0; color: #ffffff; font-size: 28px; font-weight: 700; line-height: 1.2; background-color: #000000;">
+                          Thank you for your purchase!
+                        </h2>
+                        
+                        <p style="margin: 0 0 35px; padding: 0; color: #e0e0e0; font-size: 16px; line-height: 1.7; background-color: #000000;">
+                          Our technicians are now starting to process your files.
+                        </p>
+                        
+                        <!-- Order Details -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; border: 1px solid #1a1a1a; margin-bottom: 35px;">
+                          <tr>
+                            <td style="padding: 25px; background-color: #0a0a0a;">
+                              <div style="background-color: #0a0a0a;">
+                                <div style="padding: 10px 0; background-color: #0a0a0a;">
+                                  <p style="margin: 0; padding: 0; color: #888888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; background-color: #0a0a0a;">Order ID</p>
+                                  <p style="margin: 6px 0 0; padding: 0; color: #00d4ff; font-size: 20px; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 1px; background-color: #0a0a0a;">${displayOrderId}</p>
+                                </div>
+                                <div style="padding: 10px 0; background-color: #0a0a0a;">
+                                  <p style="margin: 0; padding: 0; color: #888888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; background-color: #0a0a0a;">Date</p>
+                                  <p style="margin: 6px 0 0; padding: 0; color: #ffffff; font-size: 16px; font-weight: 500; background-color: #0a0a0a;">${formattedDate}</p>
+                                </div>
+                                <div style="padding: 10px 0; background-color: #0a0a0a;">
+                                  <p style="margin: 0; padding: 0; color: #888888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; background-color: #0a0a0a;">Customer Name</p>
+                                  <p style="margin: 6px 0 0; padding: 0; color: #ffffff; font-size: 16px; font-weight: 500; background-color: #0a0a0a;">${customerName || 'N/A'}</p>
+                                </div>
+                                <div style="padding: 10px 0; background-color: #0a0a0a;">
+                                  <p style="margin: 0; padding: 0; color: #888888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; background-color: #0a0a0a;">Price</p>
+                                  <p style="margin: 6px 0 0; padding: 0; color: #00d4ff; font-size: 22px; font-weight: 700; background-color: #0a0a0a;">€${totalAmount.toFixed(2)}</p>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        <!-- Tracking Button -->
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #000000;">
+                          <tr>
+                            <td align="center" style="padding: 25px 0; background-color: #000000;">
+                              <a href="${trackingUrl}" 
+                                 style="display: inline-block; padding: 20px 50px; background-color: #00d4ff; color: #000000; font-size: 15px; font-weight: 700; text-decoration: none; text-transform: uppercase; letter-spacing: 2px;">
+                                VIEW LIVE TRACKING
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                        
+                        <p style="margin: 35px 0 0; padding: 0; color: #888888; font-size: 14px; line-height: 1.7; text-align: center; background-color: #000000;">
+                          You can track your order status in real-time by clicking the button above or visiting our tracking page.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
                 
                 <!-- Footer -->
-                <tr>
-                  <td style="padding: 30px 40px; border-top: 1px solid #333; text-align: center; background-color: #111111;">
-                    <p style="margin: 0 0 10px; color: #ffffff; font-size: 14px; font-weight: 500;">
-                      REMAPPRO
-                    </p>
-                    <p style="margin: 0 0 8px; color: #888; font-size: 13px; line-height: 1.6;">
-                      Janka Kráľa 29, Veľký Krtíš, Slovakia<br>
-                      Professional ECU Tuning Services
-                    </p>
-                    <p style="margin: 8px 0; color: #888; font-size: 12px; line-height: 1.6;">
-                      IČO: 41281471 | DIČ: 1041196607
-                    </p>
-                    <p style="margin: 15px 0 0; color: #666; font-size: 12px;">
-                      © ${new Date().getFullYear()} REMAPPRO. All rights reserved.
-                    </p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-        </table>
+                <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #000000; border-top: 1px solid #1a1a1a;">
+                  <tr>
+                    <td style="padding: 40px 40px 30px; text-align: center; background-color: #000000;">
+                      <div style="background-color: #000000;">
+                        <p style="margin: 0 0 8px; padding: 0; color: #888888; font-size: 12px; line-height: 1.6; background-color: #000000;">
+                          REMAPPRO
+                        </p>
+                        <p style="margin: 0 0 8px; padding: 0; color: #888888; font-size: 12px; line-height: 1.6; background-color: #000000;">
+                          Janka Kráľa 29, 990 01 Veľký Krtíš, Slovakia
+                        </p>
+                        <p style="margin: 0 0 15px; padding: 0; color: #888888; font-size: 12px; line-height: 1.6; background-color: #000000;">
+                          IČO: 41281471 | DIČ: 1041196607
+                        </p>
+                        <p style="margin: 0; padding: 0; color: #555555; font-size: 11px; background-color: #000000;">
+                          © ${new Date().getFullYear()} REMAPPRO. All rights reserved.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </div>
       </body>
       </html>
     `;
