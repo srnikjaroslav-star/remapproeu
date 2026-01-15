@@ -9,18 +9,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface NotifyRequest {
+interface CompletionEmailRequest {
   orderId: string;
   orderNumber: string;
   customerEmail: string;
   customerName: string;
   carBrand: string;
   carModel: string;
-  resultFileUrl?: string;
+  year: number;
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  console.log("send-order-ready function called");
+  console.log("send-completion-email function called");
 
   if (req.method === "OPTIONS") {
     return new Response(null, { 
@@ -37,10 +37,10 @@ const handler = async (req: Request): Promise<Response> => {
       customerName,
       carBrand,
       carModel,
-      resultFileUrl,
-    }: NotifyRequest = await req.json();
+      year,
+    }: CompletionEmailRequest = await req.json();
 
-    console.log(`Sending notification for order ${orderNumber} to ${customerEmail}`);
+    console.log(`Sending completion email for order ${orderNumber} to ${customerEmail}`);
 
     if (!customerEmail) {
       throw new Error("Customer email is required");
@@ -51,8 +51,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const displayOrderId = orderNumber || orderId.slice(0, 8).toUpperCase();
-    const vehicleInfo = `${carBrand || ''} ${carModel || ''}`.trim() || 'your vehicle';
-    const downloadUrl = resultFileUrl || `https://remappro.eu/check-order?order=${displayOrderId}`;
+    // Build vehicle info with proper handling of null/empty values
+    const brand = carBrand || '';
+    const model = carModel || '';
+    const yearStr = year ? year.toString() : '';
+    const vehicleInfo = `${brand} ${model} ${yearStr}`.trim();
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -81,47 +84,17 @@ const handler = async (req: Request): Promise<Response> => {
                 <!-- Main Content -->
                 <tr>
                   <td style="padding: 50px 40px;">
-                    <h2 style="margin: 0 0 20px; color: #e5e5e5; font-size: 24px; text-align: center;">
-                      🏁 Your Tuning File is Ready!
-                    </h2>
-                    
-                    <p style="margin: 0 0 20px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
-                      Hi${customerName ? ` ${customerName}` : ''},
-                    </p>
-                    
-                    <p style="margin: 0 0 30px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
-                      Great news! The ECU tuning for <strong style="color: #ffffff;">${vehicleInfo}</strong> has been completed and your modified file is ready for download.
-                    </p>
-                    
-                    <!-- Order Box -->
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px; margin-bottom: 30px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 20px;">
                       <tr>
-                        <td style="padding: 20px; text-align: center;">
-                          <p style="margin: 0 0 8px; color: #888888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
-                            Order ID
-                          </p>
-                          <p style="margin: 0; color: #00f2ff; font-size: 28px; font-weight: bold; font-family: 'Monaco', 'Consolas', monospace;">
-                            ${displayOrderId}
+                        <td style="padding: 25px;">
+                          <p style="margin: 0; color: #00f2ff; font-size: 16px; line-height: 1.6;">
+                            Hello,<br><br>
+                            Your order <strong style="color: #00f2ff;">${displayOrderId}</strong> at REMAPPRO for vehicle <strong style="color: #00f2ff;">${vehicleInfo}</strong> has been successfully completed.<br><br>
+                            We look forward to your visit.
                           </p>
                         </td>
                       </tr>
                     </table>
-                    
-                    <!-- CTA Button -->
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td align="center">
-                          <a href="${downloadUrl}" 
-                             style="background-color: #00f2ff; color: #000000; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;">
-                            Download Your File
-                          </a>
-                        </td>
-                      </tr>
-                    </table>
-                    
-                    <p style="margin: 30px 0 0; color: #888888; font-size: 14px; line-height: 1.6; text-align: center;">
-                      If the button doesn't work, visit our order tracking page and enter your Order ID and email address.
-                    </p>
                   </td>
                 </tr>
                 
@@ -156,7 +129,7 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: SENDER,
         to: [customerEmail],
-        subject: `Your Tuning File is Ready! - Order ${displayOrderId}`,
+        subject: `Objednávka ${displayOrderId} dokončená - REMAPPRO`,
         html: emailHtml,
       }),
     });
@@ -193,14 +166,14 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Completion email sent successfully:", emailResponse);
 
     return new Response(JSON.stringify({ success: true, data: emailResponse }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
-    console.error("Error sending notification email:", error);
+    console.error("Error sending completion email:", error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       {

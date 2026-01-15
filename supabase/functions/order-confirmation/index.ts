@@ -120,7 +120,7 @@ const handler = async (req: Request): Promise<Response> => {
                     </p>
                     
                     <!-- Order Details -->
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #2a2a2a; margin-bottom: 35px; border-radius: 5px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; margin-bottom: 35px; border-radius: 5px;">
                       <tr>
                         <td style="padding: 25px;">
                           <div style="padding: 10px 0;">
@@ -129,11 +129,11 @@ const handler = async (req: Request): Promise<Response> => {
                           </div>
                           <div style="padding: 10px 0;">
                             <p style="margin: 0; color: #888888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Date</p>
-                            <p style="margin: 6px 0 0; color: #e5e5e5; font-size: 16px; font-weight: 500;">${formattedDate}</p>
+                            <p style="margin: 6px 0 0; color: #00f2ff; font-size: 16px; font-weight: 500;">${formattedDate}</p>
                           </div>
                           <div style="padding: 10px 0;">
                             <p style="margin: 0; color: #888888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Customer Name</p>
-                            <p style="margin: 6px 0 0; color: #e5e5e5; font-size: 16px; font-weight: 500;">${customerName || 'N/A'}</p>
+                            <p style="margin: 6px 0 0; color: #00f2ff; font-size: 16px; font-weight: 500;">${customerName || 'N/A'}</p>
                           </div>
                           <div style="padding: 10px 0;">
                             <p style="margin: 0; color: #888888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Price</p>

@@ -206,7 +206,7 @@ const ManagementPortal = () => {
       });
       
       // Call Edge Function via direct fetch (same method as admin notifications)
-      const response = await fetch(`${supabaseUrl}/functions/v1/send-status-email`, {
+      const response = await fetch(`${supabaseUrl}/functions/v1/status-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -491,7 +491,7 @@ const ManagementPortal = () => {
               resultFileUrl: publicUrl,
             });
             
-            const response = await fetch(`${supabaseUrl}/functions/v1/send-order-ready`, {
+            const response = await fetch(`${supabaseUrl}/functions/v1/order-ready`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -603,7 +603,7 @@ const ManagementPortal = () => {
               resultFileUrl: publicUrl,
             });
             
-            const response = await fetch(`${supabaseUrl}/functions/v1/send-order-ready`, {
+            const response = await fetch(`${supabaseUrl}/functions/v1/order-ready`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

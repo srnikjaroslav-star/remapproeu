@@ -66,38 +66,62 @@ const handler = async (req: Request): Promise<Response> => {
     if (status === 'completed') {
       emailSubject = `Order ${displayOrderId} Completed - REMAPPRO`;
       emailContent = `
-        <p style="margin: 0 0 20px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
-          Hello,<br><br>
-          Your order <strong style="color: #00f2ff;">${displayOrderId}</strong> at REMAPPRO for vehicle <strong>${vehicleInfo}</strong> has been successfully completed.<br><br>
-          We look forward to your visit.
-        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 20px;">
+          <tr>
+            <td style="padding: 25px;">
+              <p style="margin: 0; color: #00f2ff; font-size: 16px; line-height: 1.6;">
+                Hello,<br><br>
+                Your order <strong style="color: #00f2ff;">${displayOrderId}</strong> at REMAPPRO for vehicle <strong style="color: #00f2ff;">${vehicleInfo}</strong> has been successfully completed.<br><br>
+                We look forward to your visit.
+              </p>
+            </td>
+          </tr>
+        </table>
       `;
     } else if (status === 'processing') {
       emailSubject = `Order ${displayOrderId} In Progress - REMAPPRO`;
       emailContent = `
-        <p style="margin: 0 0 20px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
-          Hello,<br><br>
-          Your order <strong style="color: #00f2ff;">${displayOrderId}</strong> at REMAPPRO for vehicle <strong>${vehicleInfo}</strong> is now being processed.<br><br>
-          We will keep you informed of the progress.
-        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 20px;">
+          <tr>
+            <td style="padding: 25px;">
+              <p style="margin: 0; color: #00f2ff; font-size: 16px; line-height: 1.6;">
+                Hello,<br><br>
+                Your order <strong style="color: #00f2ff;">${displayOrderId}</strong> at REMAPPRO for vehicle <strong style="color: #00f2ff;">${vehicleInfo}</strong> is now being processed.<br><br>
+                We will keep you informed of the progress.
+              </p>
+            </td>
+          </tr>
+        </table>
       `;
     } else if (status === 'pending') {
       emailSubject = `Order ${displayOrderId} Received - REMAPPRO`;
       emailContent = `
-        <p style="margin: 0 0 20px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
-          Hello,<br><br>
-          Your order <strong style="color: #00f2ff;">${displayOrderId}</strong> at REMAPPRO for vehicle <strong>${vehicleInfo}</strong> has been received.<br><br>
-          Thank you for your order.
-        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 20px;">
+          <tr>
+            <td style="padding: 25px;">
+              <p style="margin: 0; color: #00f2ff; font-size: 16px; line-height: 1.6;">
+                Hello,<br><br>
+                Your order <strong style="color: #00f2ff;">${displayOrderId}</strong> at REMAPPRO for vehicle <strong style="color: #00f2ff;">${vehicleInfo}</strong> has been received.<br><br>
+                Thank you for your order.
+              </p>
+            </td>
+          </tr>
+        </table>
       `;
     } else {
       emailSubject = `Order ${displayOrderId} Status Update - REMAPPRO`;
       emailContent = `
-        <p style="margin: 0 0 20px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
-          Hello,<br><br>
-          The status of your order <strong style="color: #00f2ff;">${displayOrderId}</strong> at REMAPPRO for vehicle <strong>${vehicleInfo}</strong> has been updated.<br><br>
-          New status: <strong>${status}</strong>
-        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 20px;">
+          <tr>
+            <td style="padding: 25px;">
+              <p style="margin: 0; color: #00f2ff; font-size: 16px; line-height: 1.6;">
+                Hello,<br><br>
+                The status of your order <strong style="color: #00f2ff;">${displayOrderId}</strong> at REMAPPRO for vehicle <strong style="color: #00f2ff;">${vehicleInfo}</strong> has been updated.<br><br>
+                New status: <strong style="color: #00f2ff;">${status}</strong>
+              </p>
+            </td>
+          </tr>
+        </table>
       `;
     }
 

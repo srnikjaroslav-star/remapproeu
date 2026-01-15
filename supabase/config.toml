@@ -15,7 +15,16 @@ major_version = 15
 enabled = true
 port = 54323
 
-[functions.send-order-ready]
+[functions.order-ready]
+verify_jwt = false
+
+[functions.order-confirmation]
+verify_jwt = false
+
+[functions.status-email]
+verify_jwt = false
+
+[functions.completion-email]
 verify_jwt = false
 
 [functions.create-checkout]

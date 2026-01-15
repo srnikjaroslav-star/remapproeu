@@ -320,37 +320,40 @@ serve(async (req) => {
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
           </head>
-          <body style="margin: 0; padding: 0; background-color: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; padding: 40px 20px;">
+          <body style="margin: 0; padding: 20px; background-color: #0a0a0a; color: #ffffff; font-family: sans-serif;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a;">
               <tr>
                 <td align="center">
-                  <table width="600" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%); border-radius: 16px; border: 1px solid #333;">
+                  <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #111111; border: 1px solid #333333; padding: 40px; border-radius: 8px;">
                     <!-- Header -->
                     <tr>
-                      <td style="padding: 40px 40px 20px; text-align: center; border-bottom: 1px solid #333;">
-                        <h1 style="margin: 0; font-size: 28px; font-weight: bold; color: #ff6b00;">
-                          🔔 NEW ORDER RECEIVED
+                      <td style="padding: 50px 40px 40px; text-align: center; border-bottom: 2px solid #00f2ff;">
+                        <h1 style="margin: 0; font-size: 36px; font-weight: 800; letter-spacing: 3px;">
+                          <span style="color: #ffffff;">REMAP</span><span style="color: #00f2ff;">PRO</span>
                         </h1>
+                        <p style="margin: 12px 0 0; color: #00f2ff; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px;">
+                          🔔 NEW ORDER RECEIVED
+                        </p>
                       </td>
                     </tr>
                     
                     <!-- Main Content -->
                     <tr>
-                      <td style="padding: 40px;">
+                      <td style="padding: 50px 40px;">
                         <!-- Order Info -->
-                        <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(255, 107, 0, 0.1); border: 1px solid rgba(255, 107, 0, 0.3); border-radius: 12px; margin-bottom: 20px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 20px;">
                           <tr>
-                            <td style="padding: 20px;">
-                              <p style="margin: 0 0 8px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                            <td style="padding: 25px;">
+                              <p style="margin: 0 0 8px; color: #888888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
                                 Order ID
                               </p>
-                              <p style="margin: 0 0 15px; color: #ff6b00; font-size: 24px; font-weight: bold; font-family: 'Monaco', 'Consolas', monospace;">
+                              <p style="margin: 0 0 15px; color: #00f2ff; font-size: 24px; font-weight: bold; font-family: 'Monaco', 'Consolas', monospace;">
                                 ${confirmedOrderNumber}
                               </p>
-                              <p style="margin: 0 0 8px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                              <p style="margin: 0 0 8px; color: #888888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
                                 Amount
                               </p>
-                              <p style="margin: 0; color: #00ff88; font-size: 20px; font-weight: bold;">
+                              <p style="margin: 0; color: #00f2ff; font-size: 20px; font-weight: bold;">
                                 €${amountTotal}
                               </p>
                             </td>
@@ -358,16 +361,16 @@ serve(async (req) => {
                         </table>
                         
                         <!-- Customer Info -->
-                        <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 12px; margin-bottom: 20px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 20px;">
                           <tr>
-                            <td style="padding: 20px;">
-                              <p style="margin: 0 0 8px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                            <td style="padding: 25px;">
+                              <p style="margin: 0 0 8px; color: #888888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
                                 Customer
                               </p>
-                              <p style="margin: 0 0 5px; color: #ffffff; font-size: 16px;">
+                              <p style="margin: 0 0 5px; color: #00f2ff; font-size: 16px; font-weight: 600;">
                                 ${customerName}
                               </p>
-                              <p style="margin: 0; color: #00d4ff; font-size: 14px;">
+                              <p style="margin: 0; color: #00f2ff; font-size: 14px;">
                                 ${customerEmail}
                               </p>
                             </td>
@@ -376,13 +379,13 @@ serve(async (req) => {
                         
                         ${customerNote ? `
                         <!-- Customer Note -->
-                        <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(255, 255, 0, 0.1); border: 1px solid rgba(255, 255, 0, 0.3); border-radius: 12px; margin-bottom: 20px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 20px;">
                           <tr>
-                            <td style="padding: 20px;">
-                              <p style="margin: 0 0 8px; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
+                            <td style="padding: 25px;">
+                              <p style="margin: 0 0 8px; color: #888888; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">
                                 ⚠️ Customer Note
                               </p>
-                              <p style="margin: 0; color: #ffff88; font-size: 14px; line-height: 1.6;">
+                              <p style="margin: 0; color: #00f2ff; font-size: 14px; line-height: 1.6;">
                                 ${customerNote}
                               </p>
                             </td>
@@ -395,7 +398,7 @@ serve(async (req) => {
                           <tr>
                             <td align="center">
                               <a href="${SITE_URL}/manage" 
-                                 style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #ff6b00 0%, #ff9500 100%); color: #000000; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px;">
+                                 style="background-color: #00f2ff; color: #000000; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;">
                                 Open Admin Portal
                               </a>
                             </td>
@@ -406,8 +409,8 @@ serve(async (req) => {
                     
                     <!-- Footer -->
                     <tr>
-                      <td style="padding: 20px 40px; border-top: 1px solid #333; text-align: center;">
-                        <p style="margin: 0; color: #666; font-size: 12px;">
+                      <td style="margin-top: 30px; border-top: 1px solid #333333; padding-top: 20px; text-align: center;">
+                        <p style="margin: 0; color: #666666; font-size: 12px;">
                           REMAPPRO Admin Notification
                         </p>
                       </td>
@@ -453,11 +456,11 @@ serve(async (req) => {
         } else {
           // Use explicit SERVICE_ROLE_KEY and FUNCTION_URL (mirroring admin notification pattern)
           const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-          const FUNCTION_URL = `${supabaseUrl}/functions/v1/send-order-confirmation`;
+          const FUNCTION_URL = `${supabaseUrl}/functions/v1/order-confirmation`;
           
           console.log("CRITICAL: Executing customer confirmation via Service Role Key for Order:", confirmedOrderId);
           
-          // Direct fetch to send-order-confirmation function (NOT using supabase.functions.invoke)
+          // Direct fetch to order-confirmation function (NOT using supabase.functions.invoke)
           // Mirror the exact implementation used for Admin notification
           const confirmationRes = await fetch(FUNCTION_URL, {
             method: "POST",

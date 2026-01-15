@@ -713,7 +713,7 @@ serve(async (req) => {
                       </h2>
                       
                       <!-- Order ID Banner -->
-                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border-radius: 5px; border: 1px solid #00f2ff; margin-bottom: 30px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 30px;">
                         <tr>
                           <td style="padding: 25px; text-align: center;">
                             <p style="margin: 0 0 8px; color: #888888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Your Order ID</p>
@@ -726,22 +726,22 @@ serve(async (req) => {
                       <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px;">
                         <tr>
                           <td style="vertical-align: top; width: 50%; padding-right: 10px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px;">
                               <tr>
                                 <td style="padding: 20px;">
                                   <p style="margin: 0 0 8px; color: #888888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Customer</p>
-                                  <p style="margin: 0 0 6px; color: #e5e5e5; font-size: 16px; font-weight: 600;">${customerName || 'Customer'}</p>
+                                  <p style="margin: 0 0 6px; color: #00f2ff; font-size: 16px; font-weight: 600;">${customerName || 'Customer'}</p>
                                   <p style="margin: 0; color: #888888; font-size: 14px;">${customerEmail}</p>
                                 </td>
                               </tr>
                             </table>
                           </td>
                           <td style="vertical-align: top; width: 50%; padding-left: 10px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #00f2ff; border-radius: 5px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px;">
                               <tr>
                                 <td style="padding: 20px;">
                                   <p style="margin: 0 0 8px; color: #00f2ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Invoice</p>
-                                  <p style="margin: 0 0 6px; color: #e5e5e5; font-size: 16px; font-weight: 600;">${invoiceNumber}</p>
+                                  <p style="margin: 0 0 6px; color: #00f2ff; font-size: 16px; font-weight: 600;">${invoiceNumber}</p>
                                   <p style="margin: 0; color: #00f2ff; font-size: 22px; font-weight: 700;">€${totalAmount.toFixed(2)}</p>
                                 </td>
                               </tr>
@@ -752,7 +752,7 @@ serve(async (req) => {
                       
                       ${carInfo ? `
                       <!-- Vehicle Details -->
-                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px; margin-bottom: 25px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 25px;">
                         <tr>
                           <td style="padding: 20px;">
                             <p style="margin: 0 0 15px; color: #00f2ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">
@@ -761,15 +761,15 @@ serve(async (req) => {
                             <table width="100%" cellpadding="0" cellspacing="0">
                               <tr>
                                 <td style="color: #888888; font-size: 12px; padding: 4px 0;">Brand:</td>
-                                <td style="color: #e5e5e5; font-size: 12px; padding: 4px 0; font-weight: 500;">${brand || '-'}</td>
+                                <td style="color: #00f2ff; font-size: 12px; padding: 4px 0; font-weight: 500;">${brand || '-'}</td>
                                 <td style="color: #888888; font-size: 12px; padding: 4px 0; padding-left: 20px;">Model:</td>
-                                <td style="color: #e5e5e5; font-size: 12px; padding: 4px 0; font-weight: 500;">${model || '-'}</td>
+                                <td style="color: #00f2ff; font-size: 12px; padding: 4px 0; font-weight: 500;">${model || '-'}</td>
                               </tr>
                               <tr>
                                 <td style="color: #888888; font-size: 12px; padding: 4px 0;">Year:</td>
-                                <td style="color: #e5e5e5; font-size: 12px; padding: 4px 0; font-weight: 500;">${year || '-'}</td>
+                                <td style="color: #00f2ff; font-size: 12px; padding: 4px 0; font-weight: 500;">${year || '-'}</td>
                                 <td style="color: #888888; font-size: 12px; padding: 4px 0; padding-left: 20px;">Fuel:</td>
-                                <td style="color: #e5e5e5; font-size: 12px; padding: 4px 0; font-weight: 500;">${fuelType || '-'}</td>
+                                <td style="color: #00f2ff; font-size: 12px; padding: 4px 0; font-weight: 500;">${fuelType || '-'}</td>
                               </tr>
                               ${ecuType ? `
                               <tr>
@@ -790,7 +790,7 @@ serve(async (req) => {
                       ` : ''}
                       
                       <!-- Services Table -->
-                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px; margin-bottom: 25px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 25px;">
                         <tr>
                           <td style="padding: 20px;">
                             <p style="margin: 0 0 15px; color: #00f2ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">
@@ -798,27 +798,27 @@ serve(async (req) => {
                             </p>
                             <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse: collapse;">
                               <thead>
-                                <tr style="background-color: #2a2a2a;">
-                                  <th style="text-align: left; color: #ffffff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a3a3a;">Item</th>
-                                  <th style="text-align: center; color: #ffffff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a3a3a;">Qty</th>
-                                  <th style="text-align: right; color: #ffffff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a3a3a;">Unit Price</th>
-                                  <th style="text-align: right; color: #ffffff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a3a3a;">Total</th>
+                                <tr style="background-color: #2a4a4f;">
+                                  <th style="text-align: left; color: #00f2ff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a5a5f;">Item</th>
+                                  <th style="text-align: center; color: #00f2ff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a5a5f;">Qty</th>
+                                  <th style="text-align: right; color: #00f2ff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a5a5f;">Unit Price</th>
+                                  <th style="text-align: right; color: #00f2ff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a5a5f;">Total</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 ${mappedItems.map((item, index) => {
                                   // Format item name with word-wrap for long service names
                                   return `
-                                    <tr style="${index % 2 === 0 ? 'background-color: #1a1a1a;' : 'background-color: #222222;'}">
-                                      <td style="color: #e5e5e5; font-size: 12px; padding: 10px; border-bottom: 1px solid #3a3a3a; word-wrap: break-word; max-width: 200px;">${item.name}</td>
-                                      <td style="text-align: center; color: #888888; font-size: 12px; padding: 10px; border-bottom: 1px solid #3a3a3a;">${item.qty}</td>
-                                      <td style="text-align: right; color: #888888; font-size: 12px; padding: 10px; border-bottom: 1px solid #3a3a3a;">€${item.unitPrice.toFixed(2)}</td>
-                                      <td style="text-align: right; color: #00f2ff; font-size: 12px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a3a3a;">€${item.total.toFixed(2)}</td>
+                                    <tr style="${index % 2 === 0 ? 'background-color: #1a2e31;' : 'background-color: #1f3a3f;'}">
+                                      <td style="color: #00f2ff; font-size: 12px; padding: 10px; border-bottom: 1px solid #3a5a5f; word-wrap: break-word; max-width: 200px;">${item.name}</td>
+                                      <td style="text-align: center; color: #00f2ff; font-size: 12px; padding: 10px; border-bottom: 1px solid #3a5a5f;">${item.qty}</td>
+                                      <td style="text-align: right; color: #00f2ff; font-size: 12px; padding: 10px; border-bottom: 1px solid #3a5a5f;">€${item.unitPrice.toFixed(2)}</td>
+                                      <td style="text-align: right; color: #00f2ff; font-size: 12px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a5a5f;">€${item.total.toFixed(2)}</td>
                                     </tr>
                                   `;
                                 }).join('')}
                                 <tr>
-                                  <td colspan="3" style="text-align: right; color: #e5e5e5; font-size: 13px; font-weight: 600; padding: 15px 10px 10px; border-top: 2px solid #00f2ff;">Total Amount:</td>
+                                  <td colspan="3" style="text-align: right; color: #00f2ff; font-size: 13px; font-weight: 600; padding: 15px 10px 10px; border-top: 2px solid #00f2ff;">Total Amount:</td>
                                   <td style="text-align: right; color: #00f2ff; font-size: 16px; font-weight: 700; padding: 15px 10px 10px; border-top: 2px solid #00f2ff;">€${mappedItems.reduce((sum, item) => sum + item.total, 0).toFixed(2)}</td>
                                 </tr>
                               </tbody>
@@ -828,13 +828,13 @@ serve(async (req) => {
                       </table>
                       
                       <!-- What's Next -->
-                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px; margin-bottom: 30px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 30px;">
                         <tr>
                           <td style="padding: 25px; text-align: center;">
-                            <p style="margin: 0 0 12px; color: #e5e5e5; font-size: 15px; font-weight: 600;">
+                            <p style="margin: 0 0 12px; color: #00f2ff; font-size: 15px; font-weight: 600;">
                               What happens next?
                             </p>
-                            <p style="margin: 0; color: #888888; font-size: 14px; line-height: 1.7;">
+                            <p style="margin: 0; color: #00f2ff; font-size: 14px; line-height: 1.7;">
                               Our engineers are now processing your file. You will receive<br>
                               an email notification when your optimized file is ready for download.
                             </p>
