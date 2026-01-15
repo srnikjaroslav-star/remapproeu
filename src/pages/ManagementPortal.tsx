@@ -786,13 +786,13 @@ const ManagementPortal = () => {
       case 'paid':
         return 'status-paid';
       case 'pending':
-        return 'bg-black text-orange-500 border border-orange-500/50';
+        return 'status-pending';
       case 'processing':
         return 'status-processing';
       case 'completed':
         return 'status-completed';
       default:
-        return 'bg-black text-orange-500 border border-orange-500/50';
+        return 'status-pending';
     }
   };
 
@@ -1143,7 +1143,7 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                             ? 'bg-primary/20 text-primary border border-primary/30'
                             : detailOrder.status === 'completed'
                             ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                            : 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                            : 'bg-black text-orange-500 border border-orange-500/50'
                         }`}>
                           {detailOrder.status === 'pending' ? 'Pending' : detailOrder.status === 'processing' ? 'Processing' : detailOrder.status === 'completed' ? 'Completed' : detailOrder.status}
                         </span>
