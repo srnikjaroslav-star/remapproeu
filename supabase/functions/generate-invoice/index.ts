@@ -5,12 +5,13 @@ import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const SENDER = "REMAPPRO <info@remappro.eu>";
 
-// Supplier Details - Hardcoded pre REMAPPRO
+// Supplier Details - Hardcoded for REMAPPRO
+// All text in English, no special characters (basic Latin only)
 const SUPPLIER = {
   brandName: "REMAPPRO",
-  legalEntity: "Jaroslav Srník",
-  address: "Janka Kráľa 29",
-  city: "990 01 Veľký Krtíš",
+  legalEntity: "Jaroslav Srnik",
+  address: "Janka Krala 29",
+  city: "990 01 Velky Krtis",
   country: "Slovakia",
   ico: "41281471",
   dic: "1041196607",
@@ -25,6 +26,7 @@ const corsHeaders = {
 interface InvoiceItem {
   name: string;
   price: number;
+  quantity?: number; // Optional quantity, defaults to 1
 }
 
 interface InvoiceRequest {
@@ -61,9 +63,19 @@ function generateInvoicePDF(data: {
   carInfo?: string;
   vin?: string;
 }): string {
-  const doc = new jsPDF();
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4',
+    compress: true
+  });
+  
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
+  
+  // Margins: 20mm from each side
+  const margin = 20;
+  const contentWidth = pageWidth - (margin * 2);
   
   // Colors - Professional White Background Design
   const textBlack = [0, 0, 0]; // #000000 - Black text
@@ -72,149 +84,179 @@ function generateInvoicePDF(data: {
   const lineGray = [220, 220, 220]; // #dcdcdc - Light gray lines
   const bgWhite = [255, 255, 255]; // #ffffff - White background
   const bgLightGray = [245, 245, 245]; // #f5f5f5 - Light gray background for table rows
+  const bgDarkGray = [80, 80, 80]; // #505050 - Dark gray for table header
+  const textWhite = [255, 255, 255]; // #ffffff - White text
+  const cyanBlue = [0, 255, 255]; // #00ffff - Cyan blue for PRO
+  const successGreen = [0, 150, 0]; // #009600 - Green for PAID IN FULL
   
   // White background for entire page
   doc.setFillColor(...bgWhite);
   doc.rect(0, 0, pageWidth, pageHeight, 'F');
   
   // Header section
-  let yPos = 25;
+  let yPos = margin;
   
-  // Logo placeholder (left) - Rectangle for logo image
-  doc.setDrawColor(...lineGray);
-  doc.setLineWidth(0.5);
-  doc.rect(20, yPos - 10, 40, 20, 'S'); // Placeholder box for logo
-  doc.setTextColor(...textLightGray);
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.text("LOGO", 40, yPos + 2, { align: "center" });
+  // Logo - REMAPPRO (one word, no space)
+  // REMAP in black (#000000), bold
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...textBlack);
+  const remapWidth = doc.getTextWidth("REMAP");
+  doc.text("REMAP", margin, yPos);
   
-  // Invoice title (right)
+  // PRO in cyan (#00ffff), bold, no space
+  doc.setTextColor(...cyanBlue);
+  doc.text("PRO", margin + remapWidth, yPos);
+  
+  // Right-aligned block: Invoice title, number, order, date
+  const rightEdge = pageWidth - margin;
+  const rightBlockY = yPos;
+  
+  // Invoice title (right) - INVOICE
   doc.setTextColor(...textBlack);
   doc.setFontSize(32);
   doc.setFont("helvetica", "bold");
-  doc.text("FAKTÚRA", pageWidth - 20, yPos, { align: "right" });
+  doc.text("INVOICE", rightEdge, rightBlockY, { align: "right" });
   
   // Invoice number (right, below title)
   doc.setTextColor(...textGray);
   doc.setFontSize(12);
   doc.setFont("helvetica", "normal");
-  doc.text(`Číslo faktúry: ${data.invoiceNumber}`, pageWidth - 20, yPos + 10, { align: "right" });
+  doc.text(`Invoice No.: ${data.invoiceNumber}`, rightEdge, rightBlockY + 10, { align: "right" });
   
   // Order number (right, below invoice number)
   doc.setFontSize(10);
-  doc.text(`Objednávka: ${data.orderNumber}`, pageWidth - 20, yPos + 17, { align: "right" });
+  doc.text(`Order: ${data.orderNumber}`, rightEdge, rightBlockY + 17, { align: "right" });
   
-  // Date
-  const currentDate = new Date().toLocaleDateString('sk-SK', {
+  // Date - aligned to right edge
+  const currentDate = new Date().toLocaleDateString('en-US', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric'
   });
-  doc.text(`Dátum: ${currentDate}`, pageWidth - 20, yPos + 24, { align: "right" });
+  doc.text(`Date: ${currentDate}`, rightEdge, rightBlockY + 24, { align: "right" });
   
   // Two column layout for addresses
-  yPos = 70;
+  yPos = margin + 45;
   
-  // Supplier section (left) - "Dodávateľ"
+  // Supplier section (left) - "Supplier"
   doc.setTextColor(...textBlack);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text("Dodávateľ", 20, yPos);
+  doc.text("Supplier", margin, yPos);
   
   // Light gray line under header
   doc.setDrawColor(...lineGray);
   doc.setLineWidth(0.5);
-  doc.line(20, yPos + 2, 95, yPos + 2);
+  doc.line(margin, yPos + 2, margin + 75, yPos + 2);
   
   doc.setTextColor(...textBlack);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text(SUPPLIER.brandName, 20, yPos + 12);
+  doc.text(SUPPLIER.brandName, margin, yPos + 12);
   
   doc.setTextColor(...textGray);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(SUPPLIER.legalEntity, 20, yPos + 20);
-  doc.text(SUPPLIER.address, 20, yPos + 28);
-  doc.text(SUPPLIER.city, 20, yPos + 36);
-  doc.text(SUPPLIER.country, 20, yPos + 44);
-  doc.text(`IČO: ${SUPPLIER.ico}`, 20, yPos + 52);
-  doc.text(`DIČ: ${SUPPLIER.dic}`, 20, yPos + 60);
+  doc.text(SUPPLIER.legalEntity, margin, yPos + 20);
+  doc.text(SUPPLIER.address, margin, yPos + 28);
+  doc.text(SUPPLIER.city, margin, yPos + 36);
+  doc.text(SUPPLIER.country, margin, yPos + 44);
+  doc.text(`Reg. No.: ${SUPPLIER.ico}`, margin, yPos + 52);
+  doc.text(`Tax ID: ${SUPPLIER.dic}`, margin, yPos + 60);
   
-  // Customer section (right) - "Odberateľ"
+  // Customer section (right) - "Customer"
+  const customerX = margin + 90;
   doc.setTextColor(...textBlack);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text("Odberateľ", 110, yPos);
+  doc.text("Customer", customerX, yPos);
   
   // Light gray line under header
   doc.setDrawColor(...lineGray);
   doc.setLineWidth(0.5);
-  doc.line(110, yPos + 2, pageWidth - 20, yPos + 2);
+  doc.line(customerX, yPos + 2, rightEdge, yPos + 2);
   
   doc.setTextColor(...textBlack);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text(data.customerName || "Zákazník", 110, yPos + 12);
+  doc.text(data.customerName || "Customer", customerX, yPos + 12);
   
   doc.setTextColor(...textGray);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(data.customerEmail, 110, yPos + 20);
+  doc.text(data.customerEmail, customerX, yPos + 20);
   
   if (data.carInfo) {
-    doc.text(`Vozidlo: ${data.carInfo}`, 110, yPos + 28);
+    doc.text(`Vehicle: ${data.carInfo}`, customerX, yPos + 28);
   }
   
   if (data.vin) {
-    doc.text(`VIN: ${data.vin}`, 110, yPos + 36);
+    doc.text(`VIN: ${data.vin}`, customerX, yPos + 36);
   }
   
-  // Items table
-  yPos = 150;
+  // Items table with 4 columns: Item | Qty | Unit Price | Total
+  yPos = margin + 125;
   
-  // Table header
-  doc.setFillColor(...bgLightGray);
-  doc.rect(20, yPos - 8, pageWidth - 40, 12, 'F');
+  // Table header - Dark gray with white text
+  doc.setFillColor(...bgDarkGray);
+  doc.rect(margin, yPos - 8, contentWidth, 12, 'F');
   
   // Header border
-  doc.setDrawColor(...lineGray);
+  doc.setDrawColor(...bgDarkGray);
   doc.setLineWidth(0.5);
-  doc.rect(20, yPos - 8, pageWidth - 40, 12, 'S');
+  doc.rect(margin, yPos - 8, contentWidth, 12, 'S');
   
-  doc.setTextColor(...textBlack);
+  // Column widths (4 columns)
+  const col1Width = contentWidth * 0.40; // Item - 40%
+  const col2Width = contentWidth * 0.15; // Qty - 15%
+  const col3Width = contentWidth * 0.22; // Unit Price - 22%
+  const col4Width = contentWidth * 0.23; // Total - 23%
+  
+  const col1X = margin + 5;
+  const col2X = col1X + col1Width;
+  const col3X = col2X + col2Width;
+  const col4X = col3X + col3Width;
+  
+  doc.setTextColor(...textWhite);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text("Položka", 25, yPos);
-  doc.text("Cena", pageWidth - 25, yPos, { align: "right" });
+  doc.text("Item", col1X, yPos);
+  doc.text("Qty", col2X, yPos);
+  doc.text("Unit Price", col3X, yPos);
+  doc.text("Total", col4X, yPos, { align: "right" });
   
   yPos += 12;
   
   // Table items
   for (let i = 0; i < data.items.length; i++) {
     const item = data.items[i];
+    const quantity = item.quantity || 1; // Default quantity is 1
+    const unitPrice = item.price;
+    const totalPrice = unitPrice * quantity;
     
-    // Alternating row background
+    // Alternating row background - very light gray for better readability
     if (i % 2 === 0) {
       doc.setFillColor(...bgWhite);
     } else {
       doc.setFillColor(...bgLightGray);
     }
-    doc.rect(20, yPos - 6, pageWidth - 40, 12, 'F');
+    doc.rect(margin, yPos - 6, contentWidth, 12, 'F');
     
     // Row border
     doc.setDrawColor(...lineGray);
     doc.setLineWidth(0.5);
-    doc.line(20, yPos - 6, pageWidth - 20, yPos - 6);
+    doc.line(margin, yPos - 6, rightEdge, yPos - 6);
     
     doc.setTextColor(...textBlack);
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
-    doc.text(item.name, 25, yPos + 2);
+    doc.text(item.name, col1X, yPos + 2);
+    doc.text(quantity.toString(), col2X, yPos + 2);
+    doc.text(`€${unitPrice.toFixed(2)}`, col3X, yPos + 2);
     
     doc.setFont("helvetica", "bold");
-    doc.text(`€${item.price.toFixed(2)}`, pageWidth - 25, yPos + 2, { align: "right" });
+    doc.text(`€${totalPrice.toFixed(2)}`, col4X, yPos + 2, { align: "right" });
     
     yPos += 12;
   }
@@ -222,59 +264,53 @@ function generateInvoicePDF(data: {
   // Bottom border of table
   doc.setDrawColor(...lineGray);
   doc.setLineWidth(0.5);
-  doc.line(20, yPos - 6, pageWidth - 20, yPos - 6);
+  doc.line(margin, yPos - 6, rightEdge, yPos - 6);
   
   // Summary section (right aligned)
   yPos += 15;
   
   const summaryWidth = 80;
-  const summaryX = pageWidth - summaryWidth - 20;
+  const summaryX = rightEdge - summaryWidth;
   
-  // "Celkom k úhrade" label
+  // "Total Amount" label
   doc.setTextColor(...textGray);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  doc.text("Celkom k úhrade:", summaryX, yPos, { align: "right" });
+  doc.text("Total Amount:", summaryX, yPos, { align: "right" });
   
   // Total amount
   doc.setTextColor(...textBlack);
   doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text(`€${data.totalAmount.toFixed(2)}`, pageWidth - 20, yPos + 8, { align: "right" });
+  doc.text(`€${data.totalAmount.toFixed(2)}`, rightEdge, yPos + 8, { align: "right" });
   
-  // "ZAPLATENÉ" status
+  // "PAID IN FULL" status - Green color for customer reassurance
   yPos += 20;
-  doc.setTextColor(...textBlack);
-  doc.setFontSize(14);
+  doc.setTextColor(...successGreen);
+  doc.setFontSize(16);
   doc.setFont("helvetica", "bold");
-  doc.text("ZAPLATENÉ", pageWidth - 20, yPos, { align: "right" });
+  doc.text("PAID IN FULL", rightEdge, yPos, { align: "right" });
   
   // Payment date
   doc.setTextColor(...textGray);
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(`Platba prijatá: ${currentDate}`, pageWidth - 20, yPos + 8, { align: "right" });
+  doc.text(`Payment received: ${currentDate}`, rightEdge, yPos + 8, { align: "right" });
   
-  // Footer section
-  const footerY = pageHeight - 40;
+  // Footer section - Single line with vertical separators (|)
+  const footerY = pageHeight - margin - 10;
   
   // Light gray footer line
   doc.setDrawColor(...lineGray);
   doc.setLineWidth(0.5);
-  doc.line(20, footerY, pageWidth - 20, footerY);
+  doc.line(margin, footerY, rightEdge, footerY);
   
-  // Company details in footer
+  // Company details in footer - Single line separated by vertical bars
   doc.setTextColor(...textGray);
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.text(`${SUPPLIER.brandName}`, pageWidth / 2, footerY + 8, { align: "center" });
-  doc.text(`${SUPPLIER.address}, ${SUPPLIER.city}, ${SUPPLIER.country}`, pageWidth / 2, footerY + 15, { align: "center" });
-  doc.text(`IČO: ${SUPPLIER.ico}, DIČ: ${SUPPLIER.dic}`, pageWidth / 2, footerY + 22, { align: "center" });
-  
-  // Copyright
-  doc.setTextColor(...textLightGray);
   doc.setFontSize(7);
-  doc.text(`© ${new Date().getFullYear()} ${SUPPLIER.brandName}. All rights reserved.`, pageWidth / 2, footerY + 30, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  const footerText = `${SUPPLIER.brandName} | ${SUPPLIER.address}, ${SUPPLIER.city}, ${SUPPLIER.country} | Reg. No.: ${SUPPLIER.ico} | Tax ID: ${SUPPLIER.dic}`;
+  doc.text(footerText, pageWidth / 2, footerY + 8, { align: "center" });
   
   // Return as base64
   return doc.output('datauristring').split(',')[1];
@@ -441,8 +477,11 @@ serve(async (req) => {
         <!DOCTYPE html>
         <html>
         <head>
-          <meta charset="utf-8">
+          <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
         </head>
         <body style="margin: 0; padding: 0; background-color: #000000; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
           <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #000000; padding: 40px 20px;">
