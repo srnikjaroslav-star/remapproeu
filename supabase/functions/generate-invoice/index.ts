@@ -383,10 +383,12 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Upload PDF to storage - bucket 'invoices'
+    // STEP 1: Upload PDF to storage FIRST - bucket 'invoices'
+    // File name: invoice-${orderId}.pdf
     const pdfBuffer = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
-    const fileName = `${invoiceNumber}.pdf`;
+    const fileName = `invoice-${orderId}.pdf`;
     
+    console.log("Uploading invoice PDF to storage:", fileName);
     const { error: uploadError } = await supabase.storage
       .from('invoices')
       .upload(fileName, pdfBuffer, {
@@ -399,15 +401,17 @@ serve(async (req) => {
       throw new Error(`Failed to upload invoice PDF: ${uploadError.message}`);
     }
     
+    console.log("PDF uploaded successfully to invoices bucket");
+    
     // Get public URL
     const { data: urlData } = supabase.storage
       .from('invoices')
       .getPublicUrl(fileName);
     
     const invoiceUrl = urlData?.publicUrl || null;
-    console.log("Invoice URL:", invoiceUrl);
+    console.log("Invoice public URL:", invoiceUrl);
     
-    // Update order with invoice info
+    // STEP 2: Save invoice URL to database
     const { error: updateError } = await supabase
       .from('orders')
       .update({
@@ -418,6 +422,9 @@ serve(async (req) => {
     
     if (updateError) {
       console.error("Order update error:", updateError);
+      // Non-fatal - continue even if DB update fails
+    } else {
+      console.log("Invoice URL saved to orders table");
     }
     
     // Save to invoices table for accounting
@@ -439,12 +446,14 @@ serve(async (req) => {
       console.error("Invoice table insert error:", invoiceInsertError);
     }
     
-    // Send email with PDF attachment via Resend
+    // STEP 3: Send email with PDF attachment via Resend (separate try-catch, non-blocking)
+    // If Resend fails (e.g., 403), function continues and returns success because PDF is already in Storage
     if (RESEND_API_KEY) {
-      const trackingLink = `${SITE_URL}/track?id=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(customerEmail)}`;
-      const carInfo = brand && model ? `${brand} ${model}` : '';
-      
-      const emailHtml = `
+      try {
+        const trackingLink = `${SITE_URL}/track?id=${encodeURIComponent(orderNumber)}&email=${encodeURIComponent(customerEmail)}`;
+        const carInfo = brand && model ? `${brand} ${model}` : '';
+        
+        const emailHtml = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -642,14 +651,31 @@ serve(async (req) => {
       });
       
       const emailResult = await emailRes.text();
-      console.log("Invoice email sent:", emailRes.ok, emailResult);
+      
+      if (!emailRes.ok) {
+        // If Resend fails (e.g., 403), log but continue - PDF is already in Storage
+        if (emailRes.status === 403) {
+          console.warn("Resend API returned 403 (forbidden) - invoice PDF is saved in Storage, continuing...");
+        } else {
+          console.error("Resend API error:", emailRes.status, emailResult);
+        }
+      } else {
+        console.log("Invoice email sent successfully via Resend");
+      }
+      } catch (resendError: any) {
+        // Resend error is non-fatal - PDF is already in Storage and URL is saved to DB
+        console.error("Resend email sending failed (non-fatal):", resendError);
+        console.log("Invoice PDF is saved in Storage, function will return success");
+      }
     }
     
+    // Return success - PDF is in Storage and URL is in DB, even if email failed
     return new Response(
       JSON.stringify({
         success: true,
         invoiceNumber,
         invoiceUrl,
+        message: "Invoice generated and saved successfully",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
