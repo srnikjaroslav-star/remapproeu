@@ -252,19 +252,8 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  /* Pending: Orange (#f97316) */
-  .status-pending {
-    background-color: hsl(0 0% 2%);
-    color: hsl(25 95% 53%);
-    border: 2px solid hsl(25 95% 53%);
-    box-shadow: 0 0 8px hsla(25, 95%, 53%, 0.3);
-  }
-
-  .status-pending:hover,
-  .status-pending:focus {
-    box-shadow: 0 0 15px hsla(25, 95%, 53%, 0.5);
-    outline: none;
-  }
+  /* Pending: Orange - Using Tailwind classes bg-orange-500/20 text-orange-400 border border-orange-500/50 */
+  /* CSS class removed - using inline Tailwind classes instead */
 
   /* Processing: Neon Cyan (#00f2ff) */
   .status-processing {

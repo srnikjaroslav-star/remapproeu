@@ -784,15 +784,15 @@ const ManagementPortal = () => {
   const getStatusClass = (status: string) => {
     switch (status) {
       case 'paid':
-        return 'status-paid';
+        return 'bg-orange-500/20 text-orange-400 border border-orange-500/50';
       case 'pending':
-        return 'status-pending';
+        return 'bg-orange-500/20 text-orange-400 border border-orange-500/50';
       case 'processing':
         return 'status-processing';
       case 'completed':
         return 'status-completed';
       default:
-        return 'status-pending';
+        return 'bg-orange-500/20 text-orange-400 border border-orange-500/50';
     }
   };
 
@@ -1138,12 +1138,12 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                         <p className="text-sm text-muted-foreground">Status</p>
                         <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${
                           detailOrder.status === 'pending' 
-                            ? 'bg-black text-orange-500 border border-orange-500/50'
+                            ? 'bg-orange-500/20 text-orange-400 border border-orange-500/50'
                             : detailOrder.status === 'processing'
                             ? 'bg-primary/20 text-primary border border-primary/30'
                             : detailOrder.status === 'completed'
                             ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                            : 'bg-black text-orange-500 border border-orange-500/50'
+                            : 'bg-orange-500/20 text-orange-400 border border-orange-500/50'
                         }`}>
                           {detailOrder.status === 'pending' ? 'Pending' : detailOrder.status === 'processing' ? 'Processing' : detailOrder.status === 'completed' ? 'Completed' : detailOrder.status}
                         </span>
