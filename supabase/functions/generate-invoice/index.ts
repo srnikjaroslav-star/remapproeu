@@ -684,22 +684,22 @@ serve(async (req) => {
           <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
           <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
         </head>
-        <body style="margin: 0; padding: 0; background-color: #000000; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
-          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #000000; padding: 40px 20px;">
+        <body style="margin: 0; padding: 20px; background-color: #0a0a0a; color: #ffffff; font-family: sans-serif;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a;">
             <tr>
               <td align="center">
-                <table width="600" cellpadding="0" cellspacing="0" style="background-color: #000000; border-radius: 0;">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #111111; border: 1px solid #333333; padding: 40px; border-radius: 8px;">
                   
                   <!-- Header with Logo -->
                   <tr>
-                    <td style="padding: 50px 40px 40px; text-align: center; border-bottom: 2px solid #00d4ff;">
-                      <h1 style="margin: 0; font-size: 36px; font-weight: 800; color: #ffffff; letter-spacing: 3px;">
-                        <span style="color: #ffffff;">REMAP</span><span style="color: #00d4ff;">PRO</span>
+                    <td style="padding: 50px 40px 40px; text-align: center; border-bottom: 2px solid #00f2ff;">
+                      <h1 style="margin: 0; font-size: 36px; font-weight: 800; letter-spacing: 3px;">
+                        <span style="color: #ffffff;">REMAP</span><span style="color: #00f2ff;">PRO</span>
                       </h1>
-                      <p style="margin: 12px 0 0; color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">
+                      <p style="margin: 12px 0 0; color: #888888; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">
                         Professional ECU Tuning
                       </p>
-                      <p style="margin: 15px 0 0; color: #00d4ff; font-size: 14px; font-weight: 600;">
+                      <p style="margin: 15px 0 0; color: #00f2ff; font-size: 14px; font-weight: 600;">
                         ✅ Payment Confirmed
                       </p>
                     </td>
@@ -708,16 +708,16 @@ serve(async (req) => {
                   <!-- Main Content -->
                   <tr>
                     <td style="padding: 50px 40px;">
-                      <h2 style="margin: 0 0 25px; color: #ffffff; font-size: 28px; font-weight: 700; line-height: 1.2;">
+                      <h2 style="margin: 0 0 25px; color: #e5e5e5; font-size: 28px; font-weight: 700; line-height: 1.2;">
                         Thank you for your order!
                       </h2>
                       
                       <!-- Order ID Banner -->
-                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; border-radius: 0; border: 1px solid #00d4ff; margin-bottom: 30px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border-radius: 5px; border: 1px solid #00f2ff; margin-bottom: 30px;">
                         <tr>
                           <td style="padding: 25px; text-align: center;">
-                            <p style="margin: 0 0 8px; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Your Order ID</p>
-                            <p style="margin: 0; color: #00d4ff; font-size: 28px; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 2px;">${orderNumber}</p>
+                            <p style="margin: 0 0 8px; color: #888888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Your Order ID</p>
+                            <p style="margin: 0; color: #00f2ff; font-size: 28px; font-weight: 700; font-family: 'Courier New', monospace; letter-spacing: 2px;">${orderNumber}</p>
                           </td>
                         </tr>
                       </table>
@@ -726,23 +726,23 @@ serve(async (req) => {
                       <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px;">
                         <tr>
                           <td style="vertical-align: top; width: 50%; padding-right: 10px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 0;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px;">
                               <tr>
                                 <td style="padding: 20px;">
-                                  <p style="margin: 0 0 8px; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Customer</p>
-                                  <p style="margin: 0 0 6px; color: #ffffff; font-size: 16px; font-weight: 600;">${customerName || 'Customer'}</p>
-                                  <p style="margin: 0; color: #888; font-size: 14px;">${customerEmail}</p>
+                                  <p style="margin: 0 0 8px; color: #888888; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Customer</p>
+                                  <p style="margin: 0 0 6px; color: #e5e5e5; font-size: 16px; font-weight: 600;">${customerName || 'Customer'}</p>
+                                  <p style="margin: 0; color: #888888; font-size: 14px;">${customerEmail}</p>
                                 </td>
                               </tr>
                             </table>
                           </td>
                           <td style="vertical-align: top; width: 50%; padding-left: 10px;">
-                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; border: 1px solid #00d4ff; border-radius: 0;">
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #00f2ff; border-radius: 5px;">
                               <tr>
                                 <td style="padding: 20px;">
-                                  <p style="margin: 0 0 8px; color: #00d4ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Invoice</p>
-                                  <p style="margin: 0 0 6px; color: #ffffff; font-size: 16px; font-weight: 600;">${invoiceNumber}</p>
-                                  <p style="margin: 0; color: #00d4ff; font-size: 22px; font-weight: 700;">€${totalAmount.toFixed(2)}</p>
+                                  <p style="margin: 0 0 8px; color: #00f2ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Invoice</p>
+                                  <p style="margin: 0 0 6px; color: #e5e5e5; font-size: 16px; font-weight: 600;">${invoiceNumber}</p>
+                                  <p style="margin: 0; color: #00f2ff; font-size: 22px; font-weight: 700;">€${totalAmount.toFixed(2)}</p>
                                 </td>
                               </tr>
                             </table>
@@ -752,35 +752,35 @@ serve(async (req) => {
                       
                       ${carInfo ? `
                       <!-- Vehicle Details -->
-                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 0; margin-bottom: 25px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px; margin-bottom: 25px;">
                         <tr>
                           <td style="padding: 20px;">
-                            <p style="margin: 0 0 15px; color: #00d4ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">
+                            <p style="margin: 0 0 15px; color: #00f2ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">
                               🚗 Vehicle Details
                             </p>
                             <table width="100%" cellpadding="0" cellspacing="0">
                               <tr>
-                                <td style="color: #888; font-size: 12px; padding: 4px 0;">Brand:</td>
-                                <td style="color: #ffffff; font-size: 12px; padding: 4px 0; font-weight: 500;">${brand || '-'}</td>
-                                <td style="color: #888; font-size: 12px; padding: 4px 0; padding-left: 20px;">Model:</td>
-                                <td style="color: #ffffff; font-size: 12px; padding: 4px 0; font-weight: 500;">${model || '-'}</td>
+                                <td style="color: #888888; font-size: 12px; padding: 4px 0;">Brand:</td>
+                                <td style="color: #e5e5e5; font-size: 12px; padding: 4px 0; font-weight: 500;">${brand || '-'}</td>
+                                <td style="color: #888888; font-size: 12px; padding: 4px 0; padding-left: 20px;">Model:</td>
+                                <td style="color: #e5e5e5; font-size: 12px; padding: 4px 0; font-weight: 500;">${model || '-'}</td>
                               </tr>
                               <tr>
-                                <td style="color: #888; font-size: 12px; padding: 4px 0;">Year:</td>
-                                <td style="color: #ffffff; font-size: 12px; padding: 4px 0; font-weight: 500;">${year || '-'}</td>
-                                <td style="color: #888; font-size: 12px; padding: 4px 0; padding-left: 20px;">Fuel:</td>
-                                <td style="color: #ffffff; font-size: 12px; padding: 4px 0; font-weight: 500;">${fuelType || '-'}</td>
+                                <td style="color: #888888; font-size: 12px; padding: 4px 0;">Year:</td>
+                                <td style="color: #e5e5e5; font-size: 12px; padding: 4px 0; font-weight: 500;">${year || '-'}</td>
+                                <td style="color: #888888; font-size: 12px; padding: 4px 0; padding-left: 20px;">Fuel:</td>
+                                <td style="color: #e5e5e5; font-size: 12px; padding: 4px 0; font-weight: 500;">${fuelType || '-'}</td>
                               </tr>
                               ${ecuType ? `
                               <tr>
-                                <td style="color: #888; font-size: 12px; padding: 4px 0;">ECU:</td>
-                                <td colspan="3" style="color: #00d4ff; font-size: 12px; padding: 4px 0; font-weight: 600;">${ecuType}</td>
+                                <td style="color: #888888; font-size: 12px; padding: 4px 0;">ECU:</td>
+                                <td colspan="3" style="color: #00f2ff; font-size: 12px; padding: 4px 0; font-weight: 600;">${ecuType}</td>
                               </tr>
                               ` : ''}
                               ${vin ? `
                               <tr>
-                                <td style="color: #888; font-size: 12px; padding: 4px 0;">VIN:</td>
-                                <td colspan="3" style="color: #00d4ff; font-size: 12px; padding: 4px 0; font-weight: 600; font-family: 'Courier New', monospace;">${vin}</td>
+                                <td style="color: #888888; font-size: 12px; padding: 4px 0;">VIN:</td>
+                                <td colspan="3" style="color: #00f2ff; font-size: 12px; padding: 4px 0; font-weight: 600; font-family: 'Courier New', monospace;">${vin}</td>
                               </tr>
                               ` : ''}
                             </table>
@@ -790,36 +790,36 @@ serve(async (req) => {
                       ` : ''}
                       
                       <!-- Services Table -->
-                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 0; margin-bottom: 25px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px; margin-bottom: 25px;">
                         <tr>
                           <td style="padding: 20px;">
-                            <p style="margin: 0 0 15px; color: #00d4ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">
+                            <p style="margin: 0 0 15px; color: #00f2ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">
                               📋 Order Items
                             </p>
                             <table width="100%" cellpadding="8" cellspacing="0" style="border-collapse: collapse;">
                               <thead>
-                                <tr style="background-color: #1a1a1a;">
-                                  <th style="text-align: left; color: #ffffff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #2a2a2a;">Item</th>
-                                  <th style="text-align: center; color: #ffffff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #2a2a2a;">Qty</th>
-                                  <th style="text-align: right; color: #ffffff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #2a2a2a;">Unit Price</th>
-                                  <th style="text-align: right; color: #ffffff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #2a2a2a;">Total</th>
+                                <tr style="background-color: #2a2a2a;">
+                                  <th style="text-align: left; color: #ffffff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a3a3a;">Item</th>
+                                  <th style="text-align: center; color: #ffffff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a3a3a;">Qty</th>
+                                  <th style="text-align: right; color: #ffffff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a3a3a;">Unit Price</th>
+                                  <th style="text-align: right; color: #ffffff; font-size: 11px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a3a3a;">Total</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 ${mappedItems.map((item, index) => {
                                   // Format item name with word-wrap for long service names
                                   return `
-                                    <tr style="${index % 2 === 0 ? 'background-color: #0a0a0a;' : 'background-color: #111111;'}">
-                                      <td style="color: #ffffff; font-size: 12px; padding: 10px; border-bottom: 1px solid #2a2a2a; word-wrap: break-word; max-width: 200px;">${item.name}</td>
-                                      <td style="text-align: center; color: #888; font-size: 12px; padding: 10px; border-bottom: 1px solid #2a2a2a;">${item.qty}</td>
-                                      <td style="text-align: right; color: #888; font-size: 12px; padding: 10px; border-bottom: 1px solid #2a2a2a;">€${item.unitPrice.toFixed(2)}</td>
-                                      <td style="text-align: right; color: #00d4ff; font-size: 12px; font-weight: 600; padding: 10px; border-bottom: 1px solid #2a2a2a;">€${item.total.toFixed(2)}</td>
+                                    <tr style="${index % 2 === 0 ? 'background-color: #1a1a1a;' : 'background-color: #222222;'}">
+                                      <td style="color: #e5e5e5; font-size: 12px; padding: 10px; border-bottom: 1px solid #3a3a3a; word-wrap: break-word; max-width: 200px;">${item.name}</td>
+                                      <td style="text-align: center; color: #888888; font-size: 12px; padding: 10px; border-bottom: 1px solid #3a3a3a;">${item.qty}</td>
+                                      <td style="text-align: right; color: #888888; font-size: 12px; padding: 10px; border-bottom: 1px solid #3a3a3a;">€${item.unitPrice.toFixed(2)}</td>
+                                      <td style="text-align: right; color: #00f2ff; font-size: 12px; font-weight: 600; padding: 10px; border-bottom: 1px solid #3a3a3a;">€${item.total.toFixed(2)}</td>
                                     </tr>
                                   `;
                                 }).join('')}
                                 <tr>
-                                  <td colspan="3" style="text-align: right; color: #ffffff; font-size: 13px; font-weight: 600; padding: 15px 10px 10px; border-top: 2px solid #00d4ff;">Total Amount:</td>
-                                  <td style="text-align: right; color: #00d4ff; font-size: 16px; font-weight: 700; padding: 15px 10px 10px; border-top: 2px solid #00d4ff;">€${mappedItems.reduce((sum, item) => sum + item.total, 0).toFixed(2)}</td>
+                                  <td colspan="3" style="text-align: right; color: #e5e5e5; font-size: 13px; font-weight: 600; padding: 15px 10px 10px; border-top: 2px solid #00f2ff;">Total Amount:</td>
+                                  <td style="text-align: right; color: #00f2ff; font-size: 16px; font-weight: 700; padding: 15px 10px 10px; border-top: 2px solid #00f2ff;">€${mappedItems.reduce((sum, item) => sum + item.total, 0).toFixed(2)}</td>
                                 </tr>
                               </tbody>
                             </table>
@@ -828,13 +828,13 @@ serve(async (req) => {
                       </table>
                       
                       <!-- What's Next -->
-                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 0; margin-bottom: 30px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px; margin-bottom: 30px;">
                         <tr>
                           <td style="padding: 25px; text-align: center;">
-                            <p style="margin: 0 0 12px; color: #ffffff; font-size: 15px; font-weight: 600;">
+                            <p style="margin: 0 0 12px; color: #e5e5e5; font-size: 15px; font-weight: 600;">
                               What happens next?
                             </p>
-                            <p style="margin: 0; color: #888; font-size: 14px; line-height: 1.7;">
+                            <p style="margin: 0; color: #888888; font-size: 14px; line-height: 1.7;">
                               Our engineers are now processing your file. You will receive<br>
                               an email notification when your optimized file is ready for download.
                             </p>
@@ -848,8 +848,8 @@ serve(async (req) => {
                           <td align="center" style="padding-bottom: 15px;">
                             ${invoiceUrl ? `
                             <a href="${invoiceUrl}" 
-                               style="display: inline-block; padding: 18px 40px; background-color: #00d4ff; color: #000000; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 0; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);">
-                              📄 Stiahnuť faktúru
+                               style="background-color: #00f2ff; color: #000000; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;">
+                              📄 Download Invoice
                             </a>
                             ` : ''}
                           </td>
@@ -857,8 +857,8 @@ serve(async (req) => {
                         <tr>
                           <td align="center">
                             <a href="${trackingLink}" 
-                               style="display: inline-block; padding: 18px 40px; background-color: #00d4ff; color: #000000; font-size: 14px; font-weight: 700; text-decoration: none; border-radius: 0; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 20px rgba(0, 212, 255, 0.4);">
-                              🔍 Sledovať objednávku
+                               style="background-color: #00f2ff; color: #000000; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;">
+                              🔍 Track Order
                             </a>
                           </td>
                         </tr>
@@ -868,18 +868,15 @@ serve(async (req) => {
                   
                   <!-- Footer -->
                   <tr>
-                    <td style="padding: 40px 40px 30px; border-top: 1px solid #1a1a1a; text-align: center; background-color: #000000;">
-                      <p style="margin: 0 0 8px; color: #888; font-size: 12px; line-height: 1.6; background-color: #000000;">
-                        ${SUPPLIER.brandName} ${SUPPLIER.address}, ${SUPPLIER.city}, ${SUPPLIER.country}
+                    <td style="margin-top: 30px; border-top: 1px solid #333333; padding-top: 20px; text-align: center;">
+                      <p style="margin: 0 0 8px; color: #666666; font-size: 12px; line-height: 1.6;">
+                        REMAPPRO | Janka Krala 29, 990 01 Velky Krtis, Slovakia
                       </p>
-                      <p style="margin: 0 0 8px; color: #888; font-size: 12px; line-height: 1.6; background-color: #000000;">
-                        ICO: ${SUPPLIER.ico}, DIC: ${SUPPLIER.dic}
+                      <p style="margin: 0 0 15px; color: #666666; font-size: 12px; line-height: 1.6;">
+                        Reg. No.: 41281471 | Tax ID: 1041196607 | info@remappro.eu
                       </p>
-                      <p style="margin: 0 0 15px; color: #888; font-size: 12px; line-height: 1.6; background-color: #000000;">
-                        Email: ${SUPPLIER.email}
-                      </p>
-                      <p style="margin: 0; color: #555; font-size: 11px; background-color: #000000;">
-                        © ${new Date().getFullYear()} ${SUPPLIER.brandName}. All rights reserved.
+                      <p style="margin: 0; color: #666666; font-size: 12px;">
+                        © ${new Date().getFullYear()} REMAPPRO. All rights reserved.
                       </p>
                     </td>
                   </tr>

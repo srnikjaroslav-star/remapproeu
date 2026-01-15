@@ -61,18 +61,18 @@ const handler = async (req: Request): Promise<Response> => {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
-      <body style="margin: 0; padding: 0; background-color: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; padding: 40px 20px;">
+      <body style="margin: 0; padding: 20px; background-color: #0a0a0a; color: #ffffff; font-family: sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a;">
           <tr>
             <td align="center">
-              <table width="600" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%); border-radius: 16px; border: 1px solid #333;">
-                <!-- Header -->
+              <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #111111; border: 1px solid #333333; padding: 40px; border-radius: 8px;">
+                <!-- Header with Logo -->
                 <tr>
-                  <td style="padding: 40px 40px 20px; text-align: center; border-bottom: 1px solid #333;">
-                    <h1 style="margin: 0; font-size: 28px; font-weight: bold; color: #00d4ff;">
-                      REMAPPRO
+                  <td style="padding: 50px 40px 40px; text-align: center; border-bottom: 2px solid #00f2ff;">
+                    <h1 style="margin: 0; font-size: 36px; font-weight: 800; letter-spacing: 3px;">
+                      <span style="color: #ffffff;">REMAP</span><span style="color: #00f2ff;">PRO</span>
                     </h1>
-                    <p style="margin: 10px 0 0; color: #888; font-size: 14px;">
+                    <p style="margin: 12px 0 0; color: #888888; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">
                       Professional ECU Tuning
                     </p>
                   </td>
@@ -80,27 +80,27 @@ const handler = async (req: Request): Promise<Response> => {
                 
                 <!-- Main Content -->
                 <tr>
-                  <td style="padding: 40px;">
-                    <h2 style="margin: 0 0 20px; color: #00ffcc; font-size: 24px; text-align: center;">
+                  <td style="padding: 50px 40px;">
+                    <h2 style="margin: 0 0 20px; color: #e5e5e5; font-size: 24px; text-align: center;">
                       🏁 Your Tuning File is Ready!
                     </h2>
                     
-                    <p style="margin: 0 0 20px; color: #ffffff; font-size: 16px; line-height: 1.6;">
+                    <p style="margin: 0 0 20px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
                       Hi${customerName ? ` ${customerName}` : ''},
                     </p>
                     
-                    <p style="margin: 0 0 30px; color: #cccccc; font-size: 16px; line-height: 1.6;">
+                    <p style="margin: 0 0 30px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
                       Great news! The ECU tuning for <strong style="color: #ffffff;">${vehicleInfo}</strong> has been completed and your modified file is ready for download.
                     </p>
                     
                     <!-- Order Box -->
-                    <table width="100%" cellpadding="0" cellspacing="0" style="background: rgba(0, 212, 255, 0.1); border: 1px solid rgba(0, 212, 255, 0.3); border-radius: 12px; margin-bottom: 30px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 5px; margin-bottom: 30px;">
                       <tr>
                         <td style="padding: 20px; text-align: center;">
-                          <p style="margin: 0 0 8px; color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
+                          <p style="margin: 0 0 8px; color: #888888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">
                             Order ID
                           </p>
-                          <p style="margin: 0; color: #00d4ff; font-size: 28px; font-weight: bold; font-family: 'Monaco', 'Consolas', monospace;">
+                          <p style="margin: 0; color: #00f2ff; font-size: 28px; font-weight: bold; font-family: 'Monaco', 'Consolas', monospace;">
                             ${displayOrderId}
                           </p>
                         </td>
@@ -112,14 +112,14 @@ const handler = async (req: Request): Promise<Response> => {
                       <tr>
                         <td align="center">
                           <a href="${downloadUrl}" 
-                             style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #00d4ff 0%, #00ffcc 100%); color: #000000; font-size: 16px; font-weight: bold; text-decoration: none; border-radius: 8px; text-transform: uppercase; letter-spacing: 1px;">
+                             style="background-color: #00f2ff; color: #000000; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;">
                             Download Your File
                           </a>
                         </td>
                       </tr>
                     </table>
                     
-                    <p style="margin: 30px 0 0; color: #888; font-size: 14px; line-height: 1.6; text-align: center;">
+                    <p style="margin: 30px 0 0; color: #888888; font-size: 14px; line-height: 1.6; text-align: center;">
                       If the button doesn't work, visit our order tracking page and enter your Order ID and email address.
                     </p>
                   </td>
@@ -127,12 +127,15 @@ const handler = async (req: Request): Promise<Response> => {
                 
                 <!-- Footer -->
                 <tr>
-                  <td style="padding: 30px 40px; border-top: 1px solid #333; text-align: center;">
-                    <p style="margin: 0 0 10px; color: #888; font-size: 14px;">
-                      Thank you for choosing REMAPPRO!
+                  <td style="margin-top: 30px; border-top: 1px solid #333333; padding-top: 20px; text-align: center;">
+                    <p style="margin: 0 0 8px; color: #666666; font-size: 12px; line-height: 1.6;">
+                      REMAPPRO | Janka Krala 29, 990 01 Velky Krtis, Slovakia
                     </p>
-                    <p style="margin: 0; color: #666; font-size: 12px;">
-                      © ${new Date().getFullYear()} REMAPPRO. Professional ECU Tuning Services.
+                    <p style="margin: 0 0 15px; color: #666666; font-size: 12px; line-height: 1.6;">
+                      Reg. No.: 41281471 | Tax ID: 1041196607 | info@remappro.eu
+                    </p>
+                    <p style="margin: 0; color: #666666; font-size: 12px;">
+                      © ${new Date().getFullYear()} REMAPPRO. All rights reserved.
                     </p>
                   </td>
                 </tr>

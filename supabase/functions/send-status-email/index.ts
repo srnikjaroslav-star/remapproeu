@@ -64,39 +64,39 @@ const handler = async (req: Request): Promise<Response> => {
     let emailContent = '';
 
     if (status === 'completed') {
-      emailSubject = `Objednávka ${displayOrderId} dokončená - REMAPPRO`;
+      emailSubject = `Order ${displayOrderId} Completed - REMAPPRO`;
       emailContent = `
-        <p style="margin: 0 0 20px; color: #ffffff; font-size: 16px; line-height: 1.6;">
-          Dobrý deň,<br><br>
-          Vaša objednávka <strong style="color: #00d4ff;">${displayOrderId}</strong> v REMAPPRO pre vozidlo <strong>${vehicleInfo}</strong> bola úspešne dokončená.<br><br>
-          Tešíme sa na Vašu návštevu.
+        <p style="margin: 0 0 20px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
+          Hello,<br><br>
+          Your order <strong style="color: #00f2ff;">${displayOrderId}</strong> at REMAPPRO for vehicle <strong>${vehicleInfo}</strong> has been successfully completed.<br><br>
+          We look forward to your visit.
         </p>
       `;
     } else if (status === 'processing') {
-      emailSubject = `Objednávka ${displayOrderId} v riešení - REMAPPRO`;
+      emailSubject = `Order ${displayOrderId} In Progress - REMAPPRO`;
       emailContent = `
-        <p style="margin: 0 0 20px; color: #ffffff; font-size: 16px; line-height: 1.6;">
-          Dobrý deň,<br><br>
-          Vaša objednávka <strong style="color: #00d4ff;">${displayOrderId}</strong> v REMAPPRO pre vozidlo <strong>${vehicleInfo}</strong> je teraz v riešení.<br><br>
-          O priebehu Vás budeme informovať.
+        <p style="margin: 0 0 20px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
+          Hello,<br><br>
+          Your order <strong style="color: #00f2ff;">${displayOrderId}</strong> at REMAPPRO for vehicle <strong>${vehicleInfo}</strong> is now being processed.<br><br>
+          We will keep you informed of the progress.
         </p>
       `;
     } else if (status === 'pending') {
-      emailSubject = `Objednávka ${displayOrderId} prijatá - REMAPPRO`;
+      emailSubject = `Order ${displayOrderId} Received - REMAPPRO`;
       emailContent = `
-        <p style="margin: 0 0 20px; color: #ffffff; font-size: 16px; line-height: 1.6;">
-          Dobrý deň,<br><br>
-          Vaša objednávka <strong style="color: #00d4ff;">${displayOrderId}</strong> v REMAPPRO pre vozidlo <strong>${vehicleInfo}</strong> bola prijatá.<br><br>
-          Ďakujeme za Vašu objednávku.
+        <p style="margin: 0 0 20px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
+          Hello,<br><br>
+          Your order <strong style="color: #00f2ff;">${displayOrderId}</strong> at REMAPPRO for vehicle <strong>${vehicleInfo}</strong> has been received.<br><br>
+          Thank you for your order.
         </p>
       `;
     } else {
-      emailSubject = `Aktualizácia objednávky ${displayOrderId} - REMAPPRO`;
+      emailSubject = `Order ${displayOrderId} Status Update - REMAPPRO`;
       emailContent = `
-        <p style="margin: 0 0 20px; color: #ffffff; font-size: 16px; line-height: 1.6;">
-          Dobrý deň,<br><br>
-          Status Vašej objednávky <strong style="color: #00d4ff;">${displayOrderId}</strong> v REMAPPRO pre vozidlo <strong>${vehicleInfo}</strong> bol aktualizovaný.<br><br>
-          Nový status: <strong>${status}</strong>
+        <p style="margin: 0 0 20px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
+          Hello,<br><br>
+          The status of your order <strong style="color: #00f2ff;">${displayOrderId}</strong> at REMAPPRO for vehicle <strong>${vehicleInfo}</strong> has been updated.<br><br>
+          New status: <strong>${status}</strong>
         </p>
       `;
     }
@@ -108,18 +108,18 @@ const handler = async (req: Request): Promise<Response> => {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
-      <body style="margin: 0; padding: 0; background-color: #0a0a0a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a; padding: 40px 20px;">
+      <body style="margin: 0; padding: 20px; background-color: #0a0a0a; color: #ffffff; font-family: sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #0a0a0a;">
           <tr>
             <td align="center">
-              <table width="600" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%); border-radius: 16px; border: 1px solid #333;">
-                <!-- Header -->
+              <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background-color: #111111; border: 1px solid #333333; padding: 40px; border-radius: 8px;">
+                <!-- Header with Logo -->
                 <tr>
-                  <td style="padding: 40px 40px 20px; text-align: center; border-bottom: 1px solid #333;">
-                    <h1 style="margin: 0; font-size: 28px; font-weight: bold; color: #00d4ff;">
-                      REMAPPRO
+                  <td style="padding: 50px 40px 40px; text-align: center; border-bottom: 2px solid #00f2ff;">
+                    <h1 style="margin: 0; font-size: 36px; font-weight: 800; letter-spacing: 3px;">
+                      <span style="color: #ffffff;">REMAP</span><span style="color: #00f2ff;">PRO</span>
                     </h1>
-                    <p style="margin: 10px 0 0; color: #888; font-size: 14px;">
+                    <p style="margin: 12px 0 0; color: #888888; font-size: 12px; text-transform: uppercase; letter-spacing: 2px;">
                       Professional ECU Tuning
                     </p>
                   </td>
@@ -127,16 +127,22 @@ const handler = async (req: Request): Promise<Response> => {
                 
                 <!-- Main Content -->
                 <tr>
-                  <td style="padding: 40px;">
+                  <td style="padding: 50px 40px;">
                     ${emailContent}
                   </td>
                 </tr>
                 
                 <!-- Footer -->
                 <tr>
-                  <td style="padding: 30px 40px; border-top: 1px solid #333; text-align: center;">
-                    <p style="margin: 0; color: #666; font-size: 12px;">
-                      © ${new Date().getFullYear()} REMAPPRO. Professional ECU Tuning Services.
+                  <td style="margin-top: 30px; border-top: 1px solid #333333; padding-top: 20px; text-align: center;">
+                    <p style="margin: 0 0 8px; color: #666666; font-size: 12px; line-height: 1.6;">
+                      REMAPPRO | Janka Krala 29, 990 01 Velky Krtis, Slovakia
+                    </p>
+                    <p style="margin: 0 0 15px; color: #666666; font-size: 12px; line-height: 1.6;">
+                      Reg. No.: 41281471 | Tax ID: 1041196607 | info@remappro.eu
+                    </p>
+                    <p style="margin: 0; color: #666666; font-size: 12px;">
+                      © ${new Date().getFullYear()} REMAPPRO. All rights reserved.
                     </p>
                   </td>
                 </tr>
