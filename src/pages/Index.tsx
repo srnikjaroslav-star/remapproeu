@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, Shield, Clock, Car, ChevronRight, Gauge, Settings } from 'lucide-react';
+import { ArrowRight, Zap, Shield, Clock, Car, ChevronRight, Gauge, Settings, Cpu, ShieldCheck, Wrench } from 'lucide-react';
 import Logo from '@/components/Logo';
 import SystemStatus from '@/components/SystemStatus';
 import Footer from '@/components/Footer';
@@ -21,6 +21,9 @@ const Index = () => {
             <SystemStatus />
           </div>
           <nav className="hidden md:flex items-center gap-8">
+            <Link to="/about" className="text-muted-foreground hover:text-foreground transition-colors">
+              O nás & Služby
+            </Link>
             <Link to="/track" className="text-muted-foreground hover:text-foreground transition-colors">
               Track Order
             </Link>
@@ -151,6 +154,141 @@ const Index = () => {
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SEO Section */}
+      <section className="relative py-20 border-t border-gray-900" style={{ backgroundColor: '#080808' }}>
+        <div className="container mx-auto px-4">
+          {/* Heading */}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Profesionálny{' '}
+              <span className="text-cyan-400">Chip Tuning</span>
+              {' '}a Úpravy ECU
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Špecializujeme sa na softvérové úpravy riadiacich jednotiek pre maximálny výkon a spoľahlivosť
+            </p>
+          </div>
+
+          {/* Services Grid - 3 Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 max-w-6xl mx-auto">
+            {/* Card 1: Zvýšenie výkonu */}
+            <div className="border border-gray-900 rounded-xl p-8 hover:border-cyan-400/30 transition-all duration-300" style={{ backgroundColor: '#0a0a0a' }}>
+              <div className="w-14 h-14 rounded-xl bg-cyan-400/10 flex items-center justify-center mb-6">
+                <Gauge className="w-7 h-7 text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-4 text-foreground">Zvýšenie výkonu</h3>
+              <p className="text-muted-foreground mb-4">
+                Stage 1 & Stage 2 tuning pre výrazné zvýšenie výkonu a krútiaceho momentu.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Individuálne ladenie pre každé vozidlo</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Bezpečná optimalizácia výkonu</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Testované a validované riešenia</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Card 2: Emisné riešenia */}
+            <div className="border border-gray-900 rounded-xl p-8 hover:border-cyan-400/30 transition-all duration-300" style={{ backgroundColor: '#0a0a0a' }}>
+              <div className="w-14 h-14 rounded-xl bg-cyan-400/10 flex items-center justify-center mb-6">
+                <ShieldCheck className="w-7 h-7 text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-4 text-foreground">Emisné riešenia (Off-road)</h3>
+              <p className="text-muted-foreground mb-4">
+                Softvérové odstránenie AdBlue, DPF a EGR systémov pre motoršportové aplikácie.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>AdBlue systém off</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>DPF (Diesel Particulate Filter) úpravy</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>EGR (Exhaust Gas Recirculation) úpravy</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Card 3: Extra funkcie ECU */}
+            <div className="border border-gray-900 rounded-xl p-8 hover:border-cyan-400/30 transition-all duration-300" style={{ backgroundColor: '#0a0a0a' }}>
+              <div className="w-14 h-14 rounded-xl bg-cyan-400/10 flex items-center justify-center mb-6">
+                <Cpu className="w-7 h-7 text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-4 text-foreground">Extra funkcie ECU</h3>
+              <p className="text-muted-foreground mb-4">
+                Pokročilé funkcie pre motoršport a individuálne požiadavky.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Pop & Bangs (výfukové efekty)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Launch Control</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>V-Max odblokovanie</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Start-Stop systém off</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* SEO Text Block */}
+          <div className="max-w-4xl mx-auto mb-12">
+            <div className="border border-gray-900 rounded-xl p-8" style={{ backgroundColor: '#0a0a0a' }}>
+              <div className="prose prose-invert max-w-none">
+                <p className="text-muted-foreground leading-relaxed text-base">
+                  REMAPPRO poskytuje profesionálne služby <strong className="text-foreground">chip tuning Veľký Krtíš</strong> a špecializuje sa na 
+                  <strong className="text-foreground"> softvérové odstránenie AdBlue</strong> systémov. Naša expertíza zahŕňa komplexné 
+                  <strong className="text-foreground"> úpravy riadiacich jednotiek</strong> pre vozidlá v regióne 
+                  <strong className="text-foreground"> Lučenec</strong>, <strong className="text-foreground">Zvolen</strong> a celú strednú a južnú časť Slovenska.
+                </p>
+                <p className="text-muted-foreground leading-relaxed text-base mt-4">
+                  Každé vozidlo je jedinečné, preto pristupujeme k <strong className="text-foreground">úpravám riadiacich jednotiek</strong> individuálne. 
+                  Naša metodika zahŕňa dôkladnú analýzu pôvodného softvéru, identifikáciu optimalizačných možností a vytvorenie bezpečných, 
+                  testovaných úprav, ktoré respektujú limity motoru a zabezpečujú dlhodobú spoľahlivosť. 
+                  <strong className="text-foreground"> Chip tuning Veľký Krtíš</strong> a okolie - profesionálne riešenia pre každého zákazníka.
+                </p>
+                <p className="text-muted-foreground leading-relaxed text-base mt-4">
+                  Špecializujeme sa na <strong className="text-foreground">softvérové odstránenie AdBlue</strong>, DPF a EGR systémov pre motoršportové účely. 
+                  Naše služby zahŕňajú Stage 1 a Stage 2 tuning, pokročilé ECU funkcie ako Pop & Bangs, Launch Control a V-Max odblokovanie. 
+                  Pre zákazníkov v <strong className="text-foreground">Lučenec</strong> a <strong className="text-foreground">Zvolen</strong> poskytujeme rýchle spracovanie objednávok 
+                  s priemernou dobou dodania 2-4 hodiny.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Legal Disclaimer */}
+          <div className="max-w-4xl mx-auto text-center">
+            <p className="text-xs text-muted-foreground leading-relaxed" style={{ opacity: 0.3 }}>
+              <strong>Právne upozornenie:</strong> Úpravy emisných systémov (AdBlue, DPF, EGR) sú poskytované výlučne pre motoršportové účely 
+              a použitie na uzavretých okruhoch. Tieto úpravy nie sú vhodné pre bežné použitie na verejných komunikáciách a môžu byť v rozporu 
+              s platnou legislatívou v niektorých krajinách. Zákazník je zodpovedný za dodržiavanie všetkých platných zákonov a predpisov 
+              v súvislosti s používaním upraveného vozidla mimo verejných komunikácií.
+            </p>
           </div>
         </div>
       </section>
