@@ -15,6 +15,7 @@ import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import RefundsPage from "./pages/RefundsPage";
 import AboutPage from "./pages/AboutPage";
+import ServiceDetail from "./pages/ServiceDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,9 @@ const App = () => (
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/refunds" element={<RefundsPage />} />
+
+          {/* Service Detail Pages - Dynamic Routing */}
+          <Route path="/services/:serviceSlug" element={<ServiceDetail />} />
 
           {/* 404 - Stránka nenájdená */}
           <Route path="*" element={<NotFound />} />

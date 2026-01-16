@@ -117,15 +117,23 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 max-w-4xl mx-auto">
-            {['Stage 1 Tuning', 'DPF Removal', 'EGR Delete', 'AdBlue Off', 'TCU Tuning', 'Pop & Bang'].map((service, idx) => (
-              <div 
-                key={service}
-                className="glass-card p-4 text-center hover:border-primary/50 transition-all duration-300"
+            {[
+              { name: 'Stage 1 Tuning', slug: 'stage-1' },
+              { name: 'DPF Removal', slug: 'dpf-removal' },
+              { name: 'EGR Delete', slug: 'egr-delete' },
+              { name: 'AdBlue Off', slug: 'adblue-off' },
+              { name: 'TCU Tuning', slug: 'tcu-tuning' },
+              { name: 'Pop & Bang', slug: 'pop-bang' }
+            ].map((service, idx) => (
+              <Link
+                key={service.slug}
+                to={`/services/${service.slug}`}
+                className="glass-card p-4 text-center hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(34,211,238,0.3)] transition-all duration-300"
                 style={{ animationDelay: `${idx * 0.05}s` }}
               >
                 <Settings className="w-6 h-6 text-primary mx-auto mb-2" />
-                <p className="text-sm font-medium">{service}</p>
-              </div>
+                <p className="text-sm font-medium">{service.name}</p>
+              </Link>
             ))}
           </div>
           
