@@ -293,6 +293,138 @@ const Index = () => {
         </div>
       </section>
 
+      {/* English SEO Section */}
+      <section className="relative py-20 border-t border-gray-900" style={{ backgroundColor: '#080808' }}>
+        <div className="container mx-auto px-4">
+          {/* Heading */}
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              High-Performance{' '}
+              <span className="text-cyan-400">ECU Software Engineering</span>
+              {' '}& Chip Tuning
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Professional engine control unit remapping and software optimization for maximum performance
+            </p>
+          </div>
+
+          {/* Services Grid - 3 Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16 max-w-6xl mx-auto">
+            {/* Card 1: Performance Tuning */}
+            <div className="border border-gray-900 rounded-xl p-8 hover:border-cyan-400/30 transition-all duration-300" style={{ backgroundColor: '#0a0a0a' }}>
+              <div className="w-14 h-14 rounded-xl bg-cyan-400/10 flex items-center justify-center mb-6">
+                <Gauge className="w-7 h-7 text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-4 text-foreground">Performance Tuning</h3>
+              <p className="text-muted-foreground mb-4">
+                Stage 1, Stage 2, and custom dyno-optimized remapping for maximum torque and horsepower.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Stage 1 & Stage 2 tuning solutions</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Dyno-optimized custom remapping</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Maximum torque and horsepower gains</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Individual calibration for each vehicle</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Card 2: Emissions Solutions */}
+            <div className="border border-gray-900 rounded-xl p-8 hover:border-cyan-400/30 transition-all duration-300" style={{ backgroundColor: '#0a0a0a' }}>
+              <div className="w-14 h-14 rounded-xl bg-cyan-400/10 flex items-center justify-center mb-6">
+                <ShieldCheck className="w-7 h-7 text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-4 text-foreground">Emissions Solutions</h3>
+              <p className="text-muted-foreground mb-4">
+                Professional software recalibration for AdBlue (SCR), DPF, and EGR systems.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>AdBlue (SCR) system recalibration</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Diesel Particulate Filter software solutions</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>EGR system optimization</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span className="text-xs italic">*Motorsport use only</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Card 3: Advanced ECU Logic */}
+            <div className="border border-gray-900 rounded-xl p-8 hover:border-cyan-400/30 transition-all duration-300" style={{ backgroundColor: '#0a0a0a' }}>
+              <div className="w-14 h-14 rounded-xl bg-cyan-400/10 flex items-center justify-center mb-6">
+                <Cpu className="w-7 h-7 text-cyan-400" />
+              </div>
+              <h3 className="text-xl font-semibold mb-4 text-foreground">Advanced ECU Logic</h3>
+              <p className="text-muted-foreground mb-4">
+                Specialized ECU functions for motorsport and performance applications.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Pop & Bangs (exhaust effects)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>V-Max unlock</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Launch Control</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-cyan-400 mt-1">•</span>
+                  <span>Start-Stop optimization</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Deep SEO Text Block */}
+          <div className="max-w-4xl mx-auto mb-12">
+            <div className="border border-gray-900 rounded-xl p-8" style={{ backgroundColor: '#0a0a0a' }}>
+              <div className="prose prose-invert max-w-none">
+                <p className="text-muted-foreground leading-relaxed text-base">
+                  REMAPPRO specializes in professional <strong className="text-foreground">Engine Control Unit remapping</strong> and 
+                  <strong className="text-foreground"> automotive software engineering Slovakia</strong>. Our expertise includes comprehensive 
+                  <strong className="text-foreground"> Diesel Particulate Filter software solutions</strong> and advanced 
+                  <strong className="text-foreground"> performance optimization</strong> for all vehicle types. We provide 
+                  <strong className="text-foreground"> AdBlue delete for export</strong> and motorsport applications, ensuring maximum 
+                  reliability and power gains through precise software calibration.
+                </p>
+                <p className="text-muted-foreground leading-relaxed text-base mt-4">
+                  Our <strong className="text-foreground">Engine Control Unit remapping</strong> services utilize state-of-the-art diagnostic 
+                  tools and custom calibration techniques. Each vehicle receives individual attention, with detailed analysis of the original 
+                  software parameters and identification of optimization opportunities. Our <strong className="text-foreground">Diesel Particulate Filter 
+                  software solutions</strong> and <strong className="text-foreground">automotive software engineering Slovakia</strong> approach ensures 
+                  safe, tested modifications that respect engine limits while delivering significant <strong className="text-foreground">performance optimization</strong>. 
+                  For export markets, we offer <strong className="text-foreground">AdBlue delete for export</strong> solutions compliant with 
+                  international motorsport regulations.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <Footer />
     </div>

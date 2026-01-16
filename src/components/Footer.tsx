@@ -30,6 +30,11 @@ const Footer = () => {
                 </a>
               </li>
               <li>
+                <a href="/about" className="hover:text-primary transition-colors">
+                  O nás & Služby
+                </a>
+              </li>
+              <li>
                 <a href="/pricing" className="hover:text-primary transition-colors">
                   Pricing
                 </a>

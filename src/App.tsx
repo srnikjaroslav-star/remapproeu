@@ -14,6 +14,7 @@ import SuccessPage from "./pages/SuccessPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import RefundsPage from "./pages/RefundsPage";
+import AboutPage from "./pages/AboutPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/track" element={<TrackPage />} />
 
           {/* Ostatné systémové stránky */}
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/success" element={<SuccessPage />} />
           <Route path="/login" element={<Login />} />
