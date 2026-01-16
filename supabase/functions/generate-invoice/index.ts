@@ -1014,7 +1014,7 @@ serve(async (req) => {
           html: emailHtml,
           attachments: [
             {
-              filename: `${invoiceNumber}.pdf`,
+              filename: isCreditNote ? `Credit-Note-${invoiceNumber}.pdf` : `${invoiceNumber}.pdf`,
               content: pdfBase64,
             },
           ],
@@ -1045,11 +1045,17 @@ serve(async (req) => {
       success: true,
       invoiceNumber,
       invoiceUrl,
+      creditNoteNumber: isCreditNote ? invoiceNumber : null,
+      creditNotePdf: isCreditNote ? invoiceUrl : null,
       isCreditNote,
       message: isCreditNote ? "Credit note generated and saved successfully" : "Invoice generated and saved successfully",
     };
     
     console.log("[generate-invoice] Returning success response:", responseData);
+    console.log("[generate-invoice] Response includes:", {
+      credit_note_number: responseData.creditNoteNumber,
+      credit_note_pdf: responseData.creditNotePdf
+    });
     
     return new Response(
       JSON.stringify(responseData),

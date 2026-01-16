@@ -563,45 +563,76 @@ const ManagementPortal = () => {
     const invoiceData = await invoiceResponse.json();
     console.log('[generateAndSendCreditNote] Credit note generated successfully:', invoiceData);
     
-    // Verify that credit note was saved to database
-    // Use existing supabase client (it should work for reading)
-    // If SERVICE_ROLE_KEY is available, create a client with it for better permissions
-    let supabaseClient = supabase;
+    // Extract credit note data from response
+    // Edge Function returns: invoiceNumber, invoiceUrl, creditNoteNumber, creditNotePdf
+    const generatedCreditNoteNumber = invoiceData.creditNoteNumber || invoiceData.invoiceNumber || creditNoteNumber;
+    const generatedCreditNotePdf = invoiceData.creditNotePdf || invoiceData.invoiceUrl || null;
     
-    if (finalAuthKey && finalAuthKey !== anonKey) {
-      try {
-        supabaseClient = createClient(supabaseUrl, finalAuthKey);
-        console.log('[generateAndSendCreditNote] Created Supabase client with SERVICE_ROLE_KEY for verification');
-      } catch (err) {
-        console.warn('[generateAndSendCreditNote] Failed to create client with SERVICE_ROLE_KEY, using default:', err);
-        supabaseClient = supabase;
+    console.log('[generateAndSendCreditNote] Extracted credit note data:', {
+      creditNoteNumber: generatedCreditNoteNumber,
+      creditNotePdf: generatedCreditNotePdf,
+      fullResponse: invoiceData
+    });
+    
+    console.log('[generateAndSendCreditNote] Extracted from response:', {
+      credit_note_number: generatedCreditNoteNumber,
+      credit_note_pdf: generatedCreditNotePdf
+    });
+    
+    // CRITICAL: Update database from frontend to ensure data is saved
+    // Edge Function may have saved it, but we'll do it again from frontend to be sure
+    if (generatedCreditNoteNumber && generatedCreditNotePdf) {
+      console.log('[generateAndSendCreditNote] Updating database from frontend...');
+      
+      // Use SERVICE_ROLE_KEY if available, otherwise use ANON_KEY
+      let supabaseClient = supabase;
+      
+      if (finalAuthKey && finalAuthKey !== anonKey) {
+        try {
+          supabaseClient = createClient(supabaseUrl, finalAuthKey);
+          console.log('[generateAndSendCreditNote] Using SERVICE_ROLE_KEY for database update');
+        } catch (err) {
+          console.warn('[generateAndSendCreditNote] Failed to create client with SERVICE_ROLE_KEY, using default:', err);
+          supabaseClient = supabase;
+        }
       }
-    }
-    
-    // Wait a moment for database to update (Edge Function may need time to save)
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const { data: updatedOrder, error: verifyError } = await supabaseClient
-      .from('orders')
-      .select('credit_note_number, credit_note_pdf')
-      .eq('id', order.id)
-      .single();
-    
-    if (verifyError) {
-      console.error('[generateAndSendCreditNote] Error verifying credit note in DB:', verifyError);
-      console.warn('[generateAndSendCreditNote] This may be due to RLS policies. Credit note should still be saved via Edge Function.');
-      console.warn('[generateAndSendCreditNote] Check Supabase Dashboard to verify credit_note_number and credit_note_pdf were saved.');
-    } else {
-      console.log('[generateAndSendCreditNote] Verified credit note in database:', updatedOrder);
-      if (updatedOrder?.credit_note_number && updatedOrder?.credit_note_pdf) {
-        console.log('[generateAndSendCreditNote] ✓ Credit note successfully saved:', {
-          number: updatedOrder.credit_note_number,
-          pdf: updatedOrder.credit_note_pdf
-        });
+      
+      const { data: updateData, error: updateError } = await supabaseClient
+        .from('orders')
+        .update({
+          credit_note_number: generatedCreditNoteNumber,
+          credit_note_pdf: generatedCreditNotePdf,
+        })
+        .eq('id', order.id)
+        .select('credit_note_number, credit_note_pdf');
+      
+      if (updateError) {
+        console.error('[generateAndSendCreditNote] Failed to update database from frontend:', updateError);
+        console.error('[generateAndSendCreditNote] Error details:', JSON.stringify(updateError, null, 2));
+        throw new Error(`Failed to save credit note to database: ${updateError.message}`);
       } else {
-        console.warn('[generateAndSendCreditNote] ⚠ Credit note fields are empty in database. Check Edge Function logs.');
-        console.warn('[generateAndSendCreditNote] Edge Function should have saved the credit note. Refresh the page to see if it appears.');
+        console.log('[generateAndSendCreditNote] ✓ Database updated successfully from frontend:', updateData);
+        
+        if (updateData && updateData.length > 0) {
+          const updated = updateData[0];
+          if (updated.credit_note_number === generatedCreditNoteNumber && updated.credit_note_pdf === generatedCreditNotePdf) {
+            console.log('[generateAndSendCreditNote] ✓ Verification: Credit note data matches in database');
+          } else {
+            console.warn('[generateAndSendCreditNote] ⚠ Verification: Credit note data mismatch');
+            console.warn('[generateAndSendCreditNote] Expected:', {
+              credit_note_number: generatedCreditNoteNumber,
+              credit_note_pdf: generatedCreditNotePdf
+            });
+            console.warn('[generateAndSendCreditNote] Got:', {
+              credit_note_number: updated.credit_note_number,
+              credit_note_pdf: updated.credit_note_pdf
+            });
+          }
+        }
       }
+    } else {
+      console.error('[generateAndSendCreditNote] CRITICAL: Missing credit note data in response:', invoiceData);
+      throw new Error('Credit note generation failed: Missing credit note number or PDF URL in response');
     }
   };
 
