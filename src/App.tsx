@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import OrderPage from "./pages/OrderPage";
 // OPRAVENÝ IMPORT: Mieri priamo na súbor v pages
@@ -25,7 +25,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <HashRouter>
         <Routes>
           {/* Domovská stránka */}
           <Route path="/" element={<Index />} />
@@ -48,11 +48,12 @@ const App = () => (
 
           {/* Service Detail Pages - Dynamic Routing */}
           <Route path="/services/:serviceSlug" element={<ServiceDetail />} />
+          <Route path="/service/:serviceSlug" element={<Index />} />
 
           {/* 404 - Stránka nenájdená */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );
