@@ -26,6 +26,8 @@ export interface Order {
   important_note: string | null;
   invoice_number: string | null;
   invoice_url: string | null;
+  credit_note_number: string | null;
+  credit_note_pdf: string | null;
   stripe_session_id: string | null;
   created_at: string;
   updated_at: string;

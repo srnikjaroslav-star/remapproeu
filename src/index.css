@@ -308,6 +308,20 @@
     outline: none;
   }
 
+  /* Cancelled: Red (#ef4444) */
+  .status-cancelled {
+    background-color: hsl(0 0% 2%) !important;
+    color: hsl(0 84% 60%) !important; /* red-500 */
+    border: 2px solid hsl(0 84% 60%) !important; /* red-500 */
+    box-shadow: 0 0 8px hsla(0, 84%, 60%, 0.3);
+  }
+
+  .status-cancelled:hover,
+  .status-cancelled:focus {
+    box-shadow: 0 0 15px hsla(0, 84%, 60%, 0.5);
+    outline: none;
+  }
+
   /* Dropdown options - Deep Black with White text */
   .admin-status-select option {
     background-color: hsl(0 0% 2%);

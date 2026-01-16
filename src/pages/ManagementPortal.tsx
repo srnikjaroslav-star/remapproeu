@@ -8,6 +8,16 @@ import Logo from '@/components/Logo';
 import SystemStatus, { fetchSystemStatusFromDB, setSystemStatusInDB, isSystemOnline, SystemStatusMode } from '@/components/SystemStatus';
 import SmartTooltip from '@/components/SmartTooltip';
 import InternalNoteModal from '@/components/InternalNoteModal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/lib/supabase';
 import { Order } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -31,6 +41,8 @@ const ManagementPortal = () => {
   const [noteModalOrder, setNoteModalOrder] = useState<Order | null>(null);
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [pendingCancelOrder, setPendingCancelOrder] = useState<{ orderId: string; newStatus: string } | null>(null);
 
   // Check authentication on mount - only allow specific email
   useEffect(() => {
@@ -186,6 +198,8 @@ const ManagementPortal = () => {
       if (updatedOrder && (
         updatedOrder.invoice_number !== detailOrder.invoice_number ||
         updatedOrder.invoice_url !== detailOrder.invoice_url ||
+        updatedOrder.credit_note_number !== detailOrder.credit_note_number ||
+        updatedOrder.credit_note_pdf !== detailOrder.credit_note_pdf ||
         updatedOrder.status !== detailOrder.status ||
         updatedOrder.result_file_url !== detailOrder.result_file_url ||
         updatedOrder.important_note !== detailOrder.important_note
@@ -296,6 +310,20 @@ const ManagementPortal = () => {
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     console.log('Updating order status:', { orderId, newStatus });
     
+    // If changing to cancelled, show confirmation dialog
+    if (newStatus === 'cancelled') {
+      setPendingCancelOrder({ orderId, newStatus });
+      setCancelDialogOpen(true);
+      return;
+    }
+    
+    // For other statuses, proceed normally
+    await executeStatusChange(orderId, newStatus);
+  };
+
+  const executeStatusChange = async (orderId: string, newStatus: string) => {
+    console.log('Executing status change:', { orderId, newStatus });
+    
     // Find the order before update
     const order = orders.find(o => o.id === orderId);
     const previousStatus = order?.status;
@@ -304,9 +332,18 @@ const ManagementPortal = () => {
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
 
     try {
+      // If changing to cancelled, multiply total_price by -1 for credit note
+      const updateData: any = { status: newStatus };
+      if (newStatus === 'cancelled' && order?.total_price) {
+        const totalPrice = typeof order.total_price === 'string' 
+          ? parseFloat(order.total_price) 
+          : order.total_price;
+        updateData.total_price = -Math.abs(totalPrice);
+      }
+
       const { data, error } = await supabase
         .from('orders')
-        .update({ status: newStatus })
+        .update(updateData)
         .eq('id', orderId)
         .select();
 
@@ -317,15 +354,24 @@ const ManagementPortal = () => {
         throw error;
       }
 
-      // Send email when status changes (if status actually changed and order exists)
-      if (newStatus !== previousStatus && order && order.customer_email) {
+      // If cancelled, generate and send credit note
+      if (newStatus === 'cancelled' && order) {
+        try {
+          await generateAndSendCreditNote(order);
+          toast.success('Objednávka zrušená a dobropis odoslaný zákazníkovi');
+        } catch (creditNoteError: any) {
+          console.error('[executeStatusChange] Credit note generation failed:', creditNoteError);
+          toast.error(`Chyba pri generovaní dobropisu: ${creditNoteError?.message || 'Neznáma chyba'}`);
+          toast.success('Status zmenený na Cancelled (dobropis sa nepodarilo odoslať)');
+        }
+      } else if (newStatus !== previousStatus && order && order.customer_email) {
         // Send email for status changes to processing or completed
         if (newStatus === 'processing' || newStatus === 'completed') {
           try {
             await sendStatusEmail(order, newStatus);
             toast.success('Status aktualizovaný a email odoslaný klientovi');
           } catch (emailError: any) {
-            console.error('[handleStatusChange] Email sending failed:', {
+            console.error('[executeStatusChange] Email sending failed:', {
               error: emailError,
               message: emailError?.message,
               stack: emailError?.stack,
@@ -349,7 +395,8 @@ const ManagementPortal = () => {
             'pending': 'Pending',
             'processing': 'Processing',
             'completed': 'Completed',
-            'paid': 'Paid'
+            'paid': 'Paid',
+            'cancelled': 'Cancelled'
           };
           toast.success(`Status changed to: ${statusLabels[newStatus] || newStatus}`);
         }
@@ -358,7 +405,8 @@ const ManagementPortal = () => {
           'pending': 'Pending',
           'processing': 'Processing',
           'completed': 'Completed',
-          'paid': 'Paid'
+          'paid': 'Paid',
+          'cancelled': 'Cancelled'
         };
         toast.success(`Status changed to: ${statusLabels[newStatus] || newStatus}`);
       }
@@ -373,6 +421,82 @@ const ManagementPortal = () => {
       }
       await fetchOrders();
     }
+  };
+
+  const generateAndSendCreditNote = async (order: Order) => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const authKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !authKey) {
+      throw new Error('Missing Supabase configuration');
+    }
+
+    // Generate credit note invoice number (original invoice number + "-D")
+    const originalInvoiceNumber = order.invoice_number || `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const creditNoteNumber = `${originalInvoiceNumber}-D`;
+
+    // Get order items for credit note
+    const { data: orderItemsData, error: itemsError } = await supabase
+      .from('order_items')
+      .select('*')
+      .eq('order_id', order.id);
+
+    if (itemsError) {
+      console.error('Error fetching order items:', itemsError);
+    }
+
+    // Calculate negative total amount
+    const totalAmount = typeof order.total_price === 'string' 
+      ? parseFloat(order.total_price) 
+      : (order.total_price || 0);
+    const negativeAmount = -Math.abs(totalAmount);
+
+    // Prepare items for credit note (with negative prices)
+    const items = orderItemsData && orderItemsData.length > 0
+      ? orderItemsData.map(item => ({
+          name: item.service_type || 'Service',
+          price: -Math.abs(typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0)),
+          quantity: item.quantity || 1
+        }))
+      : [{
+          name: order.service_type || 'ECU Tuning Service',
+          price: negativeAmount,
+          quantity: 1
+        }];
+
+    // Call generate-invoice function with creditNote flag
+    const invoiceResponse = await fetch(`${supabaseUrl}/functions/v1/generate-invoice`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authKey}`,
+      },
+      body: JSON.stringify({
+        orderId: order.id,
+        orderNumber: order.order_number || '',
+        customerName: order.customer_name || 'Customer',
+        customerEmail: order.customer_email,
+        items: items,
+        totalAmount: negativeAmount,
+        brand: order.brand,
+        model: order.model,
+        fuelType: order.fuel_type,
+        year: order.year,
+        ecuType: order.ecu_type,
+        vin: order.vin,
+        creditNote: true, // Flag to indicate this is a credit note
+        originalInvoiceNumber: originalInvoiceNumber,
+        creditNoteNumber: creditNoteNumber
+      }),
+    });
+
+    if (!invoiceResponse.ok) {
+      const errorText = await invoiceResponse.text();
+      throw new Error(`Invoice generation failed: ${errorText}`);
+    }
+
+    const invoiceData = await invoiceResponse.json();
+    console.log('Credit note generated:', invoiceData);
   };
 
   const handleFieldChange = (orderId: string, field: 'checksum_crc' | 'internal_note', value: string) => {
@@ -926,9 +1050,20 @@ const ManagementPortal = () => {
         return 'status-processing';
       case 'completed':
         return 'status-completed';
+      case 'cancelled':
+        return 'status-cancelled';
       default:
         return 'status-pending';
     }
+  };
+
+  // Helper function to get display amount (negative for cancelled orders)
+  const getDisplayAmount = (order: Order) => {
+    const amount = parseFloat(order.total_price?.toString() || '0');
+    if (order.status === 'cancelled') {
+      return -Math.abs(amount); // Ensure negative for cancelled
+    }
+    return amount;
   };
 
 const getServiceNames = (serviceIds: string[] | string | null) => {
@@ -1031,7 +1166,11 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                 <span className="w-2 h-2 rounded-full bg-blue-500"></span> Total Revenue
               </p>
               <p className="text-3xl font-bold text-blue-500">
-                €{orders.reduce((sum, o) => sum + (Number(o.total_price) || 0), 0).toLocaleString()}
+                €{orders.reduce((sum, o) => {
+                  const amount = Number(o.total_price) || 0;
+                  // For cancelled orders, subtract the amount (already negative in display)
+                  return sum + (o.status === 'cancelled' ? -Math.abs(amount) : amount);
+                }, 0).toLocaleString()}
               </p>
             </div>
             <div className="text-center p-4 bg-secondary/30 rounded-lg border-2 border-white/50 shadow-[0_0_8px_rgba(255,255,255,0.15)]">
@@ -1054,6 +1193,14 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
               </p>
               <p className="text-3xl font-bold text-emerald-500">
                 {orders.filter((o) => o.status === 'completed').length}
+              </p>
+            </div>
+            <div className="text-center p-4 bg-red-500/10 rounded-lg border-2 border-red-500/50">
+              <p className="text-muted-foreground text-sm mb-1 flex items-center justify-center gap-2">
+                <X className="w-4 h-4 text-red-500" /> Cancelled
+              </p>
+              <p className="text-3xl font-bold text-red-500">
+                {orders.filter((o) => o.status === 'cancelled').length}
               </p>
             </div>
           </div>
@@ -1083,6 +1230,7 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
             <option value="pending">Pending</option>
             <option value="processing">Processing</option>
             <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
           </select>
         </div>
 
@@ -1168,7 +1316,13 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                         </div>
                       </td>
                       <td className="p-2 whitespace-nowrap">
-                        <p className="font-semibold text-primary text-xs">{order.total_price}€</p>
+                        <p className={`font-semibold text-xs ${
+                          order.status === 'cancelled' 
+                            ? 'text-red-500' 
+                            : 'text-primary'
+                        }`}>
+                          {getDisplayAmount(order).toFixed(2)}€
+                        </p>
                       </td>
                       <td className="p-2 whitespace-nowrap">
                         <select
@@ -1179,22 +1333,36 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                           <option value="pending">Pending</option>
                           <option value="processing">Processing</option>
                           <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
                         </select>
                       </td>
                       <td className="p-2 whitespace-nowrap">
-                        {order.invoice_number ? (
-                          <a
-                            href={order.invoice_url || '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs font-mono text-green-400 hover:text-green-300 underline truncate block"
-                            title="View Invoice PDF"
-                          >
-                            {order.invoice_number}
-                          </a>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
+                        <div className="flex flex-col gap-1">
+                          {order.invoice_number ? (
+                            <a
+                              href={order.invoice_url || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-mono text-green-400 hover:text-green-300 underline truncate block"
+                              title="View Invoice PDF"
+                            >
+                              {order.invoice_number}
+                            </a>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                          {order.credit_note_number ? (
+                            <a
+                              href={order.credit_note_pdf || '#'}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs font-mono text-red-400 hover:text-red-300 underline truncate block"
+                              title="Download Credit Note PDF"
+                            >
+                              {order.credit_note_number}
+                            </a>
+                          ) : null}
+                        </div>
                       </td>
                       <td className="p-2 sticky right-0 bg-background/95 backdrop-blur-sm z-10">
                         <div className="flex items-center justify-end gap-1.5 flex-shrink-0">
@@ -1293,21 +1461,19 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Status</p>
-                        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${
-                          detailOrder.status === 'pending' 
-                            ? 'status-pending'
-                            : detailOrder.status === 'processing'
-                            ? 'status-processing'
-                            : detailOrder.status === 'completed'
-                            ? 'status-completed'
-                            : 'status-pending'
-                        }`}>
-                          {detailOrder.status === 'pending' ? 'Pending' : detailOrder.status === 'processing' ? 'Processing' : detailOrder.status === 'completed' ? 'Completed' : detailOrder.status}
+                        <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold ${getStatusClass(detailOrder.status)}`}>
+                          {detailOrder.status === 'pending' ? 'Pending' : detailOrder.status === 'processing' ? 'Processing' : detailOrder.status === 'completed' ? 'Completed' : detailOrder.status === 'cancelled' ? 'Cancelled' : detailOrder.status}
                         </span>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Celková cena</p>
-                        <p className="text-xl font-bold text-primary">{detailOrder.total_price}€</p>
+                        <p className={`text-xl font-bold ${
+                          detailOrder.status === 'cancelled' 
+                            ? 'text-red-500' 
+                            : 'text-primary'
+                        }`}>
+                          {getDisplayAmount(detailOrder).toFixed(2)}€
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1366,6 +1532,43 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                     </div>
                   </div>
                 </div>
+
+                {/* Faktúra a Dobropis */}
+                {(detailOrder.invoice_number || detailOrder.credit_note_number) && (
+                  <div className="mt-6 pt-6 border-t border-primary/20">
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Faktúra a Dobropis</h3>
+                    <div className="space-y-3">
+                      {detailOrder.invoice_number && (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">Faktúra</p>
+                          <a
+                            href={detailOrder.invoice_url || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-green-400 hover:text-green-300 underline"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span className="font-mono">{detailOrder.invoice_number}</span>
+                          </a>
+                        </div>
+                      )}
+                      {detailOrder.credit_note_number && (
+                        <div>
+                          <p className="text-sm text-muted-foreground mb-2">Dobropis</p>
+                          <a
+                            href={detailOrder.credit_note_pdf || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-red-400 hover:text-red-300 underline"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span className="font-mono">{detailOrder.credit_note_number}</span>
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Súbory */}
                 <div className="mt-6 pt-6 border-t border-primary/20">
@@ -1607,6 +1810,39 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
           </div>
         </div>
       </footer>
+
+      {/* Cancel Order Confirmation Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Vytvoriť dobropis a zrušiť objednávku?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Naozaj chcete vytvoriť dobropis a zrušiť túto objednávku? Tento krok vygeneruje zápornú faktúru a odošle ju zákazníkovi na email. 
+              Suma sa automaticky odpočíta z celkových tržieb.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => {
+              setCancelDialogOpen(false);
+              setPendingCancelOrder(null);
+            }}>
+              Zrušiť
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (pendingCancelOrder) {
+                  setCancelDialogOpen(false);
+                  await executeStatusChange(pendingCancelOrder.orderId, pendingCancelOrder.newStatus);
+                  setPendingCancelOrder(null);
+                }
+              }}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Vytvoriť dobropis
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

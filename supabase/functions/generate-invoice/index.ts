@@ -42,6 +42,9 @@ interface InvoiceRequest {
   year?: number;
   ecuType?: string;
   vin?: string;
+  creditNote?: boolean;
+  originalInvoiceNumber?: string;
+  creditNoteNumber?: string;
 }
 
 const BCC_EMAIL = "richard.srnik2@gmail.com";
@@ -203,6 +206,7 @@ function generateInvoicePDF(data: {
   orderNumber: string;
   carInfo?: string;
   vin?: string;
+  creditNote?: boolean;
 }): string {
   const doc = new jsPDF({
     orientation: 'portrait',
@@ -253,11 +257,12 @@ function generateInvoicePDF(data: {
   const rightEdge = pageWidth - margin;
   const rightBlockY = yPos;
   
-  // Invoice title (right) - INVOICE
+  // Invoice title (right) - INVOICE or CREDIT NOTE
   doc.setTextColor(...textBlack);
   doc.setFontSize(32);
   doc.setFont("helvetica", "bold");
-  doc.text("INVOICE", rightEdge, rightBlockY, { align: "right" });
+  const invoiceTitle = data.creditNote ? "CREDIT NOTE" : "INVOICE";
+  doc.text(invoiceTitle, rightEdge, rightBlockY, { align: "right" });
   
   // Invoice number (right, below title)
   doc.setTextColor(...textGray);
@@ -587,11 +592,13 @@ serve(async (req) => {
     // Convert to InvoiceItem format for PDF generation
     const items = convertToInvoiceItems(mappedItems);
     
-    // Generate invoice number
-    const invoiceNumber = generateInvoiceNumber();
+    // Generate invoice number (or use credit note number if provided)
+    const isCreditNote = data.creditNote || false;
+    const invoiceNumber = data.creditNoteNumber || generateInvoiceNumber();
     const invoiceDate = new Date().toISOString();
     
     // Format totalAmount to 2 decimal places (ensure it's a number)
+    // For credit notes, totalAmount should already be negative
     const formattedTotalAmount = typeof finalTotalAmount === 'number' && !isNaN(finalTotalAmount) 
       ? parseFloat(finalTotalAmount.toFixed(2)) 
       : 0;
@@ -607,12 +614,13 @@ serve(async (req) => {
       orderNumber,
       carInfo,
       vin,
+      creditNote: isCreditNote,
     });
     
     // STEP 1: Upload PDF to storage FIRST - bucket 'invoices'
-    // File name: invoice-${orderId}.pdf
+    // File name: invoice-${orderId}.pdf (or credit-note-${orderId}.pdf for credit notes)
     const pdfBuffer = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
-    const fileName = `invoice-${orderId}.pdf`;
+    const fileName = isCreditNote ? `credit-note-${orderId}.pdf` : `invoice-${orderId}.pdf`;
     
     const { error: uploadError } = await supabase.storage
       .from('invoices')
@@ -634,17 +642,38 @@ serve(async (req) => {
     const invoiceUrl = urlData?.publicUrl || null;
     
     // STEP 2: Save invoice URL to database
-    const { error: updateError } = await supabase
-      .from('orders')
-      .update({
-        invoice_number: invoiceNumber,
-        invoice_url: invoiceUrl,
-      })
-      .eq('id', orderId);
-    
-    if (updateError) {
-      console.error("Order update error:", updateError);
-      // Non-fatal - continue even if DB update fails
+    // CRITICAL: For credit notes, preserve original invoice data and add credit note separately
+    if (isCreditNote) {
+      // For credit notes: Save credit note number and PDF URL to separate columns, preserve original invoice
+      const { error: creditNoteUpdateError } = await supabase
+        .from('orders')
+        .update({
+          credit_note_number: invoiceNumber,
+          credit_note_pdf: invoiceUrl || '',
+          // DO NOT overwrite invoice_number or invoice_url - preserve original invoice
+        })
+        .eq('id', orderId);
+      
+      if (creditNoteUpdateError) {
+        console.error("Credit note update error:", creditNoteUpdateError);
+        // Non-fatal - continue even if DB update fails
+      } else {
+        console.log("Credit note saved to database:", { credit_note_number: invoiceNumber, credit_note_pdf: invoiceUrl });
+      }
+    } else {
+      // For regular invoices: Save invoice_number and invoice_url normally
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          invoice_number: invoiceNumber,
+          invoice_url: invoiceUrl,
+        })
+        .eq('id', orderId);
+      
+      if (updateError) {
+        console.error("Order update error:", updateError);
+        // Non-fatal - continue even if DB update fails
+      }
     }
     
     // Save to invoices table for accounting
@@ -700,7 +729,7 @@ serve(async (req) => {
                         Professional ECU Tuning
                       </p>
                       <p style="margin: 15px 0 0; color: #00f2ff; font-size: 14px; font-weight: 600;">
-                        ✅ Payment Confirmed
+                        ${isCreditNote ? '🔄 Order Cancelled' : '✅ Payment Confirmed'}
                       </p>
                     </td>
                   </tr>
@@ -709,8 +738,14 @@ serve(async (req) => {
                   <tr>
                     <td style="padding: 50px 40px;">
                       <h2 style="margin: 0 0 25px; color: #e5e5e5; font-size: 28px; font-weight: 700; line-height: 1.2;">
-                        Thank you for your order!
+                        ${isCreditNote ? 'Order Cancelled - Credit Note Issued' : 'Thank you for your order!'}
                       </h2>
+                      ${isCreditNote ? `
+                      <p style="margin: 0 0 30px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
+                        We regret to inform you that your order <strong style="color: #ffffff;">${orderNumber}</strong> has been cancelled. 
+                        A credit note has been issued for the full amount, and your payment will be refunded according to our refund policy.
+                      </p>
+                      ` : ''}
                       
                       <!-- Order ID Banner -->
                       <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 30px;">
@@ -740,9 +775,9 @@ serve(async (req) => {
                             <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px;">
                               <tr>
                                 <td style="padding: 20px;">
-                                  <p style="margin: 0 0 8px; color: #00f2ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">Invoice</p>
+                                  <p style="margin: 0 0 8px; color: #00f2ff; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">${isCreditNote ? 'Credit Note' : 'Invoice'}</p>
                                   <p style="margin: 0 0 6px; color: #00f2ff; font-size: 16px; font-weight: 600;">${invoiceNumber}</p>
-                                  <p style="margin: 0; color: #00f2ff; font-size: 22px; font-weight: 700;">€${totalAmount.toFixed(2)}</p>
+                                  <p style="margin: 0; color: #00f2ff; font-size: 22px; font-weight: 700;">€${formattedTotalAmount.toFixed(2)}</p>
                                 </td>
                               </tr>
                             </table>
@@ -827,6 +862,7 @@ serve(async (req) => {
                         </tr>
                       </table>
                       
+                      ${!isCreditNote ? `
                       <!-- What's Next -->
                       <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 30px;">
                         <tr>
@@ -841,19 +877,43 @@ serve(async (req) => {
                           </td>
                         </tr>
                       </table>
+                      ` : `
+                      <!-- Refund Information -->
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-radius: 5px; margin-bottom: 30px;">
+                        <tr>
+                          <td style="padding: 25px; text-align: center;">
+                            <p style="margin: 0 0 12px; color: #00f2ff; font-size: 15px; font-weight: 600;">
+                              Refund Information
+                            </p>
+                            <p style="margin: 0; color: #00f2ff; font-size: 14px; line-height: 1.7;">
+                              Your refund will be processed within 5-10 business days to the original payment method.<br>
+                              If you have any questions, please contact us at info@remappro.eu
+                            </p>
+                          </td>
+                        </tr>
+                      </table>
+                      `}
                       
                       <!-- CTA Buttons -->
                       <table width="100%" cellpadding="0" cellspacing="0">
                         <tr>
                           <td align="center" style="padding-bottom: 15px;">
                             ${invoiceUrl ? `
+                            ${isCreditNote ? `
+                            <a href="${invoiceUrl}" 
+                               style="background-color: #00f2ff; color: #000000; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;">
+                              📄 Download Credit Note
+                            </a>
+                            ` : `
                             <a href="${invoiceUrl}" 
                                style="background-color: #00f2ff; color: #000000; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 4px; display: inline-block;">
                               📄 Download Invoice
                             </a>
+                            `}
                             ` : ''}
                           </td>
                         </tr>
+                        ${!isCreditNote ? `
                         <tr>
                           <td align="center">
                             <a href="${trackingLink}" 
@@ -862,6 +922,7 @@ serve(async (req) => {
                             </a>
                           </td>
                         </tr>
+                        ` : ''}
                       </table>
                     </td>
                   </tr>
@@ -898,7 +959,9 @@ serve(async (req) => {
           from: SENDER,
           to: [customerEmail],
           bcc: [BCC_EMAIL],
-          subject: `Potvrdenie objednávky č. ${orderNumber} - REMAPPRO`,
+          subject: isCreditNote 
+            ? `Credit Note - Order ${orderNumber} Cancelled - REMAPPRO`
+            : `Potvrdenie objednávky č. ${orderNumber} - REMAPPRO`,
           html: emailHtml,
           attachments: [
             {
