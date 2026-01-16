@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const SENDER = "REMAPPRO <info@remappro.eu>";
@@ -9,6 +10,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Initialize Supabase client (will be initialized in handler)
+let supabase: any = null;
+
 interface NotifyRequest {
   orderId: string;
   orderNumber: string;
@@ -17,6 +21,7 @@ interface NotifyRequest {
   carBrand: string;
   carModel: string;
   resultFileUrl?: string;
+  importantNote?: string | null;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -38,7 +43,9 @@ const handler = async (req: Request): Promise<Response> => {
       carBrand,
       carModel,
       resultFileUrl,
-    }: NotifyRequest = await req.json();
+      importantNote,
+      important_note, // Pridané pre kompatibilitu
+    }: any = await req.json();
 
     console.log(`Sending notification for order ${orderNumber} to ${customerEmail}`);
 
@@ -50,9 +57,53 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("RESEND_API_KEY is not configured");
     }
 
+    // CRITICAL: Initialize Supabase client and fetch important_note from database
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    
+    let importantNoteFromDB: string | null = null;
+    
+    if (supabaseUrl && supabaseServiceKey) {
+      supabase = createClient(supabaseUrl, supabaseServiceKey);
+      
+      try {
+        console.log(`Fetching important_note from DB for order ${orderId}...`);
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .select('important_note')
+          .eq('id', orderId)
+          .single();
+
+        if (!orderError && orderData) {
+          importantNoteFromDB = orderData.important_note;
+          console.log(`✅ Fetched important_note from DB for order ${orderId}:`, importantNoteFromDB ? `"${importantNoteFromDB.substring(0, 50)}..."` : 'no note');
+        } else {
+          console.warn(`⚠️ Could not fetch important_note from DB for order ${orderId}:`, orderError?.message);
+        }
+      } catch (dbError) {
+        console.error(`❌ Error fetching important_note from DB:`, dbError);
+      }
+    } else {
+      console.warn('⚠️ Supabase credentials not configured, using important_note from payload only');
+    }
+
+    // Agresívne zlúčenie všetkých možných zdrojov dát
+    const finalImportantNote = importantNoteFromDB || important_note || importantNote || null;
+    console.log("Final note to be sent:", finalImportantNote);
+
     const displayOrderId = orderNumber || orderId.slice(0, 8).toUpperCase();
     const vehicleInfo = `${carBrand || ''} ${carModel || ''}`.trim() || 'your vehicle';
     const downloadUrl = resultFileUrl || `https://remappro.eu/check-order?order=${displayOrderId}`;
+    
+    // Sanitize important note for email display
+    const sanitizedImportantNote = finalImportantNote 
+      ? finalImportantNote
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+          .replace(/<[^>]+>/g, '')
+          .replace(/javascript:/gi, '')
+          .replace(/on\w+\s*=/gi, '')
+          .trim()
+      : null;
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -89,8 +140,20 @@ const handler = async (req: Request): Promise<Response> => {
                       Hi${customerName ? ` ${customerName}` : ''},
                     </p>
                     
-                    <p style="margin: 0 0 30px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
-                      Great news! The ECU tuning for <strong style="color: #ffffff;">${vehicleInfo}</strong> has been completed and your modified file is ready for download.
+                    <p style="margin: 0 0 ${sanitizedImportantNote ? '0' : '30'}px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
+                      Great news! The ECU tuning for <strong style="color: #ffffff;">${vehicleInfo}</strong> has been completed and your modified file is ready for download.${sanitizedImportantNote ? `<br /><br />
+                      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #1a2e31; border-left: 4px solid #00f2ff; margin-top: 15px;">
+                        <tr>
+                          <td style="padding: 15px;">
+                            <p style="margin: 0 0 10px; color: #00f2ff; font-size: 14px; font-weight: bold;">
+                              IMPORTANT:
+                            </p>
+                            <p style="margin: 0; color: #00f2ff; font-size: 15px; line-height: 1.6;">
+                              ${sanitizedImportantNote.replace(/\n/g, '<br>')}
+                            </p>
+                          </td>
+                        </tr>
+                      </table>` : ''}
                     </p>
                     
                     <!-- Order Box -->
@@ -146,6 +209,9 @@ const handler = async (req: Request): Promise<Response> => {
       </body>
       </html>
     `;
+
+    console.log("Sanitized Note for HTML:", sanitizedImportantNote);
+    console.log("Email HTML contains important note:", emailHtml.includes('IMPORTANT:') ? 'YES' : 'NO');
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",

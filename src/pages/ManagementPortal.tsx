@@ -22,7 +22,9 @@ const ManagementPortal = () => {
   const [uploadingId, setUploadingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const [editingFields, setEditingFields] = useState<Record<string, { checksum_crc: string; internal_note: string }>>({});
+  const [editingFields, setEditingFields] = useState<Record<string, { checksum_crc: string; internal_note: string; important_note: string }>>({});
+  const [importantNote, setImportantNote] = useState<string>('');
+  const [savingImportantNote, setSavingImportantNote] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [statusMode, setStatusMode] = useState<SystemStatusMode>('auto');
   const [statusLoading, setStatusLoading] = useState(false);
@@ -176,6 +178,41 @@ const ManagementPortal = () => {
       supabase.removeChannel(channel);
     };
   }, [isCheckingAuth]);
+
+  // Sync detailOrder with orders array when invoice_number or important_note changes
+  useEffect(() => {
+    if (detailOrder) {
+      const updatedOrder = orders.find(o => o.id === detailOrder.id);
+      if (updatedOrder && (
+        updatedOrder.invoice_number !== detailOrder.invoice_number ||
+        updatedOrder.invoice_url !== detailOrder.invoice_url ||
+        updatedOrder.status !== detailOrder.status ||
+        updatedOrder.result_file_url !== detailOrder.result_file_url ||
+        updatedOrder.important_note !== detailOrder.important_note
+      )) {
+        setDetailOrder(updatedOrder);
+        // Sync important_note from updated order to textarea
+        if (updatedOrder.important_note !== detailOrder.important_note) {
+          setImportantNote(updatedOrder.important_note || '');
+        }
+      }
+    }
+  }, [orders, detailOrder]);
+
+  // Initialize important_note when detailOrder changes (on open or refresh)
+  useEffect(() => {
+    if (detailOrder) {
+      // Always sync with detailOrder.important_note to ensure persistence
+      // This ensures the textarea shows the value from database
+      setImportantNote(detailOrder.important_note || '');
+      // Reset saved state when switching orders
+      setSavedImportantNote(null);
+    } else {
+      // Clear when no detail order is selected
+      setImportantNote('');
+      setSavedImportantNote(null);
+    }
+  }, [detailOrder?.id, detailOrder?.important_note]);
 
   const handleLogout = async () => {
     try {
@@ -419,12 +456,88 @@ const ManagementPortal = () => {
     return order[field] || '';
   };
 
+  // Sanitize text input - remove potentially harmful HTML/JS
+  const sanitizeText = (text: string): string => {
+    return text
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
+      .replace(/<[^>]+>/g, '') // Remove all HTML tags
+      .replace(/javascript:/gi, '') // Remove javascript: protocol
+      .replace(/on\w+\s*=/gi, '') // Remove event handlers
+      .trim();
+  };
+
+  const [savedImportantNote, setSavedImportantNote] = useState<string | null>(null);
+
+  const handleSaveImportantNote = async (orderId: string) => {
+    if (!importantNote.trim() && !detailOrder?.important_note) {
+      toast.warning('Please enter a message or delete existing one');
+      return;
+    }
+
+    setSavingImportantNote(orderId);
+    try {
+      const sanitizedNote = importantNote.trim() ? sanitizeText(importantNote) : null;
+      
+      const { error } = await supabase
+        .from('orders')
+        .update({ important_note: sanitizedNote })
+        .eq('id', orderId);
+
+      if (error) throw error;
+      
+      toast.success('Important message saved');
+      
+      // Refresh orders to get latest data
+      await fetchOrders();
+      
+      // Update detailOrder if it's currently open - keep the saved value
+      if (detailOrder?.id === orderId) {
+        setDetailOrder(prev => prev ? { ...prev, important_note: sanitizedNote } : null);
+        // Keep the text in textarea (don't clear it)
+        // The textarea will show the saved value
+        setSavedImportantNote(sanitizedNote);
+        // Reset saved state after 2 seconds to show normal state again
+        setTimeout(() => {
+          setSavedImportantNote(null);
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Save important note error:', error);
+      toast.error('Failed to save important message');
+    } finally {
+      setSavingImportantNote(null);
+    }
+  };
+
   const handleResultUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selectedOrderId) return;
 
     const orderId = selectedOrderId; // Store in local variable for clarity
+    
+    // Strict Upload Lock: Check if invoice already exists
+    const order = orders.find(o => o.id === orderId);
+    if (order?.invoice_number) {
+      console.warn('[handleResultUpload] Invoice already sent for order:', orderId, 'Invoice:', order.invoice_number);
+      toast.warning('Faktúra už bola odoslaná pre túto objednávku');
+      if (e.target) {
+        e.target.value = '';
+      }
+      return;
+    }
+    
+    // Prevent multiple uploads - set uploading state immediately
+    if (uploadingId === orderId) {
+      console.warn('[handleResultUpload] Upload already in progress for order:', orderId);
+      return;
+    }
+    
     setUploadingId(orderId);
+    
+    // Reset file input to allow same file selection again
+    if (e.target) {
+      e.target.value = '';
+    }
     
     try {
       // Step 1: Upload file to storage
@@ -505,6 +618,7 @@ const ManagementPortal = () => {
                 carBrand: finalOrder.car_brand || '',
                 carModel: finalOrder.car_model || '',
                 resultFileUrl: publicUrl,
+                importantNote: finalOrder.important_note || null,
               }),
             });
 
@@ -582,6 +696,14 @@ const ManagementPortal = () => {
               });
             } else {
               console.log('[handleResultUpload] Invoice generated and sent successfully');
+              // Strict Upload Lock: Update local state with invoice number to permanently lock the button
+              if (invoiceData.invoiceNumber) {
+                setOrders(prev => prev.map(o => 
+                  o.id === finalOrder.id 
+                    ? { ...o, invoice_number: invoiceData.invoiceNumber, invoice_url: invoiceData.invoiceUrl || null }
+                    : o
+                ));
+              }
             }
           } catch (invoiceError) {
             console.error('[handleResultUpload] Invoice generation error (non-fatal):', invoiceError);
@@ -617,6 +739,7 @@ const ManagementPortal = () => {
                 carBrand: order.car_brand || '',
                 carModel: order.car_model || '',
                 resultFileUrl: publicUrl,
+                importantNote: order.important_note || null,
               }),
             });
 
@@ -693,6 +816,14 @@ const ManagementPortal = () => {
               });
             } else {
               console.log('[handleResultUpload] Invoice generated and sent successfully');
+              // Strict Upload Lock: Update local state with invoice number to permanently lock the button
+              if (invoiceData.invoiceNumber) {
+                setOrders(prev => prev.map(o => 
+                  o.id === order.id 
+                    ? { ...o, invoice_number: invoiceData.invoiceNumber, invoice_url: invoiceData.invoiceUrl || null }
+                    : o
+                ));
+              }
             }
           } catch (invoiceError) {
             console.error('[handleResultUpload] Invoice generation error (non-fatal):', invoiceError);
@@ -702,10 +833,14 @@ const ManagementPortal = () => {
       }
       
       fetchOrders();
+      
+      // On success: Keep button disabled (upload completed, no need to reset)
+      // The button will be hidden/replaced when order status changes to 'completed'
+      // Only reset on error to allow retry
     } catch (error) {
       console.error('[handleResultUpload] Upload error:', error);
       toast.error('Failed to upload result file');
-    } finally {
+      // Only reset on error to allow retry
       setUploadingId(null);
       setSelectedOrderId(null);
     }
@@ -1076,14 +1211,36 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                               <Download className="w-4 h-4" />
                             </span>
                           )}
-                          <button
-                            onClick={() => triggerUpload(order.id)}
-                            disabled={uploadingId === order.id}
-                            className="p-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-500 transition-colors flex-shrink-0"
-                            title="Nahrať hotový súbor"
-                          >
-                            <Upload className={`w-4 h-4 ${uploadingId === order.id ? 'animate-pulse' : ''}`} />
-                          </button>
+                          {order.status === 'completed' || order.result_file_url ? (
+                            <span className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 flex-shrink-0" title="Hotový súbor je nahraný">
+                              <CheckCircle className="w-4 h-4" />
+                            </span>
+                          ) : order.invoice_number ? (
+                            <button
+                              disabled={true}
+                              className="p-2 rounded-lg bg-gray-200 text-gray-500 cursor-not-allowed flex-shrink-0"
+                              title="Súbor odoslaný"
+                            >
+                              <span className="text-xs">Súbor odoslaný</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => triggerUpload(order.id)}
+                              disabled={uploadingId === order.id}
+                              className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
+                                uploadingId === order.id
+                                  ? 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
+                                  : 'bg-green-500/20 hover:bg-green-500/30 text-green-500'
+                              }`}
+                              title={uploadingId === order.id ? 'Odosielam...' : 'Nahrať hotový súbor'}
+                            >
+                              {uploadingId === order.id ? (
+                                <span className="text-xs">Odosielam...</span>
+                              ) : (
+                                <Upload className="w-4 h-4" />
+                              )}
+                            </button>
+                          )}
                           <button
                             onClick={() => setDetailOrder(order)}
                             className="p-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-colors flex-shrink-0"
@@ -1239,19 +1396,56 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                           <Eye className="w-4 h-4" />
                           Stiahnuť hotový súbor
                         </a>
+                      ) : detailOrder.invoice_number ? (
+                        <div className="space-y-2">
+                          <p className="text-muted-foreground text-sm">Súbor už bol odoslaný</p>
+                          <button
+                            disabled={true}
+                            className="inline-flex items-center gap-2 bg-gray-200 text-gray-500 cursor-not-allowed"
+                          >
+                            <span>Súbor odoslaný</span>
+                          </button>
+                        </div>
                       ) : (
                         <div className="space-y-2">
-                          <p className="text-muted-foreground text-sm">Hotový súbor ešte nie je nahraný</p>
-                          <button
-                            onClick={() => {
-                              setDetailOrder(null);
-                              triggerUpload(detailOrder.id);
-                            }}
-                            className="btn-primary inline-flex items-center gap-2"
-                          >
-                            <Upload className="w-4 h-4" />
-                            Nahrať hotový súbor
-                          </button>
+                          {uploadingId === detailOrder.id ? (
+                            <div className="flex items-center gap-2 text-gray-400">
+                              <span className="animate-pulse">⏳</span>
+                              <span className="text-sm">Odosielam faktúru a notifikáciu klientovi...</span>
+                            </div>
+                          ) : (
+                            <>
+                              <p className="text-muted-foreground text-sm">Hotový súbor ešte nie je nahraný</p>
+                              <button
+                                onClick={() => {
+                                  setDetailOrder(null);
+                                  triggerUpload(detailOrder.id);
+                                }}
+                                disabled={uploadingId === detailOrder.id || detailOrder.invoice_number}
+                                className={`inline-flex items-center gap-2 ${
+                                  uploadingId === detailOrder.id
+                                    ? 'bg-gray-500/20 text-gray-400 cursor-not-allowed'
+                                    : detailOrder.invoice_number
+                                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                    : 'btn-primary'
+                                }`}
+                              >
+                                {uploadingId === detailOrder.id ? (
+                                  <>
+                                    <span className="animate-pulse">⏳</span>
+                                    <span>Odosielam...</span>
+                                  </>
+                                ) : detailOrder.invoice_number ? (
+                                  <span>Súbor odoslaný</span>
+                                ) : (
+                                  <>
+                                    <Upload className="w-4 h-4" />
+                                    Nahrať hotový súbor
+                                  </>
+                                )}
+                              </button>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
@@ -1312,6 +1506,61 @@ const getServiceNames = (serviceIds: string[] | string | null) => {
                       <Save className={`w-4 h-4 ${savingId === detailOrder.id ? 'animate-pulse' : ''}`} />
                       Uložiť
                     </button>
+                  </div>
+                </div>
+
+                {/* Important Message */}
+                <div className="mt-6 pt-6 border-t border-primary/20">
+                  <h3 className="text-lg font-semibold text-foreground border-b border-primary/20 pb-2 mb-4">
+                    *IMPORTANT*
+                  </h3>
+                  <div className="space-y-3">
+                    <textarea
+                      value={importantNote}
+                      onChange={(e) => {
+                        setImportantNote(e.target.value);
+                        // Reset saved state when user starts typing again
+                        if (savedImportantNote !== null && e.target.value !== savedImportantNote) {
+                          setSavedImportantNote(null);
+                        }
+                      }}
+                      placeholder="Enter important message for customer email..."
+                      rows={4}
+                      maxLength={500}
+                      className="w-full bg-secondary/50 border border-gray-600 rounded-lg px-4 py-3 text-sm text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                    />
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        This message will appear in the customer email after file completion notification.
+                      </p>
+                      <button
+                        onClick={() => handleSaveImportantNote(detailOrder.id)}
+                        disabled={savingImportantNote === detailOrder.id || (savedImportantNote !== null && importantNote === savedImportantNote)}
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                          savedImportantNote !== null && importantNote === savedImportantNote
+                            ? 'bg-emerald-500/20 text-emerald-400'
+                            : 'bg-primary/20 hover:bg-primary/30 text-primary'
+                        }`}
+                        title={savedImportantNote !== null && importantNote === savedImportantNote ? 'Uložené!' : 'Uložiť dôležitú správu'}
+                      >
+                        {savedImportantNote !== null && importantNote === savedImportantNote ? (
+                          <>
+                            <CheckCircle className="w-4 h-4" />
+                            Uložené!
+                          </>
+                        ) : savingImportantNote === detailOrder.id ? (
+                          <>
+                            <Save className="w-4 h-4 animate-pulse" />
+                            Ukladám...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4" />
+                            Uložiť poznámku
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

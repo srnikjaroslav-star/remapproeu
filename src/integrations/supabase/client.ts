@@ -23,6 +23,7 @@ export interface Order {
   customer_note: string | null;
   checksum_crc: string | null;
   internal_note: string | null;
+  important_note: string | null;
   invoice_number: string | null;
   invoice_url: string | null;
   stripe_session_id: string | null;
