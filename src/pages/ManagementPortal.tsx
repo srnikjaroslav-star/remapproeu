@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/lib/supabase';
 import { Order } from '@/integrations/supabase/client';
+import { createClient } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 import { SERVICES } from '@/data/services';
 
@@ -424,25 +425,60 @@ const ManagementPortal = () => {
   };
 
   const generateAndSendCreditNote = async (order: Order) => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    console.log('[generateAndSendCreditNote] Starting credit note generation for order:', order.id);
+    
+    // Get Supabase configuration with fallbacks
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://kivqvwdfujsnuwfxjtcz.supabase.co';
     const authKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+    
+    console.log('[generateAndSendCreditNote] Supabase URL:', supabaseUrl ? '✓ Set' : '✗ Missing');
+    console.log('[generateAndSendCreditNote] Service Role Key:', authKey ? '✓ Set' : '✗ Missing');
 
-    if (!supabaseUrl || !authKey) {
-      throw new Error('Missing Supabase configuration');
+    if (!supabaseUrl) {
+      console.error('[generateAndSendCreditNote] Missing VITE_SUPABASE_URL');
+      throw new Error('Missing Supabase URL configuration. Please set VITE_SUPABASE_URL in .env file.');
     }
+    
+    // Determine which auth key to use (prefer SERVICE_ROLE_KEY, fallback to ANON_KEY)
+    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtpdnF2d2RmdWpzbnV3ZnhqdGN6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwMjQ1OTMsImV4cCI6MjA4MjYwMDU5M30.-iDvC0T6lozYv5d4xrHrHeS9PSGOfqwajZapMB7hqjQ';
+    const finalAuthKey = authKey || anonKey;
+    
+    if (!authKey) {
+      console.warn('[generateAndSendCreditNote] Missing VITE_SUPABASE_SERVICE_ROLE_KEY - using ANON_KEY as fallback');
+      console.warn('[generateAndSendCreditNote] Note: ANON_KEY may have limited permissions. For production, set VITE_SUPABASE_SERVICE_ROLE_KEY in .env file.');
+    }
+    
+    if (!finalAuthKey) {
+      throw new Error('Missing Supabase authentication. Please set VITE_SUPABASE_SERVICE_ROLE_KEY or VITE_SUPABASE_ANON_KEY in .env file.');
+    }
+    
+    console.log('[generateAndSendCreditNote] Using auth key:', authKey ? 'SERVICE_ROLE_KEY' : 'ANON_KEY (fallback)');
 
     // Generate credit note invoice number (original invoice number + "-D")
     const originalInvoiceNumber = order.invoice_number || `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const creditNoteNumber = `${originalInvoiceNumber}-D`;
+    console.log('[generateAndSendCreditNote] Original invoice:', originalInvoiceNumber);
+    console.log('[generateAndSendCreditNote] Credit note number:', creditNoteNumber);
 
     // Get order items for credit note
-    const { data: orderItemsData, error: itemsError } = await supabase
-      .from('order_items')
-      .select('*')
-      .eq('order_id', order.id);
-
-    if (itemsError) {
-      console.error('Error fetching order items:', itemsError);
+    // Try order_items table first, but fallback to service_type from orders table if it doesn't exist
+    let orderItemsData: any[] | null = null;
+    
+    try {
+      const { data, error } = await supabase
+        .from('order_items')
+        .select('*')
+        .eq('order_id', order.id);
+      
+      if (!error && data && data.length > 0) {
+        orderItemsData = data;
+        console.log('[generateAndSendCreditNote] Found order_items:', orderItemsData.length, 'items');
+      } else {
+        console.log('[generateAndSendCreditNote] order_items table not found or empty, using service_type from orders table');
+      }
+    } catch (err: any) {
+      console.warn('[generateAndSendCreditNote] order_items table may not exist:', err?.message);
+      // Continue with fallback
     }
 
     // Calculate negative total amount
@@ -452,51 +488,121 @@ const ManagementPortal = () => {
     const negativeAmount = -Math.abs(totalAmount);
 
     // Prepare items for credit note (with negative prices)
-    const items = orderItemsData && orderItemsData.length > 0
-      ? orderItemsData.map(item => ({
-          name: item.service_type || 'Service',
-          price: -Math.abs(typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0)),
-          quantity: item.quantity || 1
-        }))
-      : [{
-          name: order.service_type || 'ECU Tuning Service',
+    // If order_items exists, use it; otherwise use service_type from orders table
+    let items: Array<{ name: string; price: number; quantity: number }>;
+    
+    if (orderItemsData && orderItemsData.length > 0) {
+      items = orderItemsData.map(item => ({
+        name: item.service_type || item.name || 'Service',
+        price: -Math.abs(typeof item.price === 'string' ? parseFloat(item.price) : (item.price || 0)),
+        quantity: item.quantity || 1
+      }));
+    } else {
+      // Fallback: Use service_type from orders table
+      // service_type can be an array or comma-separated string
+      const serviceTypes = Array.isArray(order.service_type) 
+        ? order.service_type 
+        : (typeof order.service_type === 'string' ? order.service_type.split(',').map(s => s.trim()) : []);
+      
+      if (serviceTypes.length > 0) {
+        const pricePerService = negativeAmount / serviceTypes.length;
+        items = serviceTypes.map(serviceName => ({
+          name: serviceName.replace(/[\[\]"]/g, '').trim() || 'ECU Tuning Service',
+          price: pricePerService,
+          quantity: 1
+        }));
+      } else {
+        items = [{
+          name: 'ECU Tuning Service',
           price: negativeAmount,
           quantity: 1
         }];
+      }
+    }
+    
+    console.log('[generateAndSendCreditNote] Prepared items for credit note:', items);
 
     // Call generate-invoice function with creditNote flag
+    const requestPayload = {
+      orderId: order.id,
+      orderNumber: order.order_number || '',
+      customerName: order.customer_name || 'Customer',
+      customerEmail: order.customer_email,
+      items: items,
+      totalAmount: negativeAmount,
+      brand: order.car_brand || order.brand,
+      model: order.car_model || order.model,
+      fuelType: order.fuel_type,
+      year: order.year,
+      ecuType: order.ecu_type,
+      vin: order.vin,
+      creditNote: true, // Flag to indicate this is a credit note
+      originalInvoiceNumber: originalInvoiceNumber,
+      creditNoteNumber: creditNoteNumber
+    };
+    
+    console.log('[generateAndSendCreditNote] Calling generate-invoice with payload:', JSON.stringify(requestPayload, null, 2));
+    
     const invoiceResponse = await fetch(`${supabaseUrl}/functions/v1/generate-invoice`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authKey}`,
+        'Authorization': `Bearer ${finalAuthKey}`,
       },
-      body: JSON.stringify({
-        orderId: order.id,
-        orderNumber: order.order_number || '',
-        customerName: order.customer_name || 'Customer',
-        customerEmail: order.customer_email,
-        items: items,
-        totalAmount: negativeAmount,
-        brand: order.brand,
-        model: order.model,
-        fuelType: order.fuel_type,
-        year: order.year,
-        ecuType: order.ecu_type,
-        vin: order.vin,
-        creditNote: true, // Flag to indicate this is a credit note
-        originalInvoiceNumber: originalInvoiceNumber,
-        creditNoteNumber: creditNoteNumber
-      }),
+      body: JSON.stringify(requestPayload),
     });
 
+    console.log('[generateAndSendCreditNote] Response status:', invoiceResponse.status);
+    
     if (!invoiceResponse.ok) {
       const errorText = await invoiceResponse.text();
+      console.error('[generateAndSendCreditNote] Invoice generation failed:', errorText);
       throw new Error(`Invoice generation failed: ${errorText}`);
     }
 
     const invoiceData = await invoiceResponse.json();
-    console.log('Credit note generated:', invoiceData);
+    console.log('[generateAndSendCreditNote] Credit note generated successfully:', invoiceData);
+    
+    // Verify that credit note was saved to database
+    // Use existing supabase client (it should work for reading)
+    // If SERVICE_ROLE_KEY is available, create a client with it for better permissions
+    let supabaseClient = supabase;
+    
+    if (finalAuthKey && finalAuthKey !== anonKey) {
+      try {
+        supabaseClient = createClient(supabaseUrl, finalAuthKey);
+        console.log('[generateAndSendCreditNote] Created Supabase client with SERVICE_ROLE_KEY for verification');
+      } catch (err) {
+        console.warn('[generateAndSendCreditNote] Failed to create client with SERVICE_ROLE_KEY, using default:', err);
+        supabaseClient = supabase;
+      }
+    }
+    
+    // Wait a moment for database to update (Edge Function may need time to save)
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    const { data: updatedOrder, error: verifyError } = await supabaseClient
+      .from('orders')
+      .select('credit_note_number, credit_note_pdf')
+      .eq('id', order.id)
+      .single();
+    
+    if (verifyError) {
+      console.error('[generateAndSendCreditNote] Error verifying credit note in DB:', verifyError);
+      console.warn('[generateAndSendCreditNote] This may be due to RLS policies. Credit note should still be saved via Edge Function.');
+      console.warn('[generateAndSendCreditNote] Check Supabase Dashboard to verify credit_note_number and credit_note_pdf were saved.');
+    } else {
+      console.log('[generateAndSendCreditNote] Verified credit note in database:', updatedOrder);
+      if (updatedOrder?.credit_note_number && updatedOrder?.credit_note_pdf) {
+        console.log('[generateAndSendCreditNote] ✓ Credit note successfully saved:', {
+          number: updatedOrder.credit_note_number,
+          pdf: updatedOrder.credit_note_pdf
+        });
+      } else {
+        console.warn('[generateAndSendCreditNote] ⚠ Credit note fields are empty in database. Check Edge Function logs.');
+        console.warn('[generateAndSendCreditNote] Edge Function should have saved the credit note. Refresh the page to see if it appears.');
+      }
+    }
   };
 
   const handleFieldChange = (orderId: string, field: 'checksum_crc' | 'internal_note', value: string) => {

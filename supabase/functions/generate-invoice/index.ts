@@ -498,9 +498,12 @@ serve(async (req) => {
 
   try {
     const data: InvoiceRequest = await req.json();
+    console.log("[generate-invoice] Received request:", JSON.stringify(data, null, 2));
     
     // Extract data with fallback values
     const orderId = data.orderId || "";
+    const isCreditNote = data.creditNote || false;
+    console.log("[generate-invoice] isCreditNote:", isCreditNote);
     
     // Validate only truly required fields
     if (!orderId) {
@@ -585,17 +588,27 @@ serve(async (req) => {
     const calculatedTotalFromItems = mappedItems.reduce((sum, item) => sum + item.total, 0);
     
     // Use calculated total from items, fallback to order total if needed
-    const finalTotalAmount = calculatedTotalFromItems > 0 
+    // For credit notes, use the negative amount from request, otherwise use calculated total
+    let finalTotalAmount = calculatedTotalFromItems > 0 
       ? calculatedTotalFromItems 
       : (typeof totalAmount === 'string' ? parseFloat(totalAmount) : (totalAmount || 0));
+    
+    // If this is a credit note and totalAmount from request is negative, use it
+    if (isCreditNote && data.totalAmount && data.totalAmount < 0) {
+      finalTotalAmount = data.totalAmount;
+      console.log("[generate-invoice] Using negative totalAmount from request for credit note:", finalTotalAmount);
+    }
     
     // Convert to InvoiceItem format for PDF generation
     const items = convertToInvoiceItems(mappedItems);
     
     // Generate invoice number (or use credit note number if provided)
-    const isCreditNote = data.creditNote || false;
-    const invoiceNumber = data.creditNoteNumber || generateInvoiceNumber();
+    const invoiceNumber = isCreditNote && data.creditNoteNumber 
+      ? data.creditNoteNumber 
+      : generateInvoiceNumber();
     const invoiceDate = new Date().toISOString();
+    console.log("[generate-invoice] Invoice/Credit Note Number:", invoiceNumber);
+    console.log("[generate-invoice] isCreditNote flag:", isCreditNote);
     
     // Format totalAmount to 2 decimal places (ensure it's a number)
     // For credit notes, totalAmount should already be negative
@@ -617,48 +630,85 @@ serve(async (req) => {
       creditNote: isCreditNote,
     });
     
-    // STEP 1: Upload PDF to storage FIRST - bucket 'invoices'
-    // File name: invoice-${orderId}.pdf (or credit-note-${orderId}.pdf for credit notes)
+    // STEP 1: Upload PDF to storage FIRST
+    // For credit notes: use 'credit-note' bucket, for invoices: use 'invoices' bucket
+    console.log("[generate-invoice] STEP 1: Uploading PDF to storage. isCreditNote:", isCreditNote);
     const pdfBuffer = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
     const fileName = isCreditNote ? `credit-note-${orderId}.pdf` : `invoice-${orderId}.pdf`;
+    const bucketName = isCreditNote ? 'credit-note' : 'invoices';
+    console.log("[generate-invoice] File name:", fileName);
+    console.log("[generate-invoice] Bucket name:", bucketName);
     
     const { error: uploadError } = await supabase.storage
-      .from('invoices')
+      .from(bucketName)
       .upload(fileName, pdfBuffer, {
         contentType: 'application/pdf',
         upsert: true,
       });
     
     if (uploadError) {
-      console.error("PDF upload error:", uploadError);
-      throw new Error(`Failed to upload invoice PDF: ${uploadError.message}`);
+      console.error("[generate-invoice] PDF upload error:", uploadError);
+      throw new Error(`Failed to upload ${isCreditNote ? 'credit note' : 'invoice'} PDF: ${uploadError.message}`);
     }
     
-    // Get public URL
+    console.log("[generate-invoice] PDF uploaded successfully to storage bucket:", bucketName);
+    
+    // Get public URL from the correct bucket
     const { data: urlData } = supabase.storage
-      .from('invoices')
+      .from(bucketName)
       .getPublicUrl(fileName);
     
     const invoiceUrl = urlData?.publicUrl || null;
+    console.log("[generate-invoice] PDF URL:", invoiceUrl);
     
     // STEP 2: Save invoice URL to database
     // CRITICAL: For credit notes, preserve original invoice data and add credit note separately
+    console.log("[generate-invoice] STEP 2: Saving to database. isCreditNote:", isCreditNote);
     if (isCreditNote) {
       // For credit notes: Save credit note number and PDF URL to separate columns, preserve original invoice
-      const { error: creditNoteUpdateError } = await supabase
+      console.log("[generate-invoice] Updating credit note fields:", {
+        credit_note_number: invoiceNumber,
+        credit_note_pdf: invoiceUrl,
+        orderId: orderId
+      });
+      
+      if (!invoiceUrl) {
+        console.error("[generate-invoice] CRITICAL: invoiceUrl is null! Cannot save credit note to database.");
+        throw new Error("Failed to get public URL for credit note PDF");
+      }
+      
+      const { data: updateData, error: creditNoteUpdateError } = await supabase
         .from('orders')
         .update({
           credit_note_number: invoiceNumber,
-          credit_note_pdf: invoiceUrl || '',
+          credit_note_pdf: invoiceUrl,
           // DO NOT overwrite invoice_number or invoice_url - preserve original invoice
         })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .select();
       
       if (creditNoteUpdateError) {
-        console.error("Credit note update error:", creditNoteUpdateError);
-        // Non-fatal - continue even if DB update fails
+        console.error("[generate-invoice] Credit note update error:", creditNoteUpdateError);
+        console.error("[generate-invoice] Error details:", JSON.stringify(creditNoteUpdateError, null, 2));
+        throw new Error(`Failed to save credit note to database: ${creditNoteUpdateError.message}`);
       } else {
-        console.log("Credit note saved to database:", { credit_note_number: invoiceNumber, credit_note_pdf: invoiceUrl });
+        console.log("[generate-invoice] ✓ Credit note saved successfully to database:", {
+          credit_note_number: invoiceNumber,
+          credit_note_pdf: invoiceUrl,
+          updatedOrder: updateData
+        });
+        
+        // Verify the update
+        if (updateData && updateData.length > 0) {
+          const updated = updateData[0];
+          if (updated.credit_note_number === invoiceNumber && updated.credit_note_pdf === invoiceUrl) {
+            console.log("[generate-invoice] ✓ Verification: Credit note data matches in database");
+          } else {
+            console.warn("[generate-invoice] ⚠ Verification: Credit note data mismatch in database");
+            console.warn("[generate-invoice] Expected:", { credit_note_number: invoiceNumber, credit_note_pdf: invoiceUrl });
+            console.warn("[generate-invoice] Got:", { credit_note_number: updated.credit_note_number, credit_note_pdf: updated.credit_note_pdf });
+          }
+        }
       }
     } else {
       // For regular invoices: Save invoice_number and invoice_url normally
@@ -742,8 +792,7 @@ serve(async (req) => {
                       </h2>
                       ${isCreditNote ? `
                       <p style="margin: 0 0 30px; color: #e5e5e5; font-size: 16px; line-height: 1.6;">
-                        We regret to inform you that your order <strong style="color: #ffffff;">${orderNumber}</strong> has been cancelled. 
-                        A credit note has been issued for the full amount, and your payment will be refunded according to our refund policy.
+                        Dear customer, we regret to inform you that your order <strong style="color: #ffffff;">${orderNumber}</strong> has been cancelled. Please find the attached Credit Note. The refund will be processed within the standard period.
                       </p>
                       ` : ''}
                       
@@ -960,7 +1009,7 @@ serve(async (req) => {
           to: [customerEmail],
           bcc: [BCC_EMAIL],
           subject: isCreditNote 
-            ? `Credit Note - Order ${orderNumber} Cancelled - REMAPPRO`
+            ? `Order ${orderNumber} Cancelled - Credit Note Issued`
             : `Potvrdenie objednávky č. ${orderNumber} - REMAPPRO`,
           html: emailHtml,
           attachments: [
@@ -992,13 +1041,18 @@ serve(async (req) => {
     }
     
     // Return success - PDF is in Storage and URL is in DB, even if email failed
+    const responseData = {
+      success: true,
+      invoiceNumber,
+      invoiceUrl,
+      isCreditNote,
+      message: isCreditNote ? "Credit note generated and saved successfully" : "Invoice generated and saved successfully",
+    };
+    
+    console.log("[generate-invoice] Returning success response:", responseData);
+    
     return new Response(
-      JSON.stringify({
-        success: true,
-        invoiceNumber,
-        invoiceUrl,
-        message: "Invoice generated and saved successfully",
-      }),
+      JSON.stringify(responseData),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
