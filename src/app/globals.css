@@ -1,0 +1,198 @@
+@import "tailwindcss";
+
+:root {
+  --background: #050505;
+  --foreground: #ffffff;
+  --neon-blue: #00d2ff;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: #050505;
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Glassmorphism utility */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Enhanced Neon Blue glow effects */
+.neon-glow {
+  box-shadow: 
+    0 0 10px rgba(0, 210, 255, 0.4),
+    0 0 20px rgba(0, 210, 255, 0.3),
+    0 0 30px rgba(0, 210, 255, 0.2),
+    inset 0 0 20px rgba(0, 210, 255, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.neon-glow:hover {
+  box-shadow: 
+    0 0 15px rgba(0, 210, 255, 0.6),
+    0 0 30px rgba(0, 210, 255, 0.4),
+    0 0 45px rgba(0, 210, 255, 0.3),
+    inset 0 0 30px rgba(0, 210, 255, 0.15);
+}
+
+.neon-glow-text {
+  text-shadow: 
+    0 0 5px rgba(0, 210, 255, 0.8),
+    0 0 10px rgba(0, 210, 255, 0.6),
+    0 0 15px rgba(0, 210, 255, 0.4),
+    0 0 20px rgba(0, 210, 255, 0.2);
+}
+
+/* Mobile touch targets - Garage UX */
+@media (max-width: 768px) {
+  button, a {
+    min-height: 56px;
+    min-width: 56px;
+  }
+}
+
+/* Touch optimization for garage use */
+.touch-manipulation {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0, 210, 255, 0.2);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 210, 255, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 210, 255, 0.5);
+}
+
+/* Select dropdown styling for dark theme - Remove native blue */
+select {
+  color: white !important;
+  background-color: #0a0a0a !important;
+}
+
+/* Override native browser blue highlight */
+select option {
+  background-color: #0a0a0a !important;
+  color: white !important;
+  padding: 0.5rem;
+}
+
+/* Remove native blue on focus */
+select:focus {
+  outline: none !important;
+  border-color: #00d2ff !important;
+}
+
+select:focus option {
+  background-color: #0a0a0a !important;
+  color: white !important;
+}
+
+/* Neon cyan hover state */
+select option:hover {
+  background-color: rgba(0, 210, 255, 0.2) !important;
+  color: #00d2ff !important;
+}
+
+/* Neon cyan selected state */
+select option:checked,
+select option[selected] {
+  background-color: rgba(0, 210, 255, 0.3) !important;
+  color: #00d2ff !important;
+}
+
+/* Remove native blue highlight on active/focus */
+select:active,
+select:focus {
+  background-color: #0a0a0a !important;
+  color: white !important;
+}
+
+/* Override browser default blue selection */
+select::-ms-expand {
+  display: none;
+}
+
+select::-webkit-select-placeholder {
+  color: white;
+}
+
+/* Prevent browser autocomplete styling - remove white boxes */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #0a0a0a inset !important;
+  -webkit-text-fill-color: white !important;
+  caret-color: white !important;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Ensure select maintains dark background when scrolling */
+select {
+  background-color: #0a0a0a !important;
+  accent-color: #00d2ff !important;
+  outline: none !important;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 1px solid rgba(0, 210, 255, 0.3) !important;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 8px 32px 8px 12px !important;
+  color: white !important;
+  transition: all 0.2s ease;
+}
+
+select option {
+  background-color: #1a1a1a !important;
+  color: white !important;
+}
+
+/* Custom scrollbar for dropdown menus */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 210, 255, 0.1);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0, 210, 255, 0.4);
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 210, 255, 0.6);
+}
