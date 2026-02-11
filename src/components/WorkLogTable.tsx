@@ -74,7 +74,12 @@ export default function WorkLogTable({ slug }: WorkLogTableProps) {
       {/* Search and Filter Bar */}
       <div className="flex flex-col sm:flex-row gap-4">
       <div className="flex-1 relative isolate">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white" size={20} strokeWidth={3} />
+      <Search 
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-white/90 drop-shadow-[0_0_1px_rgba(0,0,0,1)]" 
+          size={18} 
+          strokeWidth={2.5}
+          style={{ transform: 'translateY(-50%) translateZ(0)' }}
+        />
           <input
             type="text"
             value={searchQuery}
