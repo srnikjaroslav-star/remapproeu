@@ -24,7 +24,8 @@ export const metadata: Metadata = {
     siteName: 'REMAPPRO',
     images: [
       {
-        url: '/opengraph-image.png',
+        // TOTO JE KĽÚČOVÁ ZMENA - ABSOLÚTNA CESTA
+        url: 'https://tabulka-modern.vercel.app/opengraph-image.png', 
         width: 1200,
         height: 630,
         alt: 'REMAPPRO Logo',
