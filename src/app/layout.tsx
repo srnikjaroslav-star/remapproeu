@@ -14,8 +14,25 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://tabulka-modern.vercel.app'),
   title: "REMAPPRO Management Suite",
   description: "Professional service management and analytics platform",
+  openGraph: {
+    title: "REMAPPRO Management Suite",
+    description: "Professional service management and analytics platform",
+    url: 'https://tabulka-modern.vercel.app',
+    siteName: 'REMAPPRO',
+    images: [
+      {
+        url: '/opengraph-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'REMAPPRO Logo',
+      },
+    ],
+    locale: 'sk_SK',
+    type: 'website',
+  },
 };
 
 export default function RootLayout({
